@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/auto-sync-github.ps1 -Once",
+    "auto-sync": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/auto-sync-github.ps1"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

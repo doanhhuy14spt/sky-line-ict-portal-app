@@ -44,3 +44,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Agent phải luôn chủ động kiểm tra mã nguồn, chạy thử nghiệm hệ thống và kiểm tra lỗi (compile error, lint error, runtime crash) **TRƯỚC KHI** báo cáo cho Tổ trưởng.
 - Nếu có lỗi phát sinh, Agent phải tự động phân tích và khắc phục triệt để, không đùn đẩy công việc kỹ thuật cho người dùng.
 - Khi báo cáo, chỉ thông báo kết quả cụ thể, đường link truy cập và các điểm nổi bật cần trải nghiệm.
+
+---
+
+### 5. TỰ ĐỘNG ĐỒNG BỘ MỌI CHỈNH SỬA LÊN GITHUB & VERCEL
+- Ngay sau khi thực hiện bất kỳ chỉnh sửa nào trong dự án và kiểm tra không có lỗi, Agent **BẮT BUỘC** phải tự động chạy đồng bộ Git (`npm run sync` hoặc `git add -A && git commit -m "..." && git push origin main`) để đẩy ngay mã nguồn mới nhất lên kho GitHub (`https://github.com/doanhhuy14spt/sky-line-ict-portal-app`) và kích hoạt Vercel tự động cập nhật trang web trực tuyến.
+- Tuyệt đối không bao giờ đẩy các tệp chứa khóa bí mật (`.env.local`, `.env`) lên GitHub.
