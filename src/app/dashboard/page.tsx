@@ -51,6 +51,7 @@ import { AssignedTasksSection } from "@/components/assigned-tasks-section";
 import { TrainingTeamsSection } from "@/components/training-teams-section";
 import { AchievementsSection } from "@/components/achievements-section";
 import { OverviewSection } from "@/components/overview-section";
+import { SiteFooter } from "@/components/site-footer";
 
 interface TimetableSlot {
   id: string;
@@ -1547,16 +1548,8 @@ export default function DashboardPage() {
 
 
 
-      {/* FOOTER */}
-      <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 space-y-2">
-          <div className="flex items-center justify-center gap-2 font-bold text-slate-700 dark:text-slate-300">
-            <School className="w-4 h-4 text-sky-600" />
-            Hệ Thống Giáo Dục Sky-Line • Tổ Chuyên Môn Tin Học & Robotics (ICT)
-          </div>
-          <p>Phục vụ 5 cơ sở: Riverside • Central • Beach • Hill • Global | Quản trị từ Lớp 1 đến Lớp 12</p>
-        </div>
-      </footer>
+      {/* FOOTER HỆ THỐNG CƠ SỞ SKY-LINE & DESIGN BY DAH95 */}
+      <SiteFooter />
     </div>
   );
 }

@@ -466,8 +466,14 @@ export default function LoginPage() {
         </Card>
 
         {/* Thông tin chân trang nhỏ */}
-        <div className="text-center text-slate-400 text-xs mt-4">
-          Hệ Thống Giáo Dục Sky-Line • Phòng Công Nghệ & Chuyển Đổi Số
+        <div className="text-center text-slate-400 text-xs mt-4 space-y-1">
+          <div>© 2026 Hệ thống Giáo dục Sky-Line • Tổ Chuyên Môn ICT</div>
+          <div className="text-[11px] font-semibold text-slate-400">
+            Design by{" "}
+            <span className="font-black bg-gradient-to-r from-sky-400 via-teal-300 to-amber-400 bg-clip-text text-transparent">
+              DAH95
+            </span>
+          </div>
         </div>
       </div>
 

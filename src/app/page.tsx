@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { UserNav } from "@/components/user-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -472,47 +473,9 @@ export default function HomePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* FOOTER BẢN QUYỀN SKY-LINE                                                 */}
+      {/* FOOTER BẢN QUYỀN SKY-LINE & DESIGN BY DAH95                               */}
       {/* ========================================================================= */}
-      <footer className="bg-slate-900 text-slate-400 py-10 border-t border-slate-800 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-8 px-2 py-1 rounded-xl bg-white/95 flex items-center justify-center shadow-xs">
-              <img
-                src="/LogoSKL.png"
-                alt="Logo Trường Sky-Line"
-                className="h-5 w-auto object-contain"
-              />
-            </div>
-            <div>
-              <div className="font-bold text-slate-200">
-                Hệ Thống Giáo Dục Sky-Line • Tổ Chuyên Môn ICT
-              </div>
-              <div className="text-[11px] text-slate-500">
-                Cổng thông tin nội bộ bám sát Bản Kế Hoạch Chuyên Môn 2026-2027
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 text-[11px]">
-            <Link href="/" className="hover:text-white transition-colors">
-              Trang Chủ
-            </Link>
-            <span>•</span>
-            <Link href="/dashboard" className="hover:text-white transition-colors">
-              Bảng Điều Khiển (/dashboard)
-            </Link>
-            <span>•</span>
-            <Link href="/login" className="hover:text-white transition-colors">
-              Đăng Nhập (/login)
-            </Link>
-          </div>
-
-          <div className="text-[11px] text-slate-500 text-center md:text-right">
-            © 2026 Sky-Line Education Group. Bản quyền thuộc về Tổ Chuyên Môn ICT.
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
