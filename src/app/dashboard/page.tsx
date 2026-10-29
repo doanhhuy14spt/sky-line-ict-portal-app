@@ -304,8 +304,9 @@ export default function DashboardPage() {
     },
   ]);
 
-  // --- STATE CHỈNH SỬA THÔNG TIN CÁ NHÂN TRONG TAB NHÂN SỰ ICT ---
+  // --- STATE QUẢN LÝ & CHỈNH SỬA HỒ SƠ GIÁO VIÊN TRONG TAB NHÂN SỰ ICT ---
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [profileModalMode, setProfileModalMode] = useState<"add" | "edit">("edit");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [editProfileForm, setEditProfileForm] = useState({
     id: "",
@@ -316,6 +317,12 @@ export default function DashboardPage() {
     campusId: "riverside",
     lab: "",
   });
+  const [deleteConfirmTeacher, setDeleteConfirmTeacher] = useState<{
+    id: string;
+    name: string;
+    email: string;
+  } | null>(null);
+  const [isDeletingTeacher, setIsDeletingTeacher] = useState(false);
 
   // Khởi tạo và đồng bộ chế độ Sáng / Tối từ bộ nhớ trình duyệt (Mặc định: Chế độ Tối)
   useEffect(() => {
@@ -1472,45 +1479,81 @@ export default function DashboardPage() {
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Users className="w-5 h-5 text-sky-600" />
-                    Danh Bạ Đội Ngũ Nhân Sự Tổ ICT ({teachersList.length} Thầy Cô)
-                  </h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Users className="w-5 h-5 text-sky-600" />
+                      Danh Bạ Đội Ngũ Nhân Sự Tổ ICT ({teachersList.length} Thầy Cô)
+                    </h2>
+                    {isLeader && (
+                      <Badge variant="amber" className="text-[10px] font-bold">
+                        👑 Quyền Tổ Trưởng (Toàn quyền Thêm • Sửa • Xóa)
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Mỗi tài khoản có quyền chỉnh sửa thông tin cá nhân của chính mình; thông tin của các thầy cô khác ở chế độ chỉ xem.
+                    {isLeader
+                      ? "Tổ trưởng chuyên môn có toàn quyền thêm mới, chỉnh sửa và xóa thông tin giáo viên trong danh sách Nhân sự ICT."
+                      : "Mỗi tài khoản có quyền chỉnh sửa thông tin cá nhân của chính mình; thông tin của các thầy cô khác ở chế độ chỉ xem."}
                   </p>
                 </div>
 
-                {/* Nút chỉnh sửa nhanh hồ sơ của chính mình */}
-                {(() => {
-                  const myTeacherObj = teachersList.find(
-                    (t) =>
-                      t.id === currentUserProfile.id ||
-                      t.email?.toLowerCase() === currentUserProfile.email?.toLowerCase()
-                  );
-                  if (!myTeacherObj) return null;
-                  return (
+                {/* Các nút thao tác trên thanh tiêu đề */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {isLeader && (
                     <Button
                       size="sm"
                       onClick={() => {
+                        setProfileModalMode("add");
                         setEditProfileForm({
-                          id: myTeacherObj.id,
-                          name: myTeacherObj.name,
-                          roleCode: myTeacherObj.roleCode || (myTeacherObj.role.includes("Tổ trưởng") ? "leader" : "teacher"),
-                          email: myTeacherObj.email,
-                          phone: myTeacherObj.phone || "",
-                          campusId: myTeacherObj.campusId || "riverside",
-                          lab: myTeacherObj.lab || "",
+                          id: "",
+                          name: "",
+                          roleCode: "teacher",
+                          email: "",
+                          phone: "",
+                          campusId: "riverside",
+                          lab: "Phòng Lab Sky-Line Riverside Tiểu Học",
                         });
                         setIsEditProfileModalOpen(true);
                       }}
-                      className="font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-sky-600/20 cursor-pointer shrink-0"
+                      className="font-bold text-xs flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white shadow-sm shadow-amber-600/20 cursor-pointer"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Chỉnh sửa hồ sơ của tôi
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      + Thêm Giáo Viên Mới
                     </Button>
-                  );
-                })()}
+                  )}
+
+                  {(() => {
+                    const myTeacherObj = teachersList.find(
+                      (t) =>
+                        t.id === currentUserProfile.id ||
+                        t.email?.toLowerCase() === currentUserProfile.email?.toLowerCase()
+                    );
+                    if (!myTeacherObj) return null;
+                    return (
+                      <Button
+                        size="sm"
+                        variant={isLeader ? "outline" : "default"}
+                        onClick={() => {
+                          setProfileModalMode("edit");
+                          setEditProfileForm({
+                            id: myTeacherObj.id,
+                            name: myTeacherObj.name,
+                            roleCode: myTeacherObj.roleCode || (myTeacherObj.role.includes("Tổ trưởng") ? "leader" : "teacher"),
+                            email: myTeacherObj.email,
+                            phone: myTeacherObj.phone || "",
+                            campusId: myTeacherObj.campusId || "riverside",
+                            lab: myTeacherObj.lab || "",
+                          });
+                          setIsEditProfileModalOpen(true);
+                        }}
+                        className="font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Chỉnh sửa hồ sơ của tôi
+                      </Button>
+                    );
+                  })()}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1520,6 +1563,9 @@ export default function DashboardPage() {
                     (Boolean(teacher.email) &&
                       Boolean(currentUserProfile.email) &&
                       teacher.email.toLowerCase() === currentUserProfile.email.toLowerCase());
+
+                  const canEditProfile = isLeader || isOwnProfile;
+                  const canDeleteProfile = isLeader && !isOwnProfile;
 
                   const avatarInitial =
                     teacher.name
@@ -1582,28 +1628,52 @@ export default function DashboardPage() {
                             </div>
                           </div>
 
-                          {/* PHÂN QUYỀN: CHỈ CHÍNH CHỦ TÀI KHOẢN MỚI CÓ NÚT CHỈNH SỬA */}
-                          {isOwnProfile ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditProfileForm({
-                                  id: teacher.id,
-                                  name: teacher.name,
-                                  roleCode: teacher.roleCode || (teacher.role.includes("Tổ trưởng") ? "leader" : "teacher"),
-                                  email: teacher.email,
-                                  phone: teacher.phone || "",
-                                  campusId: teacher.campusId || "riverside",
-                                  lab: teacher.lab || "",
-                                });
-                                setIsEditProfileModalOpen(true);
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/80 dark:hover:bg-sky-900 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 text-[11px] font-bold transition-colors cursor-pointer shrink-0"
-                              title="Chỉnh sửa thông tin cá nhân của bạn"
-                            >
-                              <Pencil className="w-3 h-3" />
-                              <span>Chỉnh sửa</span>
-                            </button>
+                          {/* PHÂN QUYỀN: TỔ TRƯỞNG TOÀN QUYỀN SỬA/XÓA; GIÁO VIÊN CHỈ SỬA HỒ SƠ CỦA MÌNH */}
+                          {canEditProfile ? (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProfileModalMode("edit");
+                                  setEditProfileForm({
+                                    id: teacher.id,
+                                    name: teacher.name,
+                                    roleCode: teacher.roleCode || (teacher.role.includes("Tổ trưởng") ? "leader" : "teacher"),
+                                    email: teacher.email,
+                                    phone: teacher.phone || "",
+                                    campusId: teacher.campusId || "riverside",
+                                    lab: teacher.lab || "",
+                                  });
+                                  setIsEditProfileModalOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/80 dark:hover:bg-sky-900 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 text-[11px] font-bold transition-colors cursor-pointer"
+                                title={
+                                  isOwnProfile
+                                    ? "Chỉnh sửa thông tin cá nhân của bạn"
+                                    : `Chỉnh sửa hồ sơ của ${teacher.name}`
+                                }
+                              >
+                                <Pencil className="w-3 h-3" />
+                                <span>Chỉnh sửa</span>
+                              </button>
+
+                              {canDeleteProfile && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDeleteConfirmTeacher({
+                                      id: teacher.id,
+                                      name: teacher.name,
+                                      email: teacher.email,
+                                    })
+                                  }
+                                  className="inline-flex items-center justify-center p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/70 dark:hover:bg-rose-900/80 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/80 transition-colors cursor-pointer"
+                                  title={`Xóa ${teacher.name} khỏi danh sách Nhân sự ICT`}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           ) : (
                             <span
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-[10px] font-semibold shrink-0 select-none"
@@ -1694,7 +1764,7 @@ export default function DashboardPage() {
                 })}
               </div>
 
-              {/* MODAL CHỈNH SỬA THÔNG TIN CÁ NHÂN (CHỈ DÀNH CHO CHÍNH CHỦ TÀI KHOẢN) */}
+              {/* MODAL THÊM MỚI / CHỈNH SỬA HỒ SƠ GIÁO VIÊN */}
               {isEditProfileModalOpen && (
                 <div
                   className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
@@ -1708,15 +1778,33 @@ export default function DashboardPage() {
                   >
                     <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center">
-                          <Pencil className="w-4 h-4" />
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                            profileModalMode === "add"
+                              ? "bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400"
+                              : "bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400"
+                          }`}
+                        >
+                          {profileModalMode === "add" ? (
+                            <PlusCircle className="w-4 h-4" />
+                          ) : (
+                            <Pencil className="w-4 h-4" />
+                          )}
                         </div>
                         <div>
                           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                            Chỉnh Sửa Thông Tin Cá Nhân
+                            {profileModalMode === "add"
+                              ? "Thêm Giáo Viên Mới Vào Tổ ICT"
+                              : editProfileForm.id === currentUserProfile.id
+                              ? "Chỉnh Sửa Thông Tin Cá Nhân"
+                              : "Chỉnh Sửa Hồ Sơ Giáo Viên"}
                           </h3>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            Cập nhật hồ sơ cá nhân của bạn trên hệ thống Nhân sự ICT
+                            {profileModalMode === "add"
+                              ? "Quyền Tổ trưởng: Bổ sung nhân sự mới vào danh bạ Tổ Chuyên môn ICT"
+                              : editProfileForm.id === currentUserProfile.id
+                              ? "Cập nhật hồ sơ cá nhân của bạn trên hệ thống Nhân sự ICT"
+                              : "Quyền Tổ trưởng: Cập nhật thông tin nhân sự trong Tổ Chuyên môn ICT"}
                           </p>
                         </div>
                       </div>
@@ -1734,21 +1822,17 @@ export default function DashboardPage() {
                     <form
                       onSubmit={async (e) => {
                         e.preventDefault();
-                        // Kiểm tra bảo mật kép: chỉ cho phép lưu nếu đúng là hồ sơ của chính mình
-                        const isReallyMine =
-                          editProfileForm.id === currentUserProfile.id ||
-                          editProfileForm.email.toLowerCase() === currentUserProfile.email.toLowerCase();
-                        if (!isReallyMine) {
-                          showToast("Bạn chỉ có quyền chỉnh sửa thông tin cá nhân của chính mình!", "warning");
-                          return;
-                        }
 
                         if (!editProfileForm.name.trim()) {
-                          showToast("Vui lòng nhập Họ và tên!", "warning");
+                          showToast("Vui lòng nhập Họ và tên giáo viên!", "warning");
                           return;
                         }
 
-                        setIsSavingProfile(true);
+                        if (!editProfileForm.email.trim()) {
+                          showToast("Vui lòng nhập địa chỉ Email!", "warning");
+                          return;
+                        }
+
                         const campusLabel =
                           editProfileForm.campusId === "all"
                             ? "Bao quát 5 Cơ sở"
@@ -1756,6 +1840,93 @@ export default function DashboardPage() {
                         const roleLabel =
                           editProfileForm.roleCode === "leader" ? "Tổ trưởng chuyên môn" : "Giáo viên";
 
+                        // TRƯỜNG HỢP 1: THÊM GIÁO VIÊN MỚI (CHỈ DÀNH CHO TỔ TRƯỞNG)
+                        if (profileModalMode === "add") {
+                          if (!isLeader) {
+                            showToast("Chỉ Tổ trưởng chuyên môn mới có quyền thêm giáo viên mới!", "warning");
+                            return;
+                          }
+
+                          setIsSavingProfile(true);
+                          try {
+                            const { data: rpcRes, error: rpcErr } = await supabase.rpc(
+                              "create_teacher_profile",
+                              {
+                                p_full_name: editProfileForm.name.trim(),
+                                p_role: editProfileForm.roleCode,
+                                p_email: editProfileForm.email.trim(),
+                                p_phone_number: editProfileForm.phone.trim(),
+                                p_campus_id: editProfileForm.campusId,
+                                p_lab_management: editProfileForm.lab.trim() || "Chưa phân công",
+                              }
+                            );
+
+                            let newProfileId = rpcRes?.profile?.id;
+
+                            if (rpcErr || (rpcRes && rpcRes.success === false)) {
+                              if (rpcRes?.message) {
+                                throw new Error(rpcRes.message);
+                              }
+                              const { data: insertedRow, error: directInsertErr } = await supabase
+                                .from("profiles")
+                                .insert({
+                                  full_name: editProfileForm.name.trim(),
+                                  role: editProfileForm.roleCode,
+                                  email: editProfileForm.email.trim(),
+                                  phone_number: editProfileForm.phone.trim(),
+                                  campus_id: editProfileForm.campusId,
+                                  lab_management: editProfileForm.lab.trim() || "Chưa phân công",
+                                  specialty: "Robotics STEM & Tin Học",
+                                })
+                                .select()
+                                .single();
+
+                              if (directInsertErr) {
+                                throw new Error(directInsertErr.message);
+                              }
+                              newProfileId = insertedRow?.id;
+                            }
+
+                            const createdTeacher = {
+                              id: newProfileId || `t_${Date.now()}`,
+                              name: editProfileForm.name.trim(),
+                              email: editProfileForm.email.trim(),
+                              phone: editProfileForm.phone.trim(),
+                              campusId: editProfileForm.campusId,
+                              campus: campusLabel,
+                              roleCode: editProfileForm.roleCode,
+                              role: roleLabel,
+                              specialty: "Robotics STEM & Tin Học",
+                              lab: editProfileForm.lab.trim() || "Chưa phân công",
+                            };
+
+                            setTeachersList((prev) => [...prev, createdTeacher]);
+                            setIsEditProfileModalOpen(false);
+                            showToast(
+                              `Đã thêm ${editProfileForm.name.trim()} vào danh sách Nhân sự ICT!`,
+                              "success"
+                            );
+                          } catch (err: any) {
+                            showToast(
+                              "Không thể thêm giáo viên: " + (err?.message || "Vui lòng kiểm tra lại kết nối"),
+                              "warning"
+                            );
+                          } finally {
+                            setIsSavingProfile(false);
+                          }
+                          return;
+                        }
+
+                        // TRƯỜNG HỢP 2: CHỈNH SỬA HỒ SƠ (TỔ TRƯỞNG HOẶC CHÍNH CHỦ TÀI KHOẢN)
+                        const isReallyMine =
+                          editProfileForm.id === currentUserProfile.id ||
+                          editProfileForm.email.toLowerCase() === currentUserProfile.email.toLowerCase();
+                        if (!isLeader && !isReallyMine) {
+                          showToast("Bạn chỉ có quyền chỉnh sửa thông tin cá nhân của chính mình!", "warning");
+                          return;
+                        }
+
+                        setIsSavingProfile(true);
                         try {
                           // 1. Gọi hàm RPC bảo mật trên Supabase
                           const { data: rpcRes, error: rpcErr } = await supabase.rpc(
@@ -1772,7 +1943,6 @@ export default function DashboardPage() {
                           );
 
                           if (rpcErr || (rpcRes && rpcRes.success === false)) {
-                            // Dự phòng cập nhật trực tiếp qua bảng profiles (được bảo vệ bởi RLS auth.uid() = id)
                             const { error: directErr } = await supabase
                               .from("profiles")
                               .update({
@@ -1810,20 +1980,25 @@ export default function DashboardPage() {
                             )
                           );
 
-                          // 3. Đồng bộ luôn thông tin tài khoản ở góc trên bên phải
-                          setCurrentUserProfile((prev) => ({
-                            ...prev,
-                            name: editProfileForm.name.trim(),
-                            email: editProfileForm.email.trim(),
-                            role: editProfileForm.roleCode,
-                            campus:
-                              editProfileForm.campusId === "all"
-                                ? "Sky-Line Riverside (Bao quát 5 cơ sở)"
-                                : `Cơ sở ${campusLabel}`,
-                          }));
+                          // 3. Nếu đang sửa hồ sơ của chính mình thì đồng bộ luôn thông tin ở góc trên bên phải
+                          if (editProfileForm.id === currentUserProfile.id) {
+                            setCurrentUserProfile((prev) => ({
+                              ...prev,
+                              name: editProfileForm.name.trim(),
+                              email: editProfileForm.email.trim(),
+                              role: editProfileForm.roleCode,
+                              campus:
+                                editProfileForm.campusId === "all"
+                                  ? "Sky-Line Riverside (Bao quát 5 cơ sở)"
+                                  : `Cơ sở ${campusLabel}`,
+                            }));
+                          }
 
                           setIsEditProfileModalOpen(false);
-                          showToast("Đã lưu thay đổi thông tin cá nhân thành công!", "success");
+                          showToast(
+                            `Đã lưu thay đổi hồ sơ của ${editProfileForm.name.trim()} thành công!`,
+                            "success"
+                          );
                         } catch (err: any) {
                           showToast(
                             "Không thể lưu thay đổi: " + (err?.message || "Vui lòng kiểm tra lại kết nối"),
@@ -1845,7 +2020,7 @@ export default function DashboardPage() {
                           <Input
                             value={editProfileForm.name}
                             onChange={(e) => setEditProfileForm({ ...editProfileForm, name: e.target.value })}
-                            placeholder="Ví dụ: Thầy Đỗ Anh Huy"
+                            placeholder="Ví dụ: Thầy Nguyễn Văn A"
                             required
                           />
                         </div>
@@ -1884,7 +2059,7 @@ export default function DashboardPage() {
                             type="email"
                             value={editProfileForm.email}
                             onChange={(e) => setEditProfileForm({ ...editProfileForm, email: e.target.value })}
-                            placeholder="Ví dụ: huyda@skylineschool.edu.vn"
+                            placeholder="Ví dụ: giaovien@skylineschool.edu.vn"
                             required
                           />
                         </div>
@@ -1986,10 +2161,106 @@ export default function DashboardPage() {
                         </Button>
                         <Button type="submit" size="sm" isLoading={isSavingProfile}>
                           <Check className="w-4 h-4 mr-1" />
-                          Lưu thay đổi
+                          {profileModalMode === "add" ? "Thêm giáo viên" : "Lưu thay đổi"}
                         </Button>
                       </div>
                     </form>
+                  </div>
+                </div>
+              )}
+
+              {/* MODAL XÁC NHẬN XÓA GIÁO VIÊN (CHỈ DÀNH CHO TỔ TRƯỞNG) */}
+              {deleteConfirmTeacher && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+                  onClick={() => {
+                    if (!isDeletingTeacher) setDeleteConfirmTeacher(null);
+                  }}
+                >
+                  <div
+                    className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in zoom-in-95 duration-200"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                        <AlertTriangle className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                          Xác Nhận Xóa Giáo Viên
+                        </h3>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                          Thầy có chắc chắn muốn xóa hồ sơ của{" "}
+                          <strong className="text-slate-900 dark:text-white">
+                            {deleteConfirmTeacher.name}
+                          </strong>{" "}
+                          ({deleteConfirmTeacher.email}) khỏi danh sách Nhân sự Tổ ICT không?
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteConfirmTeacher(null)}
+                        disabled={isDeletingTeacher}
+                      >
+                        Hủy bỏ
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        isLoading={isDeletingTeacher}
+                        onClick={async () => {
+                          if (!isLeader || !deleteConfirmTeacher) return;
+                          setIsDeletingTeacher(true);
+                          try {
+                            const { data: rpcRes, error: rpcErr } = await supabase.rpc(
+                              "delete_teacher_profile",
+                              {
+                                p_profile_id: deleteConfirmTeacher.id,
+                              }
+                            );
+
+                            if (rpcErr || (rpcRes && rpcRes.success === false)) {
+                              if (rpcRes?.message) {
+                                throw new Error(rpcRes.message);
+                              }
+                              const { error: directDelErr } = await supabase
+                                .from("profiles")
+                                .delete()
+                                .eq("id", deleteConfirmTeacher.id);
+                              if (directDelErr) {
+                                throw new Error(directDelErr.message);
+                              }
+                            }
+
+                            const deletedName = deleteConfirmTeacher.name;
+                            setTeachersList((prev) =>
+                              prev.filter((t) => t.id !== deleteConfirmTeacher.id)
+                            );
+                            setDeleteConfirmTeacher(null);
+                            showToast(
+                              `Đã xóa hồ sơ ${deletedName} khỏi danh sách Nhân sự ICT!`,
+                              "info"
+                            );
+                          } catch (err: any) {
+                            showToast(
+                              "Không thể xóa hồ sơ: " + (err?.message || "Vui lòng kiểm tra lại kết nối"),
+                              "warning"
+                            );
+                          } finally {
+                            setIsDeletingTeacher(false);
+                          }
+                        }}
+                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                        Xác nhận xóa
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
