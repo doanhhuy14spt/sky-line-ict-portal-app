@@ -1136,6 +1136,314 @@ export function TeacherCompetencyEvaluationSection({
       !activeSheetRecord.is_leader_confirmed
   );
 
+  // Kiểm tra điều kiện hiển thị tính năng Xuất Phiếu Đánh Giá ra file .pdf
+  // (Sau khi Tổ trưởng bấm xác nhận hoàn thành chấm điểm và có đầy đủ thông tin trong form)
+  const isReadyForPdfExport = useMemo(() => {
+    if (!activeSheetRecord || !activeSheetTeacher || !activeSheetMetrics)
+      return false;
+    const hasLeaderConfirmed = Boolean(activeSheetRecord.is_leader_confirmed);
+    const hasAllLeaderScores = ALL_CRITERIA_CODES.every(
+      (code) => Number(activeSheetRecord.leader_scores?.[code] || 0) >= 1
+    );
+    return (
+      hasLeaderConfirmed &&
+      hasAllLeaderScores &&
+      activeSheetMetrics.finalScore360 !== null
+    );
+  }, [activeSheetRecord, activeSheetTeacher, activeSheetMetrics]);
+
+  // Hàm xuất Phiếu Đánh Giá Năng Lực Giáo Viên ICT ra file định dạng .pdf chuẩn khổ A4
+  const handleExportEvaluationFormPdf = useCallback(() => {
+    if (!activeSheetTeacher || !activeSheetRecord || !activeSheetMetrics) return;
+
+    const escapeHtml = (str?: string) =>
+      String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+
+    const levelsHtml = ["Tiểu học", "THCS", "THPT", "Liên cấp"]
+      .map((lvl) => {
+        const checked = activeSheetRecord.teaching_levels?.includes(lvl);
+        return `<span style="margin-right: 14px;">${checked ? "☑" : "☐"} ${lvl}</span>`;
+      })
+      .join("");
+
+    const groupsRowsHtml = COMPETENCY_GROUPS.map((group) => {
+      const sAvg = activeSheetMetrics.groupSelf[group.id];
+      const pAvg = activeSheetMetrics.groupPeer[group.id];
+      const lAvg = activeSheetMetrics.groupLeader[group.id];
+      const cAvg = activeSheetMetrics.groupCombined[group.id];
+
+      const criteriaHtml = group.criteria
+        .map((crit) => {
+          const sVal = activeSheetRecord.self_scores?.[crit.code];
+          const pVal = activeSheetMetrics.peerAvgCriterionScores?.[crit.code];
+          const lVal = activeSheetRecord.leader_scores?.[crit.code];
+          const evVal = activeSheetRecord.evidences?.[crit.code] || "";
+          return `
+            <tr>
+              <td style="text-align:center; font-weight:bold;">${crit.code}</td>
+              <td>
+                <div style="font-weight:bold;">${escapeHtml(crit.title)}</div>
+                <div style="font-size:10.5px; color:#475569; margin-top:2px;">${escapeHtml(crit.details[0])}</div>
+              </td>
+              <td style="text-align:center; font-weight:bold;">${sVal !== undefined ? Number(sVal).toFixed(1) : "......."}</td>
+              <td style="text-align:center; font-weight:bold;">${pVal !== undefined ? Number(pVal).toFixed(1) : "......."}</td>
+              <td style="text-align:center; font-weight:bold;">${lVal !== undefined ? Number(lVal).toFixed(1) : "......."}</td>
+              <td>${escapeHtml(evVal)}</td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      return `
+        <tr style="background:#f1f5f9; font-weight:bold;">
+          <td style="text-align:center;">${group.roman}</td>
+          <td colspan="5">${escapeHtml(group.name)}</td>
+        </tr>
+        ${criteriaHtml}
+        <tr style="background:#f8fafc; font-weight:bold;">
+          <td></td>
+          <td style="text-align:right;">Điểm Trung bình Nhóm ${group.id.replace("N", "")} (${group.id}):</td>
+          <td style="text-align:center;">${sAvg !== null ? sAvg.toFixed(1) : "......."}</td>
+          <td style="text-align:center;">${pAvg !== null ? pAvg.toFixed(1) : "......."}</td>
+          <td style="text-align:center;">${lAvg !== null ? lAvg.toFixed(1) : "......."}</td>
+          <td>Điểm TB Nhóm ${group.id} tổng hợp: <strong>${cAvg !== null ? cAvg.toFixed(1) : "......."}</strong></td>
+        </tr>
+      `;
+    }).join("");
+
+    const fileTitle = `Phieu_Danh_Gia_Nang_Luc_ICT_${activeSheetTeacher.name.replace(/\s+/g, "_")}_${selectedSchoolYear.replace(/\s+/g, "")}`;
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>${escapeHtml(fileTitle)}</title>
+  <style>
+    @page { size: A4 portrait; margin: 12mm 14mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: #0f172a;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+    .header-grid {
+      display: table;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+    .header-col {
+      display: table-cell;
+      width: 50%;
+      text-align: center;
+      vertical-align: top;
+    }
+    .title-block {
+      text-align: center;
+      margin: 12px 0 16px 0;
+    }
+    .title-block h1 {
+      font-size: 17px;
+      font-weight: bold;
+      margin: 0 0 4px 0;
+      text-transform: uppercase;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin: 14px 0 6px 0;
+    }
+    .info-box p {
+      margin: 4px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 11.5px;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 5px 6px;
+      vertical-align: middle;
+    }
+    th {
+      background: #e2e8f0;
+      font-weight: bold;
+      text-align: center;
+    }
+    .ranking-list {
+      margin: 6px 0;
+      padding-left: 16px;
+    }
+    .ranking-list li {
+      margin-bottom: 4px;
+    }
+    .idp-block {
+      margin-top: 6px;
+    }
+    .idp-item {
+      margin-bottom: 8px;
+    }
+    .idp-box {
+      min-height: 38px;
+      border: 1px dashed #64748b;
+      padding: 6px 8px;
+      border-radius: 4px;
+      margin-top: 3px;
+      white-space: pre-wrap;
+    }
+    .sig-table td {
+      width: 33.33%;
+      text-align: center;
+      vertical-align: top;
+      padding: 10px 6px 28px 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-grid">
+    <div class="header-col">
+      <div style="font-weight:bold;">HỆ THỐNG GIÁO DỤC SKY-LINE</div>
+      <div style="font-weight:bold;">TỔ ICT</div>
+      <div style="width:80px; border-bottom:1px solid #0f172a; margin:4px auto 0 auto;"></div>
+    </div>
+    <div class="header-col">
+      <div style="font-weight:bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+      <div style="font-weight:bold;">Độc lập - Tự do - Hạnh phúc</div>
+      <div style="width:120px; border-bottom:1px solid #0f172a; margin:4px auto 0 auto;"></div>
+    </div>
+  </div>
+
+  <div class="title-block">
+    <h1>PHIẾU ĐÁNH GIÁ NĂNG LỰC GIÁO VIÊN ICT</h1>
+    <div style="font-weight:bold;">Năm học: ${escapeHtml(selectedSchoolYear)}</div>
+  </div>
+
+  <div class="section-title">I. THÔNG TIN CHUNG</div>
+  <div class="info-box">
+    <p>• <strong>Họ và tên giáo viên:</strong> ${escapeHtml(activeSheetTeacher.name)} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Mã nhân sự:</strong> ${escapeHtml(activeSheetRecord.staff_code)}</p>
+    <p>• <strong>Cơ sở:</strong> ${escapeHtml(activeSheetTeacher.campus || "Chưa phân công")}</p>
+    <p>• <strong>Cấp học giảng dạy chính:</strong> ${levelsHtml} (<strong>Khối lớp:</strong> ${escapeHtml(activeSheetRecord.grade_details || "....................")})</p>
+    <p>• <strong>Quản lý phòng Lab:</strong> ${escapeHtml(activeSheetTeacher.lab || "Chưa phân công")}</p>
+    <p>• <strong>Kiêm nhiệm:</strong> ${escapeHtml(activeSheetTeacher.lab || "Chưa phân công")}</p>
+  </div>
+
+  <div class="section-title">II. BẢNG CHẤM ĐIỂM CHI TIẾT</div>
+  <div style="font-style:italic; font-size:11px; margin-bottom:4px;">
+    (Điền điểm từ 1.0 đến 4.0 vào cột tương ứng. Điểm tổng kết tính theo trọng số từng nhóm. Điểm điền và điểm tổng kết được làm tròn 1 chữ số thập phân)
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:46px;">Mã TC</th>
+        <th>Nội dung Tiêu chí Đánh giá</th>
+        <th style="width:78px;">Điểm Tự ĐG<br/>(1-4 • 20%)</th>
+        <th style="width:86px;">Điểm Đồng Cấp<br/>(TB 2 GV • 20%)</th>
+        <th style="width:78px;">Điểm TTCM ĐG<br/>(1-4 • 60%)</th>
+        <th style="width:165px;">Minh chứng / Nhận xét</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${groupsRowsHtml}
+      <tr style="background:#e2e8f0; font-weight:bold;">
+        <td style="text-align:center;">TỔNG</td>
+        <td>ĐIỂM TỔNG KẾT NĂNG LỰC (Thang điểm 4.0):</td>
+        <td style="text-align:center;">${activeSheetMetrics.totalSelf !== null ? activeSheetMetrics.totalSelf.toFixed(1) : "......."}</td>
+        <td style="text-align:center;">${activeSheetMetrics.totalPeer !== null ? activeSheetMetrics.totalPeer.toFixed(1) : "......."}</td>
+        <td style="text-align:center;">${activeSheetMetrics.totalLeader !== null ? activeSheetMetrics.totalLeader.toFixed(1) : "......."}</td>
+        <td>
+          <div>Điểm chung: <strong>${activeSheetMetrics.finalScore360 !== null ? `${activeSheetMetrics.finalScore360.toFixed(2)} (${activeSheetMetrics.finalScoreRounded1?.toFixed(1)})` : "......."}</strong></div>
+          <div>Xếp loại: <strong>${escapeHtml(activeSheetMetrics.ranking?.label || "..............")}</strong></div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">III. BẢNG QUY ĐỔI XẾP LOẠI CHUNG</div>
+  <ul class="ranking-list">
+    ${RANKING_RULES.map((r) => {
+      const matched = activeSheetMetrics.ranking?.id === r.id;
+      return `<li style="${matched ? "font-weight:bold; text-decoration:underline;" : ""}"><strong>${escapeHtml(r.label)} (${escapeHtml(r.rangeText)}):</strong> ${escapeHtml(r.description)} ${matched ? " [XẾP LOẠI ĐẠT ĐƯỢC]" : ""}</li>`;
+    }).join("")}
+  </ul>
+
+  <div class="section-title">IV. NHẬN XÉT CỦA TỔ TRƯỞNG CHUYÊN MÔN &amp; KẾ HOẠCH PHÁT TRIỂN CÁ NHÂN (IDP)</div>
+  <div class="idp-block">
+    <div class="idp-item">
+      <div><strong>1. Điểm mạnh nổi bật của giáo viên trong kỳ đánh giá:</strong></div>
+      <div class="idp-box">${escapeHtml(activeSheetRecord.idp_strengths || "........................................................................................................................")}</div>
+    </div>
+    <div class="idp-item">
+      <div><strong>2. Những nội dung cần cải thiện / bồi dưỡng thêm:</strong></div>
+      <div class="idp-box">${escapeHtml(activeSheetRecord.idp_improvements || "........................................................................................................................")}</div>
+    </div>
+    <div class="idp-item">
+      <div><strong>3. Mục tiêu cam kết cho năm học tiếp theo:</strong></div>
+      <div class="idp-box">${escapeHtml(activeSheetRecord.idp_goals || "........................................................................................................................")}</div>
+    </div>
+  </div>
+
+  <table class="sig-table" style="margin-top:14px;">
+    <tr>
+      <td>
+        <div style="font-weight:bold;">NGƯỜI TỰ ĐÁNH GIÁ</div>
+        <div style="font-style:italic; font-size:11px;">(Ký và ghi rõ họ tên)</div>
+        <div style="margin-top:26px; font-weight:bold;">${escapeHtml(activeSheetRecord.teacher_name)}</div>
+        <div style="margin-top:8px; font-size:11px;">Ngày: ${escapeHtml(activeSheetRecord.self_eval_date || "..../..../202...")}</div>
+      </td>
+      <td>
+        <div style="font-weight:bold;">TỔ TRƯỞNG CHUYÊN MÔN ICT</div>
+        <div style="font-style:italic; font-size:11px;">(Ký và ghi rõ họ tên)</div>
+        <div style="margin-top:26px; font-weight:bold;">Thầy Đỗ Anh Huy</div>
+        <div style="margin-top:8px; font-size:11px;">Ngày: ${escapeHtml(activeSheetRecord.leader_eval_date || "..../..../202...")}</div>
+      </td>
+      <td>
+        <div style="font-weight:bold;">BAN ĐIỀU HÀNH CHUYÊN MÔN</div>
+        <div style="font-style:italic; font-size:11px;">(Ký và ghi rõ họ tên)</div>
+        <div style="margin-top:26px; font-weight:bold;">........................................</div>
+        <div style="margin-top:8px; font-size:11px;">Ngày: ${escapeHtml(activeSheetRecord.board_eval_date || "..../..../202...")}</div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    const printWindow = window.open("", "_blank", "width=960,height=800");
+    if (!printWindow) {
+      showToast(
+        "Vui lòng cho phép trình duyệt mở cửa sổ bật lên để xuất file .PDF!",
+        "warning"
+      );
+      return;
+    }
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 350);
+    showToast(
+      `Đang xuất Phiếu đánh giá năng lực của ${activeSheetTeacher.name} ra định dạng .PDF!`,
+      "info"
+    );
+  }, [
+    activeSheetTeacher,
+    activeSheetRecord,
+    activeSheetMetrics,
+    selectedSchoolYear,
+    showToast,
+  ]);
+
   // Thống kê tổng hợp toàn tổ dành cho Tổ trưởng
   const leaderDepartmentSummary = useMemo(() => {
     const rows = eligibleTeachers.map((teacher, idx) => {
@@ -1291,15 +1599,17 @@ export function TeacherCompetencyEvaluationSection({
               </Button>
             )}
 
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => window.print()}
-              className="font-bold text-xs cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5 mr-1.5 text-slate-600 dark:text-slate-400" />
-              In Biểu Mẫu (A4 / PDF)
-            </Button>
+            {isReadyForPdfExport && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleExportEvaluationFormPdf}
+                className="font-bold text-xs cursor-pointer border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+              >
+                <Printer className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+                Xuất Phiếu Đánh Giá (.pdf)
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1961,9 +2271,6 @@ export function TeacherCompetencyEvaluationSection({
               </div>
 
               <div className="text-center space-y-1 pt-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
-                  PHẦN V: PHỤ LỤC - BIỂU MẪU ĐÁNH GIÁ NĂNG LỰC CÁ NHÂN (KPIs)
-                </div>
                 <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase">
                   PHIẾU ĐÁNH GIÁ NĂNG LỰC GIÁO VIÊN ICT
                 </h2>
@@ -2119,6 +2426,17 @@ export function TeacherCompetencyEvaluationSection({
                         Xác Nhận Hoàn Thành Đánh Giá TTCM
                       </Button>
                     </>
+                  )}
+
+                  {isReadyForPdfExport && (
+                    <Button
+                      size="sm"
+                      onClick={handleExportEvaluationFormPdf}
+                      className="font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm cursor-pointer"
+                    >
+                      <Printer className="w-3.5 h-3.5 mr-1.5" />
+                      Xuất Phiếu Đánh Giá (.pdf)
+                    </Button>
                   )}
                 </div>
               </div>
@@ -2612,7 +2930,7 @@ export function TeacherCompetencyEvaluationSection({
                       </td>
                       <td className="py-3.5 px-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span>Điểm chung 360°:</span>
+                          <span>Điểm chung:</span>
                           <span className="text-base font-black text-emerald-700 dark:text-emerald-300">
                             {activeSheetMetrics.finalScore360 !== null
                               ? `${activeSheetMetrics.finalScore360.toFixed(2)} (${activeSheetMetrics.finalScoreRounded1?.toFixed(1)})`
@@ -2833,6 +3151,19 @@ export function TeacherCompetencyEvaluationSection({
                   </div>
                 </div>
               </div>
+
+              {isReadyForPdfExport && (
+                <div className="mt-5 flex justify-end">
+                  <Button
+                    size="sm"
+                    onClick={handleExportEvaluationFormPdf}
+                    className="font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 mr-1.5" />
+                    Xuất Phiếu Đánh Giá Ra File (.pdf)
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
