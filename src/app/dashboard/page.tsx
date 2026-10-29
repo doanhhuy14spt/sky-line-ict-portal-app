@@ -57,6 +57,7 @@ import { TrainingTeamsSection } from "@/components/training-teams-section";
 import { AchievementsSection } from "@/components/achievements-section";
 import { OverviewSection } from "@/components/overview-section";
 import { SiteFooter } from "@/components/site-footer";
+import { NotificationBell } from "@/components/notification-bell";
 
 interface TimetableSlot {
   id: string;
@@ -920,6 +921,14 @@ export default function DashboardPage() {
                 ))}
               </select>
             </div>
+
+            {/* Nút Chuông Thông Báo Hoạt Động Hệ Thống */}
+            <NotificationBell
+              supabase={supabase}
+              currentUserProfile={currentUserProfile}
+              onNavigateTab={handleTabChange}
+              showToast={showToast}
+            />
 
             {/* Nút Đổi giao diện Sáng / Tối */}
             <button
