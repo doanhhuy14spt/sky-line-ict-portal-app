@@ -218,7 +218,7 @@ export function UserNav({
         typeof document !== "undefined" &&
         createPortal(
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 font-sans animate-in fade-in duration-150"
             onClick={() => setIsProfileModalOpen(false)}
           >
             <div
@@ -228,7 +228,7 @@ export function UserNav({
               <div className="px-6 py-4 bg-gradient-to-r from-sky-600 to-sky-700 text-white flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <User className="w-5 h-5" />
-                  <h3 className="font-extrabold text-base">Hồ Sơ Cá Nhân</h3>
+                  <h3 className="font-bold text-base tracking-normal">Hồ Sơ Cá Nhân</h3>
                 </div>
                 <button
                   onClick={() => setIsProfileModalOpen(false)}
@@ -241,14 +241,14 @@ export function UserNav({
 
               <div className="p-6 space-y-4">
                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 via-sky-500 to-amber-500 text-white font-black flex items-center justify-center text-lg shadow-md shrink-0">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 via-sky-500 to-amber-500 text-white font-bold flex items-center justify-center text-lg shadow-md shrink-0">
                     {user.role === "leader" ? "TT" : user.role === "guest" ? "KH" : "GV"}
                   </div>
-                  <div className="space-y-1 min-w-0">
-                    <div className="text-base font-extrabold text-slate-900 dark:text-white truncate">
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="text-base font-bold text-slate-900 dark:text-white truncate leading-snug">
                       {user.name}
                     </div>
-                    <Badge variant="amber" className="text-[11px] font-bold px-2.5 py-0.5">
+                    <Badge variant="amber" className="text-xs font-semibold px-2.5 py-0.5">
                       {user.role === "leader"
                         ? "Tổ Trưởng Chuyên Môn ICT"
                         : user.role === "guest"
@@ -258,23 +258,23 @@ export function UserNav({
                   </div>
                 </div>
 
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                    <span className="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-2">
+                <div className="space-y-3 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-2 shrink-0">
                       <Mail className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                       Email công vụ:
                     </span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                    <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">
                       {user.email}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                    <span className="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-2 shrink-0">
                       <MapPin className="w-4 h-4 text-amber-500" />
                       Cơ sở công tác:
                     </span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 text-right">
+                    <span className="font-semibold text-slate-800 dark:text-slate-100 text-right">
                       {user.campus}
                     </span>
                   </div>
@@ -284,7 +284,7 @@ export function UserNav({
                   <Button
                     type="button"
                     onClick={() => setIsProfileModalOpen(false)}
-                    className="rounded-xl px-5 font-bold cursor-pointer"
+                    className="rounded-xl px-5 font-semibold cursor-pointer"
                   >
                     Đóng
                   </Button>
