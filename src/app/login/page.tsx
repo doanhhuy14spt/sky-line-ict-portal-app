@@ -350,9 +350,6 @@ export default function LoginPage() {
               />
             </div>
             <h2 className="text-xl font-extrabold tracking-tight">SKY-LINE ICT PORTAL</h2>
-            <p className="text-xs text-sky-100 font-medium mt-1">
-              Cổng Thông Tin Tổ Chuyên Môn Tin Học & Robotics
-            </p>
             <div className="flex justify-center gap-1.5 mt-2.5">
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/15 text-white font-semibold">
                 5 Cơ Sở
@@ -444,11 +441,11 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Hướng dẫn tài khoản nội bộ & Tài khoản Khách */}
-            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-[11px] text-slate-600 dark:text-slate-400 space-y-2">
+            {/* Hướng dẫn tài khoản nội bộ */}
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
               <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <KeyRound className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                Thông Tin Tài Khoản:
+                Thông Tin Tài Khoản Nội Bộ:
               </div>
               <p>
                 Sử dụng tài khoản email trường cấp (@skylineschool.edu.vn). Mật khẩu khởi tạo:{" "}
@@ -457,23 +454,6 @@ export default function LoginPage() {
                 </code>
                 .
               </p>
-              <div className="pt-1.5 border-t border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-2">
-                <div>
-                  <span className="font-bold text-sky-700 dark:text-sky-400">Tài khoản Khách (Chỉ xem):</span>{" "}
-                  <code className="font-semibold text-slate-800 dark:text-slate-200">khach@skylineschool.edu.vn</code>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail("khach@skylineschool.edu.vn");
-                    setPassword("SkyLine@2026");
-                    showToast("Đã điền tài khoản Khách (Chỉ xem). Bấm Đăng Nhập để truy cập!", "info");
-                  }}
-                  className="px-2.5 py-1 rounded-xl bg-sky-100 hover:bg-sky-200 dark:bg-sky-950/80 dark:hover:bg-sky-900 text-sky-700 dark:text-sky-300 font-bold text-[10px] border border-sky-300/70 dark:border-sky-800 transition-colors cursor-pointer shrink-0"
-                >
-                  Điền nhanh
-                </button>
-              </div>
             </div>
           </CardContent>
 
