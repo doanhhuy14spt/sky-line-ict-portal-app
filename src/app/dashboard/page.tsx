@@ -1,0 +1,1560 @@
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  School,
+  Calendar,
+  Clock,
+  Laptop,
+  Bot,
+  Users,
+  CheckCircle2,
+  AlertTriangle,
+  Trophy,
+  Moon,
+  Sun,
+  Layers,
+  Sparkles,
+  MapPin,
+  PlusCircle,
+  Check,
+  ChevronRight,
+  ShieldCheck,
+  Cpu,
+  X,
+  Printer,
+  Trash2,
+  Info,
+  Building2,
+  SunMedium,
+  Sunset,
+  Coffee,
+  GraduationCap,
+  Eye,
+  RefreshCw,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UserNav } from "@/components/user-nav";
+import { createClient } from "@/lib/supabase/client";
+import { LAB_ROOMS, INITIAL_LAB_TIMETABLES, LabSlot } from "@/data/lab-timetables";
+import { TEACHER_TIMETABLES, TeacherTimetableProfile, TeacherSlot } from "@/data/teacher-timetables";
+import { TeachingAssignmentSection, ClassItem } from "@/components/teaching-assignment-section";
+import { TeacherAssignedScheduleSection } from "@/components/teacher-assigned-schedule-section";
+import { LabDevicesSection } from "@/components/lab-devices-section";
+import { AssignedTasksSection } from "@/components/assigned-tasks-section";
+import { TrainingTeamsSection } from "@/components/training-teams-section";
+import { AchievementsSection } from "@/components/achievements-section";
+import { OverviewSection } from "@/components/overview-section";
+
+interface TimetableSlot {
+  id: string;
+  day: number;
+  period: number;
+  time: string;
+  className: string;
+  teacher: string;
+  subject: string;
+  room: string;
+  campusId: string;
+  topic?: string;
+}
+
+interface DeviceItem {
+  id: string;
+  name: string;
+  category: "robotics" | "computers" | "lab_room" | "accessories";
+  campusId: string;
+  campusName: string;
+  room: string;
+  manager: string;
+  quantity: string;
+  status: "good" | "in_use" | "needs_maintenance" | "broken";
+  notes?: string;
+}
+
+interface TaskItem {
+  id: string;
+  title: string;
+  assignee: string;
+  deadline: string;
+  priority: "urgent" | "important" | "normal";
+  status: "todo" | "in_progress" | "waiting_approval" | "completed";
+}
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const [isDark, setIsDark] = useState(false);
+  const [selectedCampus, setSelectedCampus] = useState("all");
+  const [selectedSchoolYear, setSelectedSchoolYear] = useState("2026-2027");
+  const [selectedLab, setSelectedLab] = useState<string>("riverside_primary"); // Mặc định: Sky-Line Riverside Tiểu Học
+  const [selectedSessionFilter, setSelectedSessionFilter] = useState<"all" | "morning" | "afternoon">("all");
+  const [timetableSubTab, setTimetableSubTab] = useState<"lab_view" | "teacher_view" | "assignment_view">("lab_view"); // 3 phần: Lịch Lab, TKB giáo viên & Phân công chuyên môn
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>("huy"); // Mặc định: Thầy Quốc Huy (Tổ trưởng)
+  const [activeTab, setActiveTab] = useState<"dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers">("dashboard");
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "warning" | "info" } | null>(null);
+  const [isLoadingTab, setIsLoadingTab] = useState(false);
+
+  // --- STATE DANH SÁCH LỚP HỌC & PHÂN CÔNG CHUYÊN MÔN (PHẦN 3) ---
+  const [classesList, setClassesList] = useState<ClassItem[]>([]);
+
+  // --- STATE THỜI KHÓA BIỂU (Làm sạch ô trống, sẵn sàng để xếp mới) ---
+  const [timetableSlots, setTimetableSlots] = useState<TimetableSlot[]>([]);
+  const [teacherTimetablesList, setTeacherTimetablesList] = useState<TeacherTimetableProfile[]>(
+    TEACHER_TIMETABLES.map((p) => ({ ...p, totalSlots: 0, slots: [] }))
+  );
+  // Dữ liệu thời khóa biểu gốc từ bảng teacher_timetables (đồng bộ trực tiếp từ Phần 2.2 sang Phần 1)
+  const [rawTeacherTimetables, setRawTeacherTimetables] = useState<any[]>([]);
+  const [isLoadingLabSchedule, setIsLoadingLabSchedule] = useState<boolean>(false);
+
+  // Hàm đối chiếu chuẩn xác một tiết dạy trong teacher_timetables có thuộc về phòng Lab chỉ định hay không
+  const isSlotInLabRoom = (room: string | undefined, labId: string): boolean => {
+    if (!room) return false;
+    const r = room.toLowerCase().trim();
+    switch (labId) {
+      case "riverside_primary":
+        return (
+          r.includes("tiểu học") ||
+          r.includes("cs1-th") ||
+          (r.includes("riverside") && !r.includes("trung học"))
+        );
+      case "riverside_secondary":
+        return (
+          r.includes("trung học") ||
+          r.includes("cs1-trh")
+        );
+      case "central":
+        return r.includes("central") || r.includes("cs2");
+      case "global":
+        return r.includes("global") || r.includes("quốc tế") || r.includes("cs3");
+      case "hill":
+        return r.includes("hill") || r.includes("cs4");
+      case "beach":
+        return r.includes("beach") || r.includes("cs5");
+      default:
+        return false;
+    }
+  };
+
+  const [filterTeacher, setFilterTeacher] = useState("all");
+  const [filterRoom, setFilterRoom] = useState("all");
+
+  const [isSlotModalOpen, setIsSlotModalOpen] = useState(false);
+  const [selectedSlotForEdit, setSelectedSlotForEdit] = useState<{ day: number; period: number; labId?: string } | null>(null);
+  const [slotForm, setSlotForm] = useState({
+    className: "Lớp 3/1",
+    teacher: "Thầy Quốc Huy",
+    subject: "Robotics STEM",
+    room: "Sky-Line Riverside Tiểu Học",
+    labId: "riverside_primary",
+    campusId: "riverside",
+    topic: "",
+  });
+  const [isSubmittingSlot, setIsSubmittingSlot] = useState(false);
+  const [slotConflictWarning, setSlotConflictWarning] = useState<string | null>(null);
+
+  // --- STATE KANBAN ---
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskAssignee, setNewTaskAssignee] = useState("Thầy Nguyễn Hoàng Nam");
+  const [newTaskDeadline, setNewTaskDeadline] = useState("30/10/2026");
+  const [newTaskPriority, setNewTaskPriority] = useState<"urgent" | "important" | "normal">("normal");
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false);
+
+
+  // --- SUPABASE CLIENT & CURRENT USER PROFILE ---
+  const supabase = createClient();
+  const [currentUserProfile, setCurrentUserProfile] = useState<{
+    id: string;
+    email: string;
+    name: string;
+    role: "leader" | "teacher";
+    campus: string;
+  }>({
+    id: "a0000001-0000-0000-0000-000000000001",
+    email: "huyda@skylineschool.edu.vn",
+    name: "Thầy Đỗ Anh Huy",
+    role: "leader",
+    campus: "Sky-Line Riverside (Bao quát 5 cơ sở)",
+  });
+
+  // Kiểm tra vai trò tài khoản: Tổ trưởng chuyên môn mới có quyền truy cập Phần 3
+  const isLeader = currentUserProfile?.role === "leader";
+
+  // Phân quyền bảo vệ: Nếu là giáo viên thì tự động chuyển khỏi Phần 3
+  useEffect(() => {
+    if (currentUserProfile && currentUserProfile.role !== "leader" && timetableSubTab === "assignment_view") {
+      setTimetableSubTab("teacher_view");
+    }
+  }, [currentUserProfile?.role, timetableSubTab]);
+
+  // Danh bạ giáo viên (Profiles) từ Supabase & file LichPhongLab.xlsx
+  const [teachersList, setTeachersList] = useState([
+    {
+      id: "a0000001-0000-0000-0000-000000000001",
+      name: "Thầy Đỗ Anh Huy",
+      email: "huyda@skylineschool.edu.vn",
+      campus: "Bao quát 5 Cơ sở",
+      role: "Tổ trưởng chuyên môn",
+      specialty: "Quản trị hệ thống, Huấn luyện HSG Robotics Quốc Tế",
+      lab: "Quản trị toàn bộ 6 phòng Lab",
+    },
+    {
+      id: "a0000001-0000-0000-0000-000000000002",
+      name: "Thầy Đồng Nguyên Tuấn",
+      email: "tuandn@skylineschool.edu.vn",
+      campus: "Sky-Line Riverside",
+      role: "Giáo viên",
+      specialty: "Robotics Lego Spike Prime & STEM Trung học",
+      lab: "Phụ trách Lab Riverside Trung Học",
+    },
+    {
+      id: "a0000001-0000-0000-0000-000000000003",
+      name: "Cô Đào Thị Mỹ Linh",
+      email: "linhdtm@skylineschool.edu.vn",
+      campus: "Sky-Line Riverside",
+      role: "Giáo viên",
+      specialty: "Tin Học Tiểu Học & Lập Trình Scratch",
+      lab: "Phụ trách Lab Riverside Tiểu Học",
+    },
+    {
+      id: "a0000001-0000-0000-0000-000000000004",
+      name: "Cô Lương Thị Ngọc Ánh",
+      email: "anhltn@skylineschool.edu.vn",
+      campus: "Sky-Line Hill",
+      role: "Giáo viên",
+      specialty: "Tin Học Song Ngữ & Ứng Dụng AI Giáo Dục",
+      lab: "Phụ trách Lab Sky-Line Hill",
+    },
+    {
+      id: "a0000001-0000-0000-0000-000000000005",
+      name: "Cô Nguyễn Thị Mỹ Tâm",
+      email: "tamntm@skylineschool.edu.vn",
+      campus: "Sky-Line Global",
+      role: "Giáo viên",
+      specialty: "Tin Học Quốc Tế Cambridge IGCSE & Computer Science",
+      lab: "Phụ trách Lab Sky-Line Global",
+    },
+    {
+      id: "a0000001-0000-0000-0000-000000000006",
+      name: "Cô Trịnh Thị Đăng",
+      email: "dangtt@skylineschool.edu.vn",
+      campus: "Sky-Line Beach",
+      role: "Giáo viên",
+      specialty: "Lập Trình Python & Đồ Họa Kỹ Thuật Số",
+      lab: "Phụ trách Lab Sky-Line Beach",
+    },
+    {
+      id: "a0000001-0000-0000-0000-000000000007",
+      name: "Cô Phạm Thị Thanh Bình",
+      email: "binhptt@skylineschool.edu.vn",
+      campus: "Sky-Line Riverside",
+      role: "Giáo viên",
+      specialty: "STEM Robotics & Trí Tuệ Nhân Tạo Tiểu Học",
+      lab: "Phụ trách Lab Chuyên Môn",
+    },
+    {
+      id: "a0000001-0000-0000-0000-000000000008",
+      name: "Cô Trần Thị Phi Yến",
+      email: "yenttp@skylineschool.edu.vn",
+      campus: "Sky-Line Central",
+      role: "Giáo viên",
+      specialty: "Tin Học Đồ Họa & Thiết Kế Đa Phương Tiện",
+      lab: "Phụ trách Lab Sky-Line Central",
+    },
+  ]);
+
+  // Khởi tạo và đồng bộ chế độ Sáng / Tối từ bộ nhớ trình duyệt
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem("skyline_theme");
+      if (savedTheme === "dark") {
+        setIsDark(true);
+        document.documentElement.classList.add("dark");
+      } else if (savedTheme === "light") {
+        setIsDark(false);
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {
+      // Bỏ qua nếu trình duyệt chặn localStorage
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDark]);
+
+  const handleToggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    try {
+      localStorage.setItem("skyline_theme", nextDark ? "dark" : "light");
+    } catch {
+      // Bỏ qua lỗi lưu trữ
+    }
+    showToast(
+      nextDark
+        ? "Đã chuyển sang giao diện Chế độ Tối (Bảo vệ mắt ban đêm)!"
+        : "Đã chuyển sang giao diện Chế độ Sáng!",
+      "info"
+    );
+  };
+
+  const showToast = (text: string, type: "success" | "warning" | "info" = "success") => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleTabChange = (newTab: typeof activeTab) => {
+    setIsLoadingTab(true);
+    setActiveTab(newTab);
+    setTimeout(() => setIsLoadingTab(false), 200);
+  };
+
+  const campuses = [
+    { id: "all", name: "Toàn bộ 5 Cơ sở" },
+    { id: "riverside", name: "Sky-Line Riverside" },
+    { id: "central", name: "Sky-Line Central" },
+    { id: "beach", name: "Sky-Line Beach" },
+    { id: "hill", name: "Sky-Line Hill" },
+    { id: "international", name: "Sky-Line Global" },
+  ];
+
+  // --- TẢI DỮ LIỆU TỪ KHO SUPABASE VÀ ĐĂNG KÝ REALTIME ---
+  const loadDashboardData = async () => {
+    try {
+      // 1. Nhận diện tài khoản đăng nhập hiện tại từ Supabase Auth an toàn
+      let authUser = null;
+      try {
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError) {
+          const isInvalidToken =
+            authError.status === 400 ||
+            (authError as any).code === "refresh_token_not_found" ||
+            (authError as any).code === "refresh_token_already_used" ||
+            authError.message?.toLowerCase().includes("refresh token");
+
+          if (isInvalidToken) {
+            // Khi token phiên làm việc cũ không còn hợp lệ, xóa sạch và chuyển hướng về /login
+            await supabase.auth.signOut().catch(() => {});
+            router.push("/login");
+            return;
+          }
+        } else {
+          authUser = user;
+        }
+      } catch {
+        // Bắt lỗi an toàn
+      }
+
+      if (authUser) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+
+        if (profile) {
+          setCurrentUserProfile({
+            id: profile.id,
+            email: profile.email || authUser.email || "",
+            name: profile.full_name || authUser.email || "Giáo Viên",
+            role: (profile.role as "leader" | "teacher") || "teacher",
+            campus:
+              profile.role === "leader"
+                ? "Sky-Line Riverside (Bao quát 5 cơ sở)"
+                : `Cơ sở Sky-Line (${campuses.find((c) => c.id === profile.campus_id)?.name || "Riverside"})`,
+          });
+        }
+      }
+
+      // 2. Tải thời khóa biểu (timetables) từ Supabase kết hợp với 193 tiết phòng Lab
+      const periodsTimes: Record<number, string> = {
+        1: "07:30 - 08:15",
+        2: "08:20 - 09:05",
+        3: "09:20 - 10:05",
+        4: "10:10 - 10:55",
+        5: "13:30 - 14:15",
+        6: "14:20 - 15:05",
+        7: "15:20 - 16:05",
+        8: "16:10 - 16:55",
+      };
+
+      // 2. Tải thời khóa biểu 6 phòng Lab từ Supabase (lab_timetables) theo Năm học
+      let labTtQuery = supabase
+        .from("lab_timetables")
+        .select("*")
+        .eq("school_year", selectedSchoolYear);
+      if (selectedCampus !== "all") {
+        labTtQuery = labTtQuery.eq("campus_id", selectedCampus);
+      }
+      const { data: labTtData } = await labTtQuery;
+      if (labTtData && labTtData.length > 0) {
+        const mappedLabSlots: TimetableSlot[] = labTtData.map((t: any) => ({
+          id: t.id,
+          day: t.day_of_week,
+          period: t.period,
+          time: t.time_slot || periodsTimes[t.period] || "07:30 - 08:15",
+          className: t.class_name,
+          teacher: t.teacher_name,
+          subject: t.subject || "Robotics & Tin Học STEM",
+          room: t.room || t.lab_name,
+          labId: t.lab_id,
+          campusId: t.campus_id,
+          topic: t.notes || "",
+        }));
+        setTimetableSlots(mappedLabSlots);
+      } else {
+        setTimetableSlots([]);
+      }
+
+      // 2b. Tải tiết dạy của từng giáo viên từ Supabase (teacher_timetables) theo Năm học
+      const { data: teacherTtData } = await supabase
+        .from("teacher_timetables")
+        .select("*")
+        .eq("school_year", selectedSchoolYear);
+      setRawTeacherTimetables(teacherTtData || []);
+      if (teacherTtData && teacherTtData.length > 0) {
+        const teacherCodeMap: Record<string, string> = {
+          HUY: "huy",
+          TUAN: "tuan",
+          LINH: "linh",
+          ANH: "anh",
+          TAM: "tam",
+          DANG: "dang",
+          BINH: "binh",
+          YEN: "yen",
+        };
+
+        const updatedProfiles = TEACHER_TIMETABLES.map((prof) => {
+          const profSlots = teacherTtData
+            .filter((row: any) => (teacherCodeMap[row.teacher_code] || row.teacher_code?.toLowerCase()) === prof.id)
+            .map((row: any) => ({
+              id: row.id,
+              teacherId: prof.id,
+              teacherName: row.teacher_name,
+              day: row.day_of_week,
+              period: row.period,
+              session: row.session as "morning" | "afternoon",
+              time: row.time_slot,
+              className: row.class_name,
+              subject: row.subject,
+              room: row.room,
+            }));
+
+          return {
+            ...prof,
+            totalSlots: profSlots.length,
+            slots: profSlots,
+          };
+        });
+
+        setTeacherTimetablesList(updatedProfiles);
+      } else {
+        setTeacherTimetablesList(
+          TEACHER_TIMETABLES.map((prof) => ({
+            ...prof,
+            totalSlots: 0,
+            slots: [],
+          }))
+        );
+      }
+
+
+
+      // 5. Tải hồ sơ giáo viên (profiles)
+      const { data: profilesData } = await supabase.from("profiles").select("*");
+      if (profilesData && profilesData.length > 0) {
+        setTeachersList(
+          profilesData.map((p: any) => ({
+            id: p.id,
+            name: p.full_name,
+            email: p.email,
+            campus: campuses.find((c) => c.id === p.campus_id)?.name || "Sky-Line Riverside",
+            role: p.role === "leader" ? "Tổ trưởng chuyên môn" : "Giáo viên",
+            specialty: p.specialty || "Robotics STEM & Tin Học",
+            lab: p.lab_management || "Phòng Lab STEM",
+          }))
+        );
+      }
+
+      // 6. Tải danh sách lớp học và phân công chuyên môn từ Supabase (classes) theo Năm học
+      const { data: classesData } = await supabase
+        .from("classes")
+        .select("*")
+        .eq("school_year", selectedSchoolYear)
+        .order("campus", { ascending: true })
+        .order("grade", { ascending: true })
+        .order("name", { ascending: true });
+
+      setClassesList(classesData || []);
+    } catch (err) {
+      console.error("Lỗi đồng bộ Supabase:", err);
+    }
+  };
+
+  // Hàm tải đồng bộ dữ liệu thời khóa biểu phòng Lab từ teacher_timetables theo Năm học
+  const loadLabScheduleFromTeacherTimetables = useCallback(async () => {
+    setIsLoadingLabSchedule(true);
+    try {
+      const { data, error } = await supabase
+        .from("teacher_timetables")
+        .select("*")
+        .eq("school_year", selectedSchoolYear)
+        .order("period", { ascending: true });
+      if (!error && data) {
+        setRawTeacherTimetables(data);
+      }
+    } catch (err) {
+      console.error("Lỗi tải lịch phòng Lab từ teacher_timetables:", err);
+    } finally {
+      setIsLoadingLabSchedule(false);
+    }
+  }, [supabase, selectedSchoolYear]);
+
+  // Tự động tải lại lịch phòng Lab khi chuyển sang tab Phần 1
+  useEffect(() => {
+    if (timetableSubTab === "lab_view") {
+      loadLabScheduleFromTeacherTimetables();
+    }
+  }, [timetableSubTab, loadLabScheduleFromTeacherTimetables]);
+
+  useEffect(() => {
+    loadDashboardData();
+
+    // Lắng nghe thay đổi tức thì qua Supabase Realtime (Không cần bấm F5)
+    const channel = supabase
+      .channel("portal_realtime_sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "timetables" }, () => {
+        loadDashboardData();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "teacher_timetables" }, () => {
+        loadLabScheduleFromTeacherTimetables();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => {
+        loadDashboardData();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "classes" }, async () => {
+        const { data: refreshedClasses } = await supabase
+          .from("classes")
+          .select("*")
+          .eq("school_year", selectedSchoolYear)
+          .order("campus", { ascending: true })
+          .order("grade", { ascending: true })
+          .order("name", { ascending: true });
+        setClassesList(refreshedClasses || []);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedCampus, selectedSchoolYear, loadLabScheduleFromTeacherTimetables]);
+
+  // Xử lý đăng xuất thực tế
+  const handleLogout = async () => {
+    showToast("Đang đăng xuất an toàn khỏi hệ thống...", "info");
+    await supabase.auth.signOut();
+    setTimeout(() => {
+      router.push("/login");
+      router.refresh();
+    }, 400);
+  };
+
+  const checkSlotConflict = (day: number, period: number, teacher: string, room: string) => {
+    const existing = timetableSlots.find(
+      (s) => s.day === day && s.period === period && (s.teacher === teacher || s.room === room)
+    );
+    if (existing) {
+      if (existing.teacher === teacher) {
+        return `Trùng lịch: ${teacher} đã có tiết tại ${existing.className} (${existing.room})!`;
+      }
+      if (existing.room === room) {
+        return `Trùng phòng: ${room} đã được lớp ${existing.className} (${existing.teacher}) đặt!`;
+      }
+    }
+    return null;
+  };
+
+  const handleOpenSlotModal = (day: number, period: number, labRoomName?: string, labId?: string) => {
+    const currentLabName = labRoomName || LAB_ROOMS.find((l) => l.id === selectedLab)?.name || "Sky-Line Riverside Tiểu Học";
+    const currentLabObj = LAB_ROOMS.find((l) => l.id === (labId || selectedLab));
+    setSelectedSlotForEdit({ day, period, labId: labId || selectedLab });
+
+    const existing = timetableSlots.find(
+      (s) => s.day === day && s.period === period && (s.room === currentLabName || s.room.includes(currentLabName))
+    );
+    if (existing) {
+      setSlotForm({
+        className: existing.className,
+        teacher: existing.teacher,
+        subject: existing.subject,
+        room: existing.room,
+        labId: labId || selectedLab,
+        campusId: existing.campusId,
+        topic: existing.topic || "",
+      });
+      setSlotConflictWarning(null);
+    } else {
+      setSlotForm({
+        className: "Lớp 3/1",
+        teacher: currentUserProfile.name || "Thầy Quốc Huy",
+        subject: "Robotics STEM",
+        room: currentLabName,
+        labId: labId || selectedLab,
+        campusId: currentLabObj?.campusId || "riverside",
+        topic: "",
+      });
+      setSlotConflictWarning(checkSlotConflict(day, period, currentUserProfile.name, currentLabName));
+    }
+    setIsSlotModalOpen(true);
+  };
+
+  // Lưu lịch dạy vào Supabase (Chuẩn 2B) & hiển thị tức thì
+  const handleSaveSlot = async () => {
+    if (!selectedSlotForEdit) return;
+    setIsSubmittingSlot(true);
+    const { day, period } = selectedSlotForEdit;
+
+    const periodsTimes: Record<number, string> = {
+      1: "07:30 - 08:15",
+      2: "08:20 - 09:05",
+      3: "09:20 - 10:05",
+      4: "10:10 - 10:55",
+      5: "13:30 - 14:15",
+      6: "14:20 - 15:05",
+      7: "15:20 - 16:05",
+      8: "16:10 - 16:55",
+    };
+
+    let generatedId = `t_${Date.now()}`;
+
+    try {
+      const { data } = await supabase
+        .from("lab_timetables")
+        .upsert({
+          school_year_id: "985ffcb7-73c6-4d33-89da-1102e2fb1699",
+          semester: "HK1",
+          lab_id: slotForm.labId || "riverside_primary",
+          lab_name: slotForm.room,
+          campus_id: slotForm.campusId,
+          day_of_week: day,
+          period: period,
+          session: period <= 4 ? "morning" : "afternoon",
+          time_slot: periodsTimes[period] || "07:30 - 08:15",
+          class_name: slotForm.className,
+          teacher_name: slotForm.teacher,
+          subject: slotForm.subject,
+          room: slotForm.room,
+        })
+        .select()
+        .single();
+
+      if (data) {
+        generatedId = data.id;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
+    // Cập nhật giao diện tức thì
+    setTimetableSlots((prev) => {
+      const filtered = prev.filter(
+        (s) => !(s.day === day && s.period === period && (s.room === slotForm.room || s.room.includes(slotForm.room)))
+      );
+      return [
+        ...filtered,
+        {
+          id: generatedId,
+          day,
+          period,
+          time: periodsTimes[period] || "07:30 - 08:15",
+          className: slotForm.className,
+          teacher: slotForm.teacher,
+          subject: slotForm.subject,
+          room: slotForm.room,
+          campusId: slotForm.campusId,
+          topic: slotForm.topic,
+        },
+      ];
+    });
+
+    setIsSubmittingSlot(false);
+    setIsSlotModalOpen(false);
+    showToast(`Đã xếp lịch và đồng bộ cho ${slotForm.className} tại ${slotForm.room}!`, "success");
+  };
+
+  const handleDeleteSlot = async () => {
+    if (!selectedSlotForEdit) return;
+    const { day, period } = selectedSlotForEdit;
+    const slotToDelete = timetableSlots.find((s) => s.day === day && s.period === period);
+    if (slotToDelete && slotToDelete.id && !slotToDelete.id.startsWith("t_")) {
+      await supabase.from("lab_timetables").delete().eq("id", slotToDelete.id);
+      await supabase.from("timetables").delete().eq("id", slotToDelete.id);
+    }
+    setTimetableSlots((prev) => prev.filter((s) => !(s.day === day && s.period === period)));
+    setIsSlotModalOpen(false);
+    showToast("Đã hủy tiết dạy và đồng bộ vào kho Supabase!", "info");
+  };
+
+  // Hàm hiển thị từng hàng thời khóa biểu theo đúng phòng Lab được chọn và 8 tiết (Sáng 4, Chiều 4)
+  // Lấy dữ liệu đồng bộ từ teacher_timetables (Phần 2.2), chỉ hiển thị Tên Lớp & Tên Giáo Viên, hoàn toàn chỉ xem (Read-only)
+  const renderTimetableRow = (slotTime: { period: number; time: string }) => {
+    return (
+      <tr key={slotTime.period} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+        <td className="p-3 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
+          <div className="font-extrabold text-slate-800 dark:text-slate-200">Tiết {slotTime.period}</div>
+          <div className="text-[10px] text-slate-500 font-medium">{slotTime.time}</div>
+        </td>
+
+        {[2, 3, 4, 5, 6].map((dayNum) => {
+          // Tìm các tiết học tương ứng trong phòng Lab đang chọn từ teacher_timetables
+          const matchingSlots = rawTeacherTimetables.filter(
+            (s) =>
+              Number(s.day_of_week) === dayNum &&
+              Number(s.period) === slotTime.period &&
+              isSlotInLabRoom(s.room, selectedLab)
+          );
+
+          const visibleSlots =
+            filterTeacher === "all"
+              ? matchingSlots
+              : matchingSlots.filter((s) => s.teacher_name === filterTeacher);
+
+          const isFilteredOut = filterTeacher !== "all" && matchingSlots.length > 0 && visibleSlots.length === 0;
+
+          return (
+            <td
+              key={dayNum}
+              className="p-2 border border-slate-100 dark:border-slate-800/60 select-none cursor-default align-middle"
+            >
+              {visibleSlots.length > 0 ? (
+                <div className="space-y-1.5">
+                  {visibleSlots.map((slot) => (
+                    <div
+                      key={slot.id}
+                      className="p-2.5 rounded-2xl bg-white dark:bg-slate-800/95 border border-sky-200/80 dark:border-sky-800/70 shadow-2xs text-center space-y-1"
+                    >
+                      {/* NỘI DUNG 1: TÊN LỚP */}
+                      <div className="font-extrabold text-xs px-2.5 py-0.5 rounded-lg bg-sky-50 dark:bg-sky-950/70 text-sky-800 dark:text-sky-200 border border-sky-200/80 dark:border-sky-800 shadow-2xs tracking-wide inline-block">
+                        {slot.class_name}
+                      </div>
+                      {/* NỘI DUNG 2: HỌ VÀ TÊN GIÁO VIÊN GIẢNG DẠY */}
+                      <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate flex items-center justify-center gap-1">
+                        <span className="text-sky-600 dark:text-sky-400 text-xs">👤</span>
+                        <span className="truncate">{slot.teacher_name}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : isFilteredOut ? (
+                <div className="h-14 rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/60 flex items-center justify-center text-[10px] text-slate-400 dark:text-slate-600 italic select-none">
+                  (Khác GV lọc)
+                </div>
+              ) : (
+                <div className="h-14 rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/60 flex items-center justify-center text-slate-300 dark:text-slate-700 font-bold select-none text-xs">
+                  -
+                </div>
+              )}
+            </td>
+          );
+        })}
+      </tr>
+    );
+  };
+
+
+
+  return (
+    <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+      {/* TOAST THÔNG BÁO NỔI */}
+      {toastMessage && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-sm font-semibold animate-in fade-in slide-in-from-bottom-5 duration-300 ${
+            toastMessage.type === "success"
+              ? "bg-slate-900 text-white dark:bg-sky-600 border-sky-400/30"
+              : toastMessage.type === "warning"
+              ? "bg-amber-600 text-white border-amber-300/40"
+              : "bg-slate-800 text-white border-slate-700"
+          }`}
+        >
+          {toastMessage.type === "success" && <CheckCircle2 className="w-5 h-5 text-emerald-400 dark:text-white" />}
+          {toastMessage.type === "warning" && <AlertTriangle className="w-5 h-5 text-amber-200" />}
+          {toastMessage.type === "info" && <Info className="w-5 h-5 text-sky-400" />}
+          <span>{toastMessage.text}</span>
+        </div>
+      )}
+
+      {/* TOP HEADER: THANH TIÊU ĐỀ TRÊN CÙNG (LOGO, CƠ SỞ, SÁNG/TỐI, TÀI KHOẢN) */}
+      <header className="sticky top-0 z-40 w-full border-b border-slate-200/90 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 shadow-xs transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+          {/* Logo & Nhận diện Sky-Line */}
+          <Link href="/" className="flex items-center gap-3 group shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 via-sky-500 to-amber-500 flex items-center justify-center shadow-md shadow-sky-600/20 text-white font-black text-lg tracking-wider select-none group-hover:scale-105 transition-transform">
+              SL
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-sky-700 via-sky-600 to-amber-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-amber-400">
+                  SKY-LINE ICT PORTAL
+                </span>
+                <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
+                  Bảng Điều Khiển
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block font-medium">
+                Cổng Quản Trị & Vận Hành Chuyên Môn
+              </p>
+            </div>
+          </Link>
+
+          {/* Khu vực công cụ & Tài khoản góc trên bên phải */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Bộ chọn Năm học tương tác linh hoạt */}
+            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <Calendar className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+              <span className="hidden lg:inline text-slate-500 dark:text-slate-400">Năm học:</span>
+              <select
+                aria-label="Chọn năm học"
+                value={selectedSchoolYear}
+                onChange={(e) => {
+                  setSelectedSchoolYear(e.target.value);
+                  showToast(`Đã chuyển sang xem dữ liệu Năm học ${e.target.value}!`, "info");
+                }}
+                className="bg-transparent font-bold text-sky-700 dark:text-sky-400 focus:outline-none cursor-pointer"
+              >
+                <option value="2026-2027" className="dark:bg-slate-900">2026 - 2027</option>
+                <option value="2025-2026" className="dark:bg-slate-900">2025 - 2026</option>
+                <option value="2024-2025" className="dark:bg-slate-900">2024 - 2025</option>
+              </select>
+            </div>
+
+            {/* Bộ chọn Cơ sở (5 Cơ sở Sky-Line) */}
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+              <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <select
+                aria-label="Chọn cơ sở trường"
+                value={selectedCampus}
+                onChange={(e) => {
+                  setSelectedCampus(e.target.value);
+                  showToast(`Đã lọc dữ liệu theo: ${campuses.find((c) => c.id === e.target.value)?.name}`, "info");
+                }}
+                className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+              >
+                {campuses.map((c) => (
+                  <option key={c.id} value={c.id} className="dark:bg-slate-900">
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Nút Đổi giao diện Sáng / Tối */}
+            <button
+              type="button"
+              onClick={handleToggleTheme}
+              className="p-2 sm:p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 transition-all cursor-pointer"
+              title={isDark ? "Chuyển sang Chế độ Sáng" : "Chuyển sang Chế độ Tối"}
+              aria-label="Đổi giao diện Sáng / Tối"
+            >
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-sky-600" />}
+            </button>
+
+            {/* LOGO TÀI KHOẢN ĐĂNG NHẬP Ở GÓC TRÊN BÊN PHẢI & THOÁT KHỎI TÀI KHOẢN */}
+            <UserNav
+              user={currentUserProfile}
+              onLogout={handleLogout}
+              onSwitchProfile={(profile) => {
+                setCurrentUserProfile(profile);
+                showToast(
+                  `Đã chuyển đổi góc nhìn sang: ${profile.name} (${profile.role === "leader" ? "Tổ Trưởng" : "Giáo Viên"})`,
+                  "info"
+                );
+              }}
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* THANH ĐIỀU HƯỚNG DASHBOARD (THANH TABS CHUYÊN MÔN & TÁC VỤ NHANH) */}
+      <div className="sticky top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 py-2">
+            {/* Dãy nút chuyển đổi chuyên mục (Segmented Tabs) */}
+            <div
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              className="bg-slate-100/95 dark:bg-slate-800/90 p-1 rounded-2xl inline-flex items-center gap-1 border border-slate-200/80 dark:border-slate-700/80 no-scrollbar overflow-x-auto max-w-full"
+            >
+              {[
+                { id: "dashboard", label: "Tổng Quan", icon: Layers },
+                { id: "timetable", label: "TKB & Lịch phòng Lab", icon: Calendar },
+                { id: "devices", label: "Thiết Bị & Robot", icon: Bot },
+                { id: "tasks", label: "Công Việc Được Giao", icon: CheckCircle2 },
+                { id: "teams", label: "Đội Tuyển", icon: GraduationCap },
+                { id: "achievements", label: "Thành Tích", icon: Trophy },
+                { id: "teachers", label: "Nhân Sự ICT", icon: Users },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id as any)}
+                    className={`inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-white text-sky-700 dark:bg-slate-900 dark:text-sky-300 shadow-sm border border-slate-200/80 dark:border-slate-700/80 scale-[1.01]"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SKELETON LOADING INDICATOR */}
+      {isLoadingTab && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-4">
+          <Skeleton className="h-10 w-64" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-44 rounded-2xl" />
+            <Skeleton className="h-44 rounded-2xl" />
+            <Skeleton className="h-44 rounded-2xl" />
+          </div>
+          <Skeleton className="h-96 rounded-2xl" />
+        </div>
+      )}
+
+      {/* MAIN CONTENT AREA */}
+      {!isLoadingTab && (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+          {/* TAB 1: DASHBOARD OVERVIEW (TRANG TỔNG QUAN MỚI ĐỒNG BỘ DỮ LIỆU THỰC TẾ) */}
+          {activeTab === "dashboard" && (
+            <OverviewSection
+              supabase={supabase}
+              selectedSchoolYear={selectedSchoolYear}
+              selectedCampus={selectedCampus}
+              campuses={campuses}
+              currentUserProfile={currentUserProfile}
+              teachersList={teachersList}
+              classesList={classesList}
+              timetableSlotsCount={timetableSlots.length}
+              rawTeacherTimetables={rawTeacherTimetables}
+              onNavigateTab={handleTabChange}
+            />
+          )}
+
+          {/* TAB 2: TKB & LỊCH PHÒNG LAB (GỒM 2 PHẦN NỘI DUNG) */}
+          {activeTab === "timetable" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              {/* THANH ĐIỀU KHIỂN CHUYỂN ĐỔI 3 PHẦN NỘI DUNG */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-2.5 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 shadow-xs">
+                <div className="inline-flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                  <button
+                    onClick={() => {
+                      setTimetableSubTab("lab_view");
+                      showToast("Đang xem Phần 1: Thời khóa biểu theo 6 phòng Lab", "info");
+                    }}
+                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      timetableSubTab === "lab_view"
+                        ? "bg-sky-600 text-white shadow-sm scale-[1.01]"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                    <span>Phần 1: Lịch Theo 6 Phòng Lab</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setTimetableSubTab("teacher_view");
+                      showToast("Đang xem Phần 2: Lịch giảng dạy cá nhân từng giáo viên (TKB CÁ NHÂN)", "info");
+                    }}
+                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      timetableSubTab === "teacher_view"
+                        ? "bg-amber-600 text-white shadow-sm scale-[1.01]"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Phần 2: Lịch Giảng Dạy Từng Giáo Viên</span>
+                    <Badge variant="amber" className="text-[9px] px-1 py-0 ml-1">
+                      TKB Cá Nhân
+                    </Badge>
+                  </button>
+
+                  {/* NÚT PHẦN 3: CHỈ HIỂN THỊ VỚI TÀI KHOẢN TỔ TRƯỞNG CHUYÊN MÔN */}
+                  {isLeader && (
+                    <button
+                      onClick={() => {
+                        setTimetableSubTab("assignment_view");
+                        showToast("Đang xem Phần 3: Phân công chuyên môn & Danh sách lớp học", "info");
+                      }}
+                      className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                        timetableSubTab === "assignment_view"
+                          ? "bg-emerald-600 text-white shadow-sm scale-[1.01]"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <GraduationCap className="w-4 h-4" />
+                      <span>Phần 3: Phân Công Chuyên Môn</span>
+                      <Badge variant="emerald" className="text-[9px] px-1 py-0 ml-1">
+                        {classesList.length > 0 ? `${classesList.length} Lớp` : "113 Lớp"}
+                      </Badge>
+                    </button>
+                  )}
+                </div>
+
+                <div className="text-xs text-slate-500 dark:text-slate-400 px-2 font-medium hidden md:block">
+                  {timetableSubTab === "lab_view"
+                    ? "Lịch giảng dạy & thiết bị 6 phòng Lab Sky-Line"
+                    : timetableSubTab === "teacher_view"
+                    ? "Lịch phân công giảng dạy chi tiết của 8 Giáo viên Tổ ICT"
+                    : "Sắp xếp phân công giáo viên giảng dạy & Quản lý danh sách 113 lớp"}
+                </div>
+              </div>
+
+              {/* ========================================================================= */}
+              {/* PHẦN 1: THỜI KHÓA BIỂU GIẢNG DẠY THEO TỪNG PHÒNG LAB                      */}
+              {/* ========================================================================= */}
+              {timetableSubTab === "lab_view" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  {/* KHUNG TIÊU ĐỀ & BỘ CHỌN 6 PHÒNG LAB */}
+                  <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="p-2 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400">
+                            <Building2 className="w-5 h-5" />
+                          </span>
+                          <div>
+                            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                              Phần 1: Thời Khóa Biểu Giảng Dạy Theo Từng Phòng Lab
+                              <Badge variant="default" className="text-[11px] font-bold">
+                                Năm học {selectedSchoolYear}
+                              </Badge>
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              Học sinh học <strong>4 tiết sáng</strong> (07:30 - 10:55) và <strong>4 tiết chiều</strong> (13:30 - 16:55). Dữ liệu chi tiết từ kế hoạch 6 phòng Lab.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* CÔNG CỤ LỌC PHỤ: THEO GIÁO VIÊN & BUỔI HỌC */}
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        {/* Lọc theo Giáo viên */}
+                        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+                          <Users className="w-3.5 h-3.5 text-sky-600" />
+                          <select
+                            aria-label="Lọc theo giáo viên giảng dạy"
+                            value={filterTeacher}
+                            onChange={(e) => setFilterTeacher(e.target.value)}
+                            className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                          >
+                            <option value="all" className="dark:bg-slate-900">Tất cả giáo viên</option>
+                            {teachersList.map((t) => (
+                              <option key={t.id} value={t.name} className="dark:bg-slate-900">
+                                {t.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Lọc theo buổi (Sáng / Chiều) */}
+                        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+                          <Clock className="w-3.5 h-3.5 text-amber-500" />
+                          <select
+                            aria-label="Lọc theo buổi học"
+                            value={selectedSessionFilter}
+                            onChange={(e) => setSelectedSessionFilter(e.target.value as any)}
+                            className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                          >
+                            <option value="all" className="dark:bg-slate-900">Cả Ngày (8 Tiết)</option>
+                            <option value="morning" className="dark:bg-slate-900">Chỉ Buổi Sáng (4 Tiết)</option>
+                            <option value="afternoon" className="dark:bg-slate-900">Chỉ Buổi Chiều (4 Tiết)</option>
+                          </select>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => showToast(`Đã xuất Thời khóa biểu phòng Lab năm học ${selectedSchoolYear} sẵn sàng để in!`, "info")}
+                          className="font-bold text-xs"
+                        >
+                          <Printer className="w-4 h-4 mr-1 text-slate-600 dark:text-slate-400" />
+                          In TKB (PDF)
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* THANH CHỌN 6 PHÒNG LAB SKY-LINE (DẠNG THẺ CHUYÊN DỤNG) */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                      <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1.5">
+                        <Laptop className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Chọn 1 trong 6 Phòng Lab Sky-Line để xem lịch chi tiết:</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                        {LAB_ROOMS.map((lab) => {
+                          const isSelected = selectedLab === lab.id;
+                          const labSlotsCount = rawTeacherTimetables.filter(
+                            (s) => isSlotInLabRoom(s.room, lab.id)
+                          ).length;
+
+                          return (
+                            <button
+                              key={lab.id}
+                              onClick={() => {
+                                setSelectedLab(lab.id);
+                                showToast(`Đang hiển thị lịch: ${lab.name} (${labSlotsCount} tiết/tuần)`, "info");
+                              }}
+                              className={`p-3 rounded-2xl text-left transition-all border cursor-pointer relative overflow-hidden group ${
+                                isSelected
+                                  ? "bg-gradient-to-br from-sky-600 to-sky-700 text-white border-sky-500 shadow-md shadow-sky-600/25 scale-[1.02]"
+                                  : "bg-slate-50 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                  isSelected
+                                    ? "bg-white/20 text-white"
+                                    : "bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300"
+                                }`}>
+                                  {lab.sheet}
+                                </span>
+                                <span className={`text-[10px] font-bold ${isSelected ? "text-amber-300" : "text-amber-600 dark:text-amber-400"}`}>
+                                  {labSlotsCount} tiết
+                                </span>
+                              </div>
+
+                              <div className="font-extrabold text-xs line-clamp-1 leading-snug">
+                                {lab.name.replace("Sky-Line ", "")}
+                              </div>
+                              <div className={`text-[10px] mt-0.5 truncate ${isSelected ? "text-sky-100" : "text-slate-500 dark:text-slate-400"}`}>
+                                GV: {lab.defaultTeacher}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* THẺ TÓM TẮT THÔNG TIN PHÒNG LAB HIỆN TẠI (CHẾ ĐỘ XEM ĐỒNG BỘ TỪ LỊCH GIÁO VIÊN) */}
+                    {(() => {
+                      const currentLabObj = LAB_ROOMS.find((l) => l.id === selectedLab);
+                      const currentLabSlots = rawTeacherTimetables.filter(
+                        (s) => isSlotInLabRoom(s.room, selectedLab)
+                      );
+
+                      return currentLabObj ? (
+                        <div className="p-3.5 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-900/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold shadow-2xs">
+                              <Bot className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-sky-900 dark:text-sky-200 text-sm">
+                                {currentLabObj.name} ({currentLabObj.sheet})
+                              </div>
+                              <div className="text-slate-600 dark:text-slate-400 text-[11px]">
+                                Giáo viên phụ trách chính: <strong>{currentLabObj.defaultTeacher}</strong> • Tổng cộng <strong>{currentLabSlots.length} tiết giảng dạy/tuần</strong>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 shadow-2xs">
+                              <Eye className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                              Chế độ chỉ xem (Đồng bộ từ Lịch GV)
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                loadLabScheduleFromTeacherTimetables();
+                                showToast("Đã đồng bộ lại dữ liệu thời khóa biểu phòng Lab!", "success");
+                              }}
+                              className="font-bold text-xs h-8"
+                              title="Làm mới dữ liệu từ cơ sở dữ liệu"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 mr-1 ${isLoadingLabSchedule ? "animate-spin" : ""}`} />
+                              Đồng bộ
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+
+                  {/* BẢNG LƯỚI THỜI KHÓA BIỂU 8 TIẾT (BUỔI SÁNG 4 TIẾT, BUỔI CHIỀU 4 TIẾT) - ĐỒNG BỘ 5 CỘT CÂN ĐỐI */}
+                  <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                    <table className="w-full text-left text-xs border-collapse min-w-[900px] table-fixed">
+                      <colgroup>
+                        <col className="w-32" />
+                        <col className="w-1/5" />
+                        <col className="w-1/5" />
+                        <col className="w-1/5" />
+                        <col className="w-1/5" />
+                        <col className="w-1/5" />
+                      </colgroup>
+                      <thead>
+                        <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+                          <th className="p-3.5 font-bold w-32 text-center bg-slate-200/60 dark:bg-slate-800">Tiết / Giờ</th>
+                          {[
+                            { day: 2, label: "Thứ Hai" },
+                            { day: 3, label: "Thứ Ba" },
+                            { day: 4, label: "Thứ Tư" },
+                            { day: 5, label: "Thứ Năm" },
+                            { day: 6, label: "Thứ Sáu" },
+                          ].map((d) => (
+                            <th
+                              key={d.day}
+                              className="p-3.5 font-bold text-center"
+                            >
+                              {d.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {/* KHỐI 1: BUỔI SÁNG (TIẾT 1 ĐẾN TIẾT 4) */}
+                        {(selectedSessionFilter === "all" || selectedSessionFilter === "morning") && (
+                          <>
+                            <tr className="bg-sky-50/70 dark:bg-sky-950/40 border-y border-sky-200/80 dark:border-sky-900/60">
+                              <td colSpan={6} className="px-4 py-2 font-black text-sky-900 dark:text-sky-300 text-xs tracking-wide">
+                                <span className="inline-flex items-center gap-2">
+                                  <SunMedium className="w-4 h-4 text-amber-500" />
+                                  BUỔI SÁNG (07:30 - 10:55 • 4 TIẾT)
+                                </span>
+                              </td>
+                            </tr>
+
+                            {[
+                              { period: 1, time: "07:30 - 08:15" },
+                              { period: 2, time: "08:20 - 09:05" },
+                            ].map((slotTime) => renderTimetableRow(slotTime))}
+
+                            {/* DÒNG NGHỈ GIẢI LAO SÁNG */}
+                            <tr className="bg-amber-50/50 dark:bg-amber-950/20 text-slate-500 dark:text-slate-400 text-[11px] italic">
+                              <td className="p-2 text-center bg-amber-100/50 dark:bg-amber-950/40 border-r border-slate-200 dark:border-slate-800 font-semibold text-amber-800 dark:text-amber-300">
+                                09:05 - 09:20
+                              </td>
+                              <td colSpan={5} className="p-2 text-center">
+                                <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-medium">
+                                  <Coffee className="w-3.5 h-3.5" /> Giờ ra chơi, ăn phụ & thể dục giữa giờ (15 phút)
+                                </span>
+                              </td>
+                            </tr>
+
+                            {[
+                              { period: 3, time: "09:20 - 10:05" },
+                              { period: 4, time: "10:10 - 10:55" },
+                            ].map((slotTime) => renderTimetableRow(slotTime))}
+                          </>
+                        )}
+
+                        {/* DÒNG NGHỈ TRƯA & BÁN TRÚ NẾU HIỂN THỊ CẢ NGÀY */}
+                        {selectedSessionFilter === "all" && (
+                          <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-xs font-bold border-y-2 border-slate-200 dark:border-slate-700">
+                            <td className="p-2.5 text-center bg-slate-200/70 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-800">
+                              11:00 - 13:30
+                            </td>
+                            <td colSpan={5} className="p-2.5 text-center">
+                              🍱 NGHỈ TRƯA, ĂN BÁN TRÚ & NGHỈ NGƠI TẠI CƠ SỞ
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* KHỐI 2: BUỔI CHIỀU (TIẾT 5 ĐẾN TIẾT 8) */}
+                        {(selectedSessionFilter === "all" || selectedSessionFilter === "afternoon") && (
+                          <>
+                            <tr className="bg-indigo-50/70 dark:bg-indigo-950/40 border-y border-indigo-200/80 dark:border-indigo-900/60">
+                              <td colSpan={6} className="px-4 py-2 font-black text-indigo-900 dark:text-indigo-300 text-xs tracking-wide">
+                                <span className="inline-flex items-center gap-2">
+                                  <Sunset className="w-4 h-4 text-orange-500" />
+                                  BUỔI CHIỀU (13:30 - 16:55 • 4 TIẾT)
+                                </span>
+                              </td>
+                            </tr>
+
+                            {[
+                              { period: 5, time: "13:30 - 14:15" },
+                              { period: 6, time: "14:20 - 15:05" },
+                            ].map((slotTime) => renderTimetableRow(slotTime))}
+
+                            {/* DÒNG NGHỈ GIẢI LAO CHIỀU */}
+                            <tr className="bg-amber-50/50 dark:bg-amber-950/20 text-slate-500 dark:text-slate-400 text-[11px] italic">
+                              <td className="p-2 text-center bg-amber-100/50 dark:bg-amber-950/40 border-r border-slate-200 dark:border-slate-800 font-semibold text-amber-800 dark:text-amber-300">
+                                15:05 - 15:20
+                              </td>
+                              <td colSpan={5} className="p-2 text-center">
+                                <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-medium">
+                                  <Coffee className="w-3.5 h-3.5" /> Giờ ăn xế & giải lao chiều (15 phút)
+                                </span>
+                              </td>
+                            </tr>
+
+                            {[
+                              { period: 7, time: "15:20 - 16:05" },
+                              { period: 8, time: "16:10 - 16:55" },
+                            ].map((slotTime) => renderTimetableRow(slotTime))}
+                          </>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================================= */}
+              {/* PHẦN 2: LỊCH GIẢNG DẠY CÁ NHÂN CỦA TỪNG GIÁO VIÊN (2.1 & 2.2)              */}
+              {/* ========================================================================= */}
+              {timetableSubTab === "teacher_view" && (
+                <TeacherAssignedScheduleSection
+                  supabase={supabase}
+                  showToast={showToast}
+                  selectedSchoolYear={selectedSchoolYear}
+                  classesList={classesList}
+                  teachersList={teachersList}
+                  currentUserProfile={currentUserProfile}
+                  onScheduleChanged={loadLabScheduleFromTeacherTimetables}
+                />
+              )}
+
+              {/* ========================================================================= */}
+              {/* PHẦN 3: PHÂN CÔNG CHUYÊN MÔN & DANH SÁCH LỚP (CHỈ DÀNH CHO TỔ TRƯỞNG)     */}
+              {/* ========================================================================= */}
+              {timetableSubTab === "assignment_view" && isLeader && (
+                <TeachingAssignmentSection
+                  classesList={classesList}
+                  setClassesList={setClassesList}
+                  teachersList={teachersList}
+                  timetableSlots={timetableSlots}
+                  setTimetableSlots={setTimetableSlots}
+                  teacherTimetablesList={teacherTimetablesList}
+                  setTeacherTimetablesList={setTeacherTimetablesList}
+                  supabase={supabase}
+                  showToast={showToast}
+                  selectedSchoolYear={selectedSchoolYear}
+                  reloadDashboardData={loadDashboardData}
+                />
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: THIẾT BỊ & ROBOT 6 PHÒNG LAB (PHÂN QUYỀN THEO QUẢN LÝ LAB) */}
+          {activeTab === "devices" && (
+            <LabDevicesSection
+              supabase={supabase}
+              showToast={showToast}
+              currentUserProfile={currentUserProfile}
+              selectedSchoolYear={selectedSchoolYear}
+            />
+          )}
+
+          {/* TAB 4: VIỆC CẦN LÀM - PHÂN CÔNG CÔNG VIỆC CHUYÊN MÔN */}
+          {activeTab === "tasks" && (
+            <AssignedTasksSection
+              supabase={supabase}
+              showToast={showToast}
+              currentUserProfile={currentUserProfile}
+              teachersList={teachersList}
+              selectedSchoolYear={selectedSchoolYear}
+            />
+          )}
+
+          {/* TAB 4.5: ĐỘI TUYỂN BỒI DƯỠNG HỌC SINH GIỎI ICT */}
+          {activeTab === "teams" && (
+            <TrainingTeamsSection
+              supabase={supabase}
+              showToast={showToast}
+              currentUserProfile={currentUserProfile}
+              classesList={classesList}
+              teachersList={teachersList}
+              selectedSchoolYear={selectedSchoolYear}
+            />
+          )}
+
+          {/* TAB 5: THÀNH TÍCH CUỘC THI & KÌ THI */}
+          {activeTab === "achievements" && (
+            <AchievementsSection
+              supabase={supabase}
+              showToast={showToast}
+              currentUserProfile={currentUserProfile}
+              classesList={classesList}
+              teachersList={teachersList}
+              selectedSchoolYear={selectedSchoolYear}
+            />
+          )}
+
+          {/* TAB 6: NHÂN SỰ TỔ CHUYÊN MÔN ICT */}
+          {activeTab === "teachers" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-sky-600" />
+                    Danh Bạ Đội Ngũ Nhân Sự Tổ ICT ({teachersList.length} Thầy Cô)
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Hồ sơ chuyên trách, cơ sở công tác và phân công chuyên môn của 8 thành viên Tổ Tin Học & Robotics Sky-Line
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {teachersList.map((teacher, idx) => (
+                  <Card key={teacher.id || idx} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-sky-700 text-white font-bold flex items-center justify-center shadow-xs">
+                          {teacher.name.charAt(0)}
+                        </div>
+                        <div>
+                          <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">{teacher.name}</CardTitle>
+                          <Badge variant={teacher.role.includes("Tổ trưởng") ? "amber" : "secondary"} className="text-[10px] mt-0.5">{teacher.role}</Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+                      <div>Email: <strong className="text-slate-800 dark:text-slate-200">{teacher.email}</strong></div>
+                      <div>Cơ sở: <strong className="text-slate-800 dark:text-slate-200">{teacher.campus}</strong></div>
+                      <div>Thế mạnh: <span className="text-sky-700 dark:text-sky-300 font-semibold">{teacher.specialty}</span></div>
+                      <div>Kiêm nhiệm: <span className="text-amber-700 dark:text-amber-400 font-semibold">{teacher.lab}</span></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* MODAL XẾP LỊCH TIẾT DẠY */}
+      {isSlotModalOpen && selectedSlotForEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-sky-600" />
+                  Xếp Lịch Tiết Dạy / Đặt Phòng Lab
+                </h3>
+                <p className="text-xs text-slate-500">Thứ {selectedSlotForEdit.day} • Tiết {selectedSlotForEdit.period}</p>
+              </div>
+              <button onClick={() => setIsSlotModalOpen(false)} className="p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {slotConflictWarning && (
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-300 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{slotConflictWarning}</span>
+              </div>
+            )}
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Khối Lớp Giảng Dạy:</label>
+                <Input value={slotForm.className} onChange={(e) => setSlotForm({ ...slotForm, className: e.target.value })} placeholder="Lớp 4/1, Lớp 11A1" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Giáo Viên Đứng Lớp:</label>
+                  <select
+                    value={slotForm.teacher}
+                    onChange={(e) => {
+                      const t = e.target.value;
+                      setSlotForm({ ...slotForm, teacher: t });
+                      setSlotConflictWarning(checkSlotConflict(selectedSlotForEdit.day, selectedSlotForEdit.period, t, slotForm.room));
+                    }}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold"
+                  >
+                    {teachersList.map((t) => (
+                      <option key={t.id} value={t.name}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Phòng Lab Sky-Line:</label>
+                  <select
+                    value={slotForm.room}
+                    onChange={(e) => {
+                      const r = e.target.value;
+                      const labObj = LAB_ROOMS.find((l) => l.name === r);
+                      setSlotForm({
+                        ...slotForm,
+                        room: r,
+                        labId: labObj?.id || slotForm.labId,
+                        campusId: labObj?.campusId || slotForm.campusId,
+                      });
+                      setSlotConflictWarning(checkSlotConflict(selectedSlotForEdit.day, selectedSlotForEdit.period, slotForm.teacher, r));
+                    }}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold"
+                  >
+                    {LAB_ROOMS.map((lab) => (
+                      <option key={lab.id} value={lab.name}>
+                        {lab.name} ({lab.sheet})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Môn Học / Chủ Đề:</label>
+                <Input value={slotForm.subject} onChange={(e) => setSlotForm({ ...slotForm, subject: e.target.value })} placeholder="Robotics Lego Spike, Python..." />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <Button variant="destructive" size="sm" onClick={handleDeleteSlot}>
+                <Trash2 className="w-4 h-4 mr-1" /> Hủy Tiết Này
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setIsSlotModalOpen(false)}>Đóng Lại</Button>
+                <Button size="sm" isLoading={isSubmittingSlot} onClick={handleSaveSlot}>
+                  <Check className="w-4 h-4 mr-1" /> Lưu Vào TKB
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {/* FOOTER */}
+      <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+        <div className="max-w-7xl mx-auto px-4 space-y-2">
+          <div className="flex items-center justify-center gap-2 font-bold text-slate-700 dark:text-slate-300">
+            <School className="w-4 h-4 text-sky-600" />
+            Hệ Thống Giáo Dục Sky-Line • Tổ Chuyên Môn Tin Học & Robotics (ICT)
+          </div>
+          <p>Phục vụ 5 cơ sở: Riverside • Central • Beach • Hill • Global | Quản trị từ Lớp 1 đến Lớp 12</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
