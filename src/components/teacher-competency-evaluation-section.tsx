@@ -566,11 +566,11 @@ export function TeacherCompetencyEvaluationSection({
         teacher_name: teacher.name,
         teacher_email: teacher.email,
         staff_code: `ICT-0${defaultIdx > 0 ? defaultIdx : 1}`,
-        campus: teacher.campus || "Sky-Line Riverside",
+        campus: teacher.campus || "Chưa phân công",
         teaching_levels: defaultLevels,
         grade_details: "",
-        lab_management: teacher.lab || "Không kiêm nhiệm",
-        concurrent_duties: teacher.specialty || "",
+        lab_management: teacher.lab || "Chưa phân công",
+        concurrent_duties: teacher.lab || "Chưa phân công",
         peer1_id: peers.peer1?.id || "",
         peer1_email: peers.peer1?.email || "",
         peer2_id: peers.peer2?.id || "",
@@ -625,13 +625,13 @@ export function TeacherCompetencyEvaluationSection({
               ...base,
               id: row.id,
               staff_code: row.staff_code || base.staff_code,
-              campus: row.campus || base.campus,
+              campus: matchedTeacher.campus || base.campus,
               teaching_levels: Array.isArray(row.teaching_levels)
                 ? row.teaching_levels
                 : base.teaching_levels,
               grade_details: row.grade_details ?? "",
-              lab_management: row.lab_management || base.lab_management,
-              concurrent_duties: row.concurrent_duties ?? base.concurrent_duties,
+              lab_management: matchedTeacher.lab || base.lab_management,
+              concurrent_duties: matchedTeacher.lab || base.concurrent_duties,
               peer1_id: row.peer1_id || base.peer1_id,
               peer1_email: row.peer1_email || base.peer1_email,
               peer2_id: row.peer2_id || base.peer2_id,
@@ -2175,18 +2175,9 @@ export function TeacherCompetencyEvaluationSection({
                       • Cơ sở:
                     </label>
                     <Input
-                      value={activeSheetRecord.campus}
-                      disabled={!canEditSelfOnActiveSheet}
-                      onChange={(e) =>
-                        updateTeacherRecordState(
-                          activeSheetTeacher.id,
-                          (prev) => ({
-                            ...prev,
-                            campus: e.target.value,
-                          })
-                        )
-                      }
-                      className="h-9 font-semibold"
+                      value={activeSheetTeacher.campus || "Chưa phân công"}
+                      disabled
+                      className="h-9 font-bold bg-slate-100 dark:bg-slate-800/80"
                     />
                   </div>
                   <div>
@@ -2194,18 +2185,9 @@ export function TeacherCompetencyEvaluationSection({
                       • Quản lý phòng Lab:
                     </label>
                     <Input
-                      value={activeSheetRecord.lab_management}
-                      disabled={!canEditSelfOnActiveSheet}
-                      onChange={(e) =>
-                        updateTeacherRecordState(
-                          activeSheetTeacher.id,
-                          (prev) => ({
-                            ...prev,
-                            lab_management: e.target.value,
-                          })
-                        )
-                      }
-                      className="h-9 font-semibold"
+                      value={activeSheetTeacher.lab || "Chưa phân công"}
+                      disabled
+                      className="h-9 font-bold bg-slate-100 dark:bg-slate-800/80"
                     />
                   </div>
                 </div>
@@ -2288,19 +2270,9 @@ export function TeacherCompetencyEvaluationSection({
                     • Kiêm nhiệm:
                   </label>
                   <Input
-                    value={activeSheetRecord.concurrent_duties}
-                    disabled={!canEditSelfOnActiveSheet}
-                    onChange={(e) =>
-                      updateTeacherRecordState(
-                        activeSheetTeacher.id,
-                        (prev) => ({
-                          ...prev,
-                          concurrent_duties: e.target.value,
-                        })
-                      )
-                    }
-                    placeholder="Nhập công tác kiêm nhiệm chuyên môn..."
-                    className="h-9 font-semibold"
+                    value={activeSheetTeacher.lab || "Chưa phân công"}
+                    disabled
+                    className="h-9 font-bold bg-slate-100 dark:bg-slate-800/80"
                   />
                 </div>
               </div>
