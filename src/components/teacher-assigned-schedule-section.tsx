@@ -1149,16 +1149,16 @@ export function TeacherAssignedScheduleSection({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-3 animate-in fade-in duration-200">
       {/* ========================================================================= */}
       {/* THANH ĐIỀU HƯỚNG 2 PHẦN CON: PHẦN 2.1 & PHẦN 2.2                           */}
       {/* ========================================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs">
         <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
           <button
             type="button"
             onClick={() => setActiveSubTab("2.1")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               activeSubTab === "2.1"
                 ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs border border-amber-200/80 dark:border-amber-900/60"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -1171,7 +1171,7 @@ export function TeacherAssignedScheduleSection({
           <button
             type="button"
             onClick={() => setActiveSubTab("2.2")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               activeSubTab === "2.2"
                 ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs border border-amber-200/80 dark:border-amber-900/60"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -1195,23 +1195,20 @@ export function TeacherAssignedScheduleSection({
       {/* NỘI DUNG PHẦN 2.1: XEM TKB CÁ NHÂN THEO TKB NHÀ TRƯỜNG                     */}
       {/* ========================================================================= */}
       {activeSubTab === "2.1" && (
-        <div className="space-y-6">
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-center gap-2.5">
-                <span className="p-2.5 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 shadow-xs">
-                  <BookOpen className="w-5 h-5" />
+        <div className="space-y-3">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-2.5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 shadow-xs">
+                  <BookOpen className="w-4 h-4" />
                 </span>
                 <div>
-                  <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                     Phần 2.1: Xem TKB Cá Nhân Theo TKB Nhà Trường
-                    <Badge variant="amber" className="text-[11px] font-bold">
+                    <Badge variant="amber" className="text-[10px] font-bold px-2 py-0">
                       TKB Toàn Trường
                     </Badge>
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Nhập tên giáo viên để tra cứu lịch giảng dạy từ Thứ 2 đến Thứ 6 (Tiết 1 đến Tiết 8) theo thời khóa biểu nhà trường.
-                  </p>
                 </div>
               </div>
 
@@ -1229,16 +1226,16 @@ export function TeacherAssignedScheduleSection({
                   variant="amber"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isImporting}
-                  className="font-bold text-xs shadow-md shadow-amber-500/20"
+                  className="font-bold text-xs h-7 px-2.5 shadow-sm shadow-amber-500/20"
                 >
                   {isImporting ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
                       Đang Import TKB...
                     </>
                   ) : (
                     <>
-                      <UploadCloud className="w-4 h-4 mr-1.5" />
+                      <UploadCloud className="w-3.5 h-3.5 mr-1" />
                       Import File TKB Nhà Trường (.xlsx)
                     </>
                   )}
@@ -1249,7 +1246,7 @@ export function TeacherAssignedScheduleSection({
                   variant="outline"
                   onClick={loadSchoolAssignedData}
                   disabled={isLoadingSchool}
-                  className="font-bold text-xs"
+                  className="font-bold text-xs h-7 px-2.5"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 mr-1 ${isLoadingSchool ? "animate-spin" : ""}`} />
                   Làm Mới
@@ -1260,7 +1257,7 @@ export function TeacherAssignedScheduleSection({
                     size="sm"
                     variant="outline"
                     onClick={() => window.print()}
-                    className="font-bold text-xs"
+                    className="font-bold text-xs h-7 px-2.5"
                   >
                     <Printer className="w-3.5 h-3.5 mr-1 text-slate-600 dark:text-slate-400" />
                     In TKB (PDF)
@@ -1269,13 +1266,13 @@ export function TeacherAssignedScheduleSection({
               </div>
             </div>
 
-            {/* Ô TÌM KIẾM GIÁO VIÊN & GỢI Ý */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <div className="relative max-w-xl">
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            {/* Ô TÌM KIẾM GIÁO VIÊN & 8 CHIP CHỌN NHANH */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
+              <div className="relative w-full xl:w-80 shrink-0">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <Input
                   type="text"
-                  placeholder="Nhập tên giáo viên cần tra cứu (ví dụ: Tuấn ICT, Linh ICT, Huy ICT, Yến ICT...)"
+                  placeholder="Tìm tên giáo viên (Tuấn ICT, Linh ICT...)"
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -1283,7 +1280,7 @@ export function TeacherAssignedScheduleSection({
                       setSelectedTeacher21("");
                     }
                   }}
-                  className="pl-10 pr-9 text-xs h-10 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 font-semibold focus:ring-2 focus:ring-amber-500/20"
+                  className="pl-9 pr-8 text-xs h-8 rounded-xl bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 font-semibold focus:ring-2 focus:ring-amber-500/20"
                 />
                 {searchTerm && (
                   <button
@@ -1292,14 +1289,14 @@ export function TeacherAssignedScheduleSection({
                       setSelectedTeacher21("");
                       setSearchTerm("");
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
 
                 {filteredTeacherSuggestions21.length > 0 && selectedTeacher21 !== searchTerm && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 z-30 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-h-56 overflow-y-auto space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-h-56 overflow-y-auto space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
                     <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Gợi ý giáo viên phù hợp:
                     </div>
@@ -1312,7 +1309,7 @@ export function TeacherAssignedScheduleSection({
                           setSearchTerm(t);
                           showToast(`Đang hiển thị lịch giảng dạy của: ${t}`, "info");
                         }}
-                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/60 hover:text-amber-700 dark:hover:text-amber-300 transition-colors flex items-center justify-between"
+                        className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/60 hover:text-amber-700 dark:hover:text-amber-300 transition-colors flex items-center justify-between"
                       >
                         <span>{t}</span>
                         <span className="text-[10px] font-normal text-slate-400">
@@ -1325,17 +1322,12 @@ export function TeacherAssignedScheduleSection({
               </div>
 
               {/* 8 CHIP GIÁO VIÊN TỔ ICT CHUẨN XÁC THEO TÊN FILE TKB NHÀ TRƯỜNG */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  Giáo viên Tổ Chuyên Môn ICT (Đối chiếu TKB):
-                </span>
+              <div className="flex flex-wrap items-center gap-1.5">
                 {OFFICIAL_ICT_TEACHERS_MAPPINGS.map((mapping) => {
                   const isSelected =
                     selectedTeacher21.toLowerCase() === mapping.fileKeyName.toLowerCase() ||
                     selectedTeacher21.toLowerCase() === mapping.officialName.toLowerCase();
 
-                  // Đếm tổng số tiết khớp trong assignedSlots
                   const count = assignedSlots.filter((s) =>
                     checkSlotBelongsToTeacher(s.teacher_name, { name: mapping.officialName })
                   ).length;
@@ -1352,16 +1344,16 @@ export function TeacherAssignedScheduleSection({
                           "info"
                         );
                       }}
-                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all border flex items-center gap-1 cursor-pointer ${
                         isSelected
-                          ? "bg-amber-500 text-white border-amber-500 shadow-xs shadow-amber-500/30 scale-105"
+                          ? "bg-amber-500 text-white border-amber-500 shadow-xs shadow-amber-500/30"
                           : "bg-amber-50/70 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60"
                       }`}
                       title={`${mapping.officialName} ➔ Tên trong file: "${mapping.fileKeyName}"`}
                     >
                       <span>{mapping.fileKeyName}</span>
                       <span
-                        className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
+                        className={`text-[9px] px-1 py-0 rounded-full font-black ${
                           isSelected
                             ? "bg-white/20 text-white"
                             : "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400"
@@ -1375,61 +1367,38 @@ export function TeacherAssignedScheduleSection({
               </div>
             </div>
 
-            {/* THẺ TÓM TẮT GIÁO VIÊN ĐANG CHỌN */}
+            {/* THANH TÓM TẮT GỌN GIÁO VIÊN ĐANG CHỌN */}
             {selectedTeacher21 && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-white dark:from-amber-950/40 dark:via-slate-900 dark:to-slate-900 border border-amber-200/90 dark:border-amber-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in duration-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white font-black text-base flex items-center justify-center shadow-md shadow-amber-500/25">
-                    {selectedTeacher21.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                      <span>Giáo Viên: {selectedTeacher21}</span>
-                      <Badge variant="amber" className="text-[10px] font-bold">
-                        {teacherStats21.total} Tiết / Tuần
-                      </Badge>
-                    </div>
-                    <div className="text-slate-600 dark:text-slate-400 text-xs mt-0.5 flex flex-wrap items-center gap-2">
-                      <span>Buổi sáng: <strong>{teacherStats21.morning} tiết</strong></span>
-                      <span>•</span>
-                      <span>Buổi chiều: <strong>{teacherStats21.afternoon} tiết</strong></span>
-                      <span>•</span>
-                      <span className="truncate max-w-xs">
-                        Các lớp: <strong>{teacherStats21.classes.join(", ") || "Chưa có"}</strong>
-                      </span>
-                    </div>
-                  </div>
+              <div className="px-3 py-1.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-extrabold text-slate-900 dark:text-white">
+                    GV: {selectedTeacher21}
+                  </span>
+                  <Badge variant="amber" className="text-[10px] font-bold px-2 py-0">
+                    {teacherStats21.total} Tiết / Tuần
+                  </Badge>
+                  <span className="text-slate-600 dark:text-slate-400 text-[11px]">
+                    (Sáng: <strong>{teacherStats21.morning}t</strong> • Chiều: <strong>{teacherStats21.afternoon}t</strong> • Lớp: <strong>{teacherStats21.classes.join(", ") || "Chưa có"}</strong>)
+                  </span>
                 </div>
-
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setSelectedTeacher21("");
-                    setSearchTerm("");
-                  }}
-                  className="text-slate-500 hover:text-slate-800 text-xs self-start sm:self-auto"
-                >
-                  Đổi giáo viên khác
-                </Button>
               </div>
             )}
           </div>
 
-          {/* LƯỚI THỜI KHÓA BIỂU PHẦN 2.1 (THỨ 2 -> THỨ 6 • TIẾT 1 -> 8) */}
-          <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <table className="w-full text-left text-xs border-collapse min-w-[900px] table-fixed">
+          {/* LƯỚI THỜI KHÓA BIỂU PHẦN 2.1 (THỨ 2 -> THỨ 6 • TIẾT 1 -> 8) - GỌN TRONG 1 MÀN HÌNH */}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <table className="w-full text-left text-xs border-collapse min-w-[760px] table-fixed">
               <colgroup>
-                <col className="w-32" style={{ width: "128px" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
+                <col className="w-28" style={{ width: "112px" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
               </colgroup>
               <thead>
                 <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                  <th className="p-3.5 font-bold w-32 text-center bg-slate-200/60 dark:bg-slate-800">
+                  <th className="py-2 px-2 font-bold w-28 text-center bg-slate-200/60 dark:bg-slate-800">
                     Tiết / Giờ
                   </th>
                   {[
@@ -1443,13 +1412,18 @@ export function TeacherAssignedScheduleSection({
                     return (
                       <th
                         key={`h21_${d.day}`}
-                        className={`p-3.5 font-bold text-center w-1/5 ${
+                        className={`py-2 px-2 font-bold text-center w-1/5 ${
                           isToday
                             ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-x border-amber-200 dark:border-amber-800"
                             : ""
                         }`}
                       >
-                        {d.label} {isToday && <span className="text-[10px] font-normal block text-amber-600">(Hôm nay)</span>}
+                        {d.label}{" "}
+                        {isToday && (
+                          <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                            (Hôm nay)
+                          </span>
+                        )}
                       </th>
                     );
                   })}
@@ -1458,17 +1432,17 @@ export function TeacherAssignedScheduleSection({
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {!selectedTeacher21 ? (
                   <tr>
-                    <td colSpan={6} className="py-16 text-center">
-                      <div className="max-w-md mx-auto space-y-3">
-                        <div className="w-14 h-14 rounded-3xl bg-amber-50 dark:bg-amber-950/50 text-amber-500 mx-auto flex items-center justify-center border border-amber-200/80 dark:border-amber-800">
-                          <Search className="w-6 h-6" />
+                    <td colSpan={6} className="py-12 text-center">
+                      <div className="max-w-md mx-auto space-y-2.5">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-500 mx-auto flex items-center justify-center border border-amber-200/80 dark:border-amber-800">
+                          <Search className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
                           <h4 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm">
                             Chưa chọn giáo viên
                           </h4>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Toàn bộ ô lưới đang để trống. Thầy/Cô vui lòng <strong>nhập tên giáo viên</strong> vào ô tìm kiếm ở trên hoặc <strong>bấm vào thẻ tên giáo viên</strong> để xem lịch giảng dạy chi tiết.
+                            Thầy/Cô vui lòng <strong>nhập tên giáo viên</strong> vào ô tìm kiếm ở trên hoặc <strong>bấm vào thẻ tên giáo viên</strong> để xem lịch giảng dạy chi tiết.
                           </p>
                         </div>
                       </div>
@@ -1477,9 +1451,9 @@ export function TeacherAssignedScheduleSection({
                 ) : (
                   <>
                     <tr className="bg-amber-50/70 dark:bg-amber-950/40 border-y border-amber-200/80 dark:border-amber-900/60">
-                      <td colSpan={6} className="px-4 py-2 font-black text-amber-900 dark:text-amber-300 text-xs tracking-wide">
-                        <span className="inline-flex items-center gap-2">
-                          <SunMedium className="w-4 h-4 text-amber-500" />
+                      <td colSpan={6} className="px-3 py-1 font-black text-amber-900 dark:text-amber-300 text-[11px] tracking-wide">
+                        <span className="inline-flex items-center gap-1.5">
+                          <SunMedium className="w-3.5 h-3.5 text-amber-500" />
                           BUỔI SÁNG (08:00 - 11:25 • 4 TIẾT)
                         </span>
                       </td>
@@ -1488,30 +1462,30 @@ export function TeacherAssignedScheduleSection({
                     {[1, 2].map((p) => {
                       return (
                         <tr key={`r21_${p}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="p-3 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 w-36">
-                            <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Tiết {p}</div>
-                            <div className="text-[10px] text-slate-500 font-medium">{PERIOD_TIMES[p]}</div>
+                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+                            <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {p}</div>
+                            <div className="text-[10px] text-slate-500 font-medium leading-tight">{PERIOD_TIMES[p]}</div>
                           </td>
                           {[2, 3, 4, 5, 6].map((dayNum) => {
                             const slot = slotMap21.get(`${dayNum}_${p}`);
                             return (
-                              <td key={`c21_${dayNum}_${p}`} className="p-2 border border-slate-100 dark:border-slate-800/60">
+                              <td key={`c21_${dayNum}_${p}`} className="py-1 px-1.5 border border-slate-100 dark:border-slate-800/60 align-middle">
                                 {slot ? (
-                                  <div className="p-3 rounded-2xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs space-y-1">
+                                  <div className="py-1 px-2.5 rounded-xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs space-y-0.5">
                                     <div className="flex items-center justify-between gap-1">
-                                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${getSubjectBadgeStyle(slot.subject)}`}>
+                                      <span className={`text-[10px] font-black px-1.5 py-0 rounded-md border leading-tight ${getSubjectBadgeStyle(slot.subject)}`}>
                                         {slot.subject || "Tiết dạy"}
                                       </span>
                                       {slot.room && (
-                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 text-sky-700 truncate max-w-[70px]">
+                                        <span className="text-[9px] font-bold px-1.5 py-0 rounded bg-sky-100 text-sky-700 truncate max-w-[70px] leading-tight">
                                           {slot.room}
                                         </span>
                                       )}
                                     </div>
-                                    <div className="font-black text-slate-900 dark:text-white text-xs">Lớp: {slot.class_name}</div>
+                                    <div className="font-black text-slate-900 dark:text-white text-[11px] leading-tight">Lớp: {slot.class_name}</div>
                                   </div>
                                 ) : (
-                                  <div className="h-16 rounded-2xl border border-dashed border-slate-200/60 dark:border-slate-800/50 flex items-center justify-center text-xs text-slate-300 select-none">-</div>
+                                  <div className="h-8 rounded-xl border border-dashed border-slate-200/60 dark:border-slate-800/50 flex items-center justify-center text-xs text-slate-300 dark:text-slate-700 select-none">-</div>
                                 )}
                               </td>
                             );
@@ -1520,40 +1494,40 @@ export function TeacherAssignedScheduleSection({
                       );
                     })}
 
-                    <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-[11px] italic">
-                      <td className="p-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 font-semibold">09:35 - 09:50</td>
-                      <td colSpan={5} className="p-2 text-center">
-                        <span className="inline-flex items-center gap-1.5"><Coffee className="w-3.5 h-3.5 text-amber-500" /> Giờ ra chơi & sinh hoạt giữa giờ (15 phút)</span>
+                    <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-[10px] italic">
+                      <td className="py-0.5 px-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 font-semibold">09:35 - 09:50</td>
+                      <td colSpan={5} className="py-0.5 px-2 text-center">
+                        <span className="inline-flex items-center gap-1"><Coffee className="w-3 h-3 text-amber-500" /> Giờ ra chơi & sinh hoạt giữa giờ (15 phút)</span>
                       </td>
                     </tr>
 
                     {[3, 4].map((p) => {
                       return (
                         <tr key={`r21_${p}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="p-3 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 w-36">
-                            <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Tiết {p}</div>
-                            <div className="text-[10px] text-slate-500 font-medium">{PERIOD_TIMES[p]}</div>
+                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+                            <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {p}</div>
+                            <div className="text-[10px] text-slate-500 font-medium leading-tight">{PERIOD_TIMES[p]}</div>
                           </td>
                           {[2, 3, 4, 5, 6].map((dayNum) => {
                             const slot = slotMap21.get(`${dayNum}_${p}`);
                             return (
-                              <td key={`c21_${dayNum}_${p}`} className="p-2 border border-slate-100 dark:border-slate-800/60">
+                              <td key={`c21_${dayNum}_${p}`} className="py-1 px-1.5 border border-slate-100 dark:border-slate-800/60 align-middle">
                                 {slot ? (
-                                  <div className="p-3 rounded-2xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs space-y-1">
+                                  <div className="py-1 px-2.5 rounded-xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs space-y-0.5">
                                     <div className="flex items-center justify-between gap-1">
-                                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${getSubjectBadgeStyle(slot.subject)}`}>
+                                      <span className={`text-[10px] font-black px-1.5 py-0 rounded-md border leading-tight ${getSubjectBadgeStyle(slot.subject)}`}>
                                         {slot.subject || "Tiết dạy"}
                                       </span>
                                       {slot.room && (
-                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 text-sky-700 truncate max-w-[70px]">
+                                        <span className="text-[9px] font-bold px-1.5 py-0 rounded bg-sky-100 text-sky-700 truncate max-w-[70px] leading-tight">
                                           {slot.room}
                                         </span>
                                       )}
                                     </div>
-                                    <div className="font-black text-slate-900 dark:text-white text-xs">Lớp: {slot.class_name}</div>
+                                    <div className="font-black text-slate-900 dark:text-white text-[11px] leading-tight">Lớp: {slot.class_name}</div>
                                   </div>
                                 ) : (
-                                  <div className="h-16 rounded-2xl border border-dashed border-slate-200/60 dark:border-slate-800/50 flex items-center justify-center text-xs text-slate-300 select-none">-</div>
+                                  <div className="h-8 rounded-xl border border-dashed border-slate-200/60 dark:border-slate-800/50 flex items-center justify-center text-xs text-slate-300 dark:text-slate-700 select-none">-</div>
                                 )}
                               </td>
                             );
@@ -1562,15 +1536,15 @@ export function TeacherAssignedScheduleSection({
                       );
                     })}
 
-                    <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-xs font-bold border-y-2 border-slate-200 dark:border-slate-700">
-                      <td className="p-2.5 text-center bg-slate-200/70 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-800">11:25 - 13:15</td>
-                      <td colSpan={5} className="p-2.5 text-center">🍱 NGHỈ TRƯA, ĂN BÁN TRÚ & NGHỈ NGƠI TẠI TRƯỜNG</td>
+                    <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-[11px] font-bold border-y border-slate-200 dark:border-slate-700">
+                      <td className="py-1 px-2 text-center bg-slate-200/70 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-800">11:25 - 13:15</td>
+                      <td colSpan={5} className="py-1 px-2 text-center">🍱 NGHỈ TRƯA, ĂN BÁN TRÚ & NGHỈ NGƠI TẠI TRƯỜNG</td>
                     </tr>
 
                     <tr className="bg-indigo-50/70 dark:bg-indigo-950/40 border-y border-indigo-200/80 dark:border-indigo-900/60">
-                      <td colSpan={6} className="px-4 py-2 font-black text-indigo-900 dark:text-indigo-300 text-xs tracking-wide">
-                        <span className="inline-flex items-center gap-2">
-                          <Sunset className="w-4 h-4 text-orange-500" />
+                      <td colSpan={6} className="px-3 py-1 font-black text-indigo-900 dark:text-indigo-300 text-[11px] tracking-wide">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Sunset className="w-3.5 h-3.5 text-orange-500" />
                           BUỔI CHIỀU (13:15 - 16:40 • 4 TIẾT)
                         </span>
                       </td>
@@ -1579,30 +1553,30 @@ export function TeacherAssignedScheduleSection({
                     {[5, 6].map((p) => {
                       return (
                         <tr key={`r21_${p}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="p-3 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 w-36">
-                            <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Tiết {p}</div>
-                            <div className="text-[10px] text-slate-500 font-medium">{PERIOD_TIMES[p]}</div>
+                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+                            <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {p}</div>
+                            <div className="text-[10px] text-slate-500 font-medium leading-tight">{PERIOD_TIMES[p]}</div>
                           </td>
                           {[2, 3, 4, 5, 6].map((dayNum) => {
                             const slot = slotMap21.get(`${dayNum}_${p}`);
                             return (
-                              <td key={`c21_${dayNum}_${p}`} className="p-2 border border-slate-100 dark:border-slate-800/60">
+                              <td key={`c21_${dayNum}_${p}`} className="py-1 px-1.5 border border-slate-100 dark:border-slate-800/60 align-middle">
                                 {slot ? (
-                                  <div className="p-3 rounded-2xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs space-y-1">
+                                  <div className="py-1 px-2.5 rounded-xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs space-y-0.5">
                                     <div className="flex items-center justify-between gap-1">
-                                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${getSubjectBadgeStyle(slot.subject)}`}>
+                                      <span className={`text-[10px] font-black px-1.5 py-0 rounded-md border leading-tight ${getSubjectBadgeStyle(slot.subject)}`}>
                                         {slot.subject || "Tiết dạy"}
                                       </span>
                                       {slot.room && (
-                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 text-sky-700 truncate max-w-[70px]">
+                                        <span className="text-[9px] font-bold px-1.5 py-0 rounded bg-sky-100 text-sky-700 truncate max-w-[70px] leading-tight">
                                           {slot.room}
                                         </span>
                                       )}
                                     </div>
-                                    <div className="font-black text-slate-900 dark:text-white text-xs">Lớp: {slot.class_name}</div>
+                                    <div className="font-black text-slate-900 dark:text-white text-[11px] leading-tight">Lớp: {slot.class_name}</div>
                                   </div>
                                 ) : (
-                                  <div className="h-16 rounded-2xl border border-dashed border-slate-200/60 dark:border-slate-800/50 flex items-center justify-center text-xs text-slate-300 select-none">-</div>
+                                  <div className="h-8 rounded-xl border border-dashed border-slate-200/60 dark:border-slate-800/50 flex items-center justify-center text-xs text-slate-300 dark:text-slate-700 select-none">-</div>
                                 )}
                               </td>
                             );
@@ -1611,40 +1585,40 @@ export function TeacherAssignedScheduleSection({
                       );
                     })}
 
-                    <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-[11px] italic">
-                      <td className="p-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 font-semibold">14:50 - 15:05</td>
-                      <td colSpan={5} className="p-2 text-center">
-                        <span className="inline-flex items-center gap-1.5"><Coffee className="w-3.5 h-3.5 text-amber-500" /> Giờ ăn xế & giải lao chiều (15 phút)</span>
+                    <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-[10px] italic">
+                      <td className="py-0.5 px-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 font-semibold">14:50 - 15:05</td>
+                      <td colSpan={5} className="py-0.5 px-2 text-center">
+                        <span className="inline-flex items-center gap-1"><Coffee className="w-3 h-3 text-amber-500" /> Giờ ăn xế & giải lao chiều (15 phút)</span>
                       </td>
                     </tr>
 
                     {[7, 8].map((p) => {
                       return (
                         <tr key={`r21_${p}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="p-3 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 w-36">
-                            <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Tiết {p}</div>
-                            <div className="text-[10px] text-slate-500 font-medium">{PERIOD_TIMES[p]}</div>
+                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+                            <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {p}</div>
+                            <div className="text-[10px] text-slate-500 font-medium leading-tight">{PERIOD_TIMES[p]}</div>
                           </td>
                           {[2, 3, 4, 5, 6].map((dayNum) => {
                             const slot = slotMap21.get(`${dayNum}_${p}`);
                             return (
-                              <td key={`c21_${dayNum}_${p}`} className="p-2 border border-slate-100 dark:border-slate-800/60">
+                              <td key={`c21_${dayNum}_${p}`} className="py-1 px-1.5 border border-slate-100 dark:border-slate-800/60 align-middle">
                                 {slot ? (
-                                  <div className="p-3 rounded-2xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs space-y-1">
+                                  <div className="py-1 px-2.5 rounded-xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs space-y-0.5">
                                     <div className="flex items-center justify-between gap-1">
-                                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${getSubjectBadgeStyle(slot.subject)}`}>
+                                      <span className={`text-[10px] font-black px-1.5 py-0 rounded-md border leading-tight ${getSubjectBadgeStyle(slot.subject)}`}>
                                         {slot.subject || "Tiết dạy"}
                                       </span>
                                       {slot.room && (
-                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 text-sky-700 truncate max-w-[70px]">
+                                        <span className="text-[9px] font-bold px-1.5 py-0 rounded bg-sky-100 text-sky-700 truncate max-w-[70px] leading-tight">
                                           {slot.room}
                                         </span>
                                       )}
                                     </div>
-                                    <div className="font-black text-slate-900 dark:text-white text-xs">Lớp: {slot.class_name}</div>
+                                    <div className="font-black text-slate-900 dark:text-white text-[11px] leading-tight">Lớp: {slot.class_name}</div>
                                   </div>
                                 ) : (
-                                  <div className="h-16 rounded-2xl border border-dashed border-slate-200/60 dark:border-slate-800/50 flex items-center justify-center text-xs text-slate-300 select-none">-</div>
+                                  <div className="h-8 rounded-xl border border-dashed border-slate-200/60 dark:border-slate-800/50 flex items-center justify-center text-xs text-slate-300 dark:text-slate-700 select-none">-</div>
                                 )}
                               </td>
                             );
