@@ -33,7 +33,10 @@ import {
   Laptop,
   Eye,
   Lock,
-  ShieldAlert
+  ShieldAlert,
+  Bot,
+  Wand2,
+  ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +74,22 @@ export interface SelfManagedTeacherSlot {
   subject: string;
   room: string;
   notes?: string;
+}
+
+export interface AiSuggestedLabSlot {
+  tempId: string;
+  selected: boolean;
+  class_name: string;
+  grade: string;
+  campus: string;
+  periodIndex: number;
+  totalPeriodsForClass: number;
+  day_of_week: number;
+  period: number;
+  room: string;
+  subject: string;
+  reason: string;
+  matchType: "school_tkb_match" | "campus_fallback_lab" | "ai_optimized";
 }
 
 interface TeacherAssignedScheduleSectionProps {
@@ -351,6 +370,12 @@ export function TeacherAssignedScheduleSection({
   // Modal xác nhận xóa sạch lịch tuần
   const [isClearWeekModalOpen, setIsClearWeekModalOpen] = useState(false);
   const [isClearingWeek, setIsClearingWeek] = useState(false);
+
+  // Modal AI Gợi Ý Sắp Xếp Lịch Phòng Lab Chống Trùng (Đầu vào từ Bảng Phân Công Chuyên Môn Phần 3)
+  const [isAiSchedulerModalOpen, setIsAiSchedulerModalOpen] = useState(false);
+  const [aiScheduleMode, setAiScheduleMode] = useState<"fill_missing" | "rebuild_all">("fill_missing");
+  const [aiSuggestedSlots, setAiSuggestedSlots] = useState<AiSuggestedLabSlot[]>([]);
+  const [isApplyingAiSchedule, setIsApplyingAiSchedule] = useState(false);
 
   // =========================================================================
   // TẢI DỮ LIỆU TỪ SUPABASE
@@ -1118,6 +1143,535 @@ export function TeacherAssignedScheduleSection({
   };
 
   // =========================================================================
+  // HẠNG MỤC AI CỐT LÕI (SKY-LINE AI SPARK - BẢNG B):
+  // AI GỢI Ý SẮP XẾP LỊCH PHÒNG LAB CHỐNG TRÙNG TỪ BẢNG PHÂN CÔNG PHẦN 3
+  // =========================================================================
+
+  // So khớp tên lớp giữa TKB / Lịch cá nhân và Bảng Phân Công Chuyên Môn (Phần 3)
+  const isMatchingClassName = (nameA?: string, nameB?: string): boolean => {
+    if (!nameA || !nameB) return false;
+    const a = nameA.trim().toLowerCase();
+    const b = nameB.trim().toLowerCase();
+    if (a === b) return true;
+    const stripSuffix = (s: string) => s.replace(/(_cs\d+|\s*-?\s*cs\d+)$/i, "").trim();
+    return stripSuffix(a) === stripSuffix(b);
+  };
+
+  // Nhận diện thông minh Phòng Lab chính & Phòng Lab dự phòng theo Cơ sở và Khối lớp
+  const resolveSmartLabRoomsForClass = (cls: any): {
+    primaryRoom: string;
+    fallbackRoom?: string;
+    campusLabel: string;
+    campusKey: string;
+  } => {
+    const rawCampus = String(cls?.campus || "").toLowerCase().trim();
+    const rawCampusName = String(cls?.campus_name || "").toLowerCase().trim();
+    const rawClassName = String(cls?.name || "").toLowerCase().trim();
+    const teacherLab = String((currentSelectedTeacher22 as any)?.lab || "").toLowerCase();
+
+    // Cơ sở 2 - Central
+    if (
+      rawCampus === "2" ||
+      rawCampus === "cs2" ||
+      rawCampusName.includes("central") ||
+      rawClassName.includes("_cs2") ||
+      rawClassName.includes("- c1")
+    ) {
+      return {
+        primaryRoom: "Phòng Lab Sky-Line Central",
+        campusLabel: "CS2 - Central",
+        campusKey: "cs2",
+      };
+    }
+
+    // Cơ sở 3 - Global
+    if (
+      rawCampus === "3" ||
+      rawCampus === "cs3" ||
+      rawCampusName.includes("global") ||
+      rawCampusName.includes("quốc tế") ||
+      rawClassName.includes("_cs3")
+    ) {
+      return {
+        primaryRoom: "Phòng Lab Sky-Line Global",
+        campusLabel: "CS3 - Global",
+        campusKey: "cs3",
+      };
+    }
+
+    // Cơ sở 4 - Hill
+    if (
+      rawCampus === "4" ||
+      rawCampus === "cs4" ||
+      rawCampusName.includes("hill") ||
+      rawClassName.includes("_cs4") ||
+      rawClassName.includes("- h1")
+    ) {
+      return {
+        primaryRoom: "Phòng Lab Sky-Line Hill",
+        campusLabel: "CS4 - Hill",
+        campusKey: "cs4",
+      };
+    }
+
+    // Cơ sở 5 - Beach
+    if (
+      rawCampus === "5" ||
+      rawCampus === "cs5" ||
+      rawCampusName.includes("beach") ||
+      rawClassName.includes("_cs5")
+    ) {
+      return {
+        primaryRoom: "Phòng Lab Sky-Line Beach",
+        campusLabel: "CS5 - Beach",
+        campusKey: "cs5",
+      };
+    }
+
+    // Mặc định Cơ sở 1 - Riverside: Phân loại Tiểu học (Khối 1-5) và Trung học (Khối 6-12)
+    const gradeMatch =
+      String(cls?.grade || "").match(/(\d{1,2})/) ||
+      String(cls?.name || "").match(/^(\d{1,2})(?:\/|\.|A|B|C|I|S|_|\s|$)/i);
+    const gradeNum = gradeMatch ? parseInt(gradeMatch[1], 10) : null;
+
+    if (gradeNum !== null && gradeNum >= 6 && gradeNum <= 12) {
+      return {
+        primaryRoom: "Phòng Lab Sky-Line Riverside Trung Học",
+        fallbackRoom: "Phòng Lab Sky-Line Riverside Tiểu Học",
+        campusLabel: "CS1 - Riverside (Trung học)",
+        campusKey: "cs1",
+      };
+    }
+
+    if (gradeNum !== null && gradeNum >= 1 && gradeNum <= 5) {
+      return {
+        primaryRoom: "Phòng Lab Sky-Line Riverside Tiểu Học",
+        fallbackRoom: "Phòng Lab Sky-Line Riverside Trung Học",
+        campusLabel: "CS1 - Riverside (Tiểu học)",
+        campusKey: "cs1",
+      };
+    }
+
+    // Nếu không rõ khối số, ưu tiên theo phòng Lab phụ trách của Giáo viên
+    if (teacherLab.includes("trung học")) {
+      return {
+        primaryRoom: "Phòng Lab Sky-Line Riverside Trung Học",
+        fallbackRoom: "Phòng Lab Sky-Line Riverside Tiểu Học",
+        campusLabel: "CS1 - Riverside (Trung học)",
+        campusKey: "cs1",
+      };
+    }
+
+    return {
+      primaryRoom: "Phòng Lab Sky-Line Riverside Tiểu Học",
+      fallbackRoom: "Phòng Lab Sky-Line Riverside Trung Học",
+      campusLabel: "CS1 - Riverside (Tiểu học)",
+      campusKey: "cs1",
+    };
+  };
+
+  // Thuật toán AI tạo danh sách gợi ý sắp xếp lịch Phòng Lab chống trùng
+  const generateAiLabScheduleSuggestions = (mode: "fill_missing" | "rebuild_all") => {
+    setAiScheduleMode(mode);
+
+    if (assignedClassesFromSection3.length === 0) {
+      setAiSuggestedSlots([]);
+      return;
+    }
+
+    // 1. Khởi tạo bản đồ chiếm dụng 6 phòng Lab trên toàn trường (Thứ 2..6, Tiết 1..8)
+    // Key: `${day}_${period}_${normalizedLabKey}`
+    const occupiedLabMap = new Map<string, { class_name: string; teacher_name: string }>();
+    const occupiedTeacherSet = new Set<string>(); // Key: `${day}_${period}`
+    const classScheduledDays = new Map<string, Set<number>>(); // className -> Set<day>
+    const teacherDayLoad = new Map<number, number>([
+      [2, 0],
+      [3, 0],
+      [4, 0],
+      [5, 0],
+      [6, 0],
+    ]);
+    const teacherSessionCampus = new Map<string, string>(); // `${day}_${session}` -> campusKey
+
+    // Đưa toàn bộ lịch của các giáo viên KHÁC (và của chính GV này nếu ở chế độ "fill_missing") vào bản đồ chống trùng
+    teacherTimetableSlots.forEach((slot) => {
+      const isCurrentTeacherSlot = activeTeacherSlots22.some((own) => own.id === slot.id);
+      if (isCurrentTeacherSlot && mode === "rebuild_all") {
+        return; // Bỏ qua lịch cũ của GV đang chọn nếu xếp mới toàn bộ
+      }
+
+      const labKey = normalizeLabRoomKey(slot.room);
+      if (labKey) {
+        occupiedLabMap.set(`${slot.day_of_week}_${slot.period}_${labKey}`, {
+          class_name: slot.class_name,
+          teacher_name: slot.teacher_name,
+        });
+      }
+
+      if (isCurrentTeacherSlot) {
+        occupiedTeacherSet.add(`${slot.day_of_week}_${slot.period}`);
+        teacherDayLoad.set(slot.day_of_week, (teacherDayLoad.get(slot.day_of_week) || 0) + 1);
+
+        const matchedCls = assignedClassesFromSection3.find((c) => isMatchingClassName(c.name, slot.class_name));
+        const cKey = (matchedCls?.name || slot.class_name).toLowerCase();
+        if (!classScheduledDays.has(cKey)) {
+          classScheduledDays.set(cKey, new Set());
+        }
+        classScheduledDays.get(cKey)!.add(slot.day_of_week);
+
+        if (matchedCls) {
+          const { campusKey } = resolveSmartLabRoomsForClass(matchedCls);
+          const sessionKey = `${slot.day_of_week}_${slot.period <= 4 ? "morning" : "afternoon"}`;
+          teacherSessionCampus.set(sessionKey, campusKey);
+        }
+      }
+    });
+
+    // 2. Lấy danh sách tiết gợi ý từ TKB nhà trường (Phần 2.1) của giáo viên đang chọn
+    const teacherSchoolHints = assignedSlots.filter((s) =>
+      checkSlotBelongsToTeacher(s.teacher_name, currentSelectedTeacher22)
+    );
+    const usedSchoolHintKeys = new Set<string>();
+
+    const suggestions: AiSuggestedLabSlot[] = [];
+
+    // 3. Duyệt qua từng lớp được Tổ trưởng phân công ở Phần 3
+    assignedClassesFromSection3.forEach((cls) => {
+      const requiredPeriods = Math.max(1, Number(cls.periods_per_week) || 2);
+      const existingPeriodsForClass =
+        mode === "fill_missing"
+          ? activeTeacherSlots22.filter((s) => isMatchingClassName(s.class_name, cls.name))
+          : [];
+
+      const startPeriodIdx = existingPeriodsForClass.length + 1;
+      const missingCount = Math.max(0, requiredPeriods - existingPeriodsForClass.length);
+      if (missingCount === 0) return;
+
+      const { primaryRoom, fallbackRoom, campusLabel, campusKey } = resolveSmartLabRoomsForClass(cls);
+      const primaryLabKey = normalizeLabRoomKey(primaryRoom);
+      const fallbackLabKey = fallbackRoom ? normalizeLabRoomKey(fallbackRoom) : "";
+      const cKey = String(cls.name).toLowerCase();
+
+      if (!classScheduledDays.has(cKey)) {
+        classScheduledDays.set(cKey, new Set());
+      }
+
+      for (let idx = 0; idx < missingCount; idx++) {
+        const periodNumberInWeek = startPeriodIdx + idx;
+        let chosenDay = -1;
+        let chosenPeriod = -1;
+        let chosenRoom = primaryRoom;
+        let chosenReason = "";
+        let chosenMatchType: "school_tkb_match" | "campus_fallback_lab" | "ai_optimized" = "ai_optimized";
+
+        // BƯỚC 3.1: Ưu tiên kiểm tra xem trong TKB Nhà trường (Phần 2.1) có tiết của lớp này không
+        const matchingHint = teacherSchoolHints.find((h) => {
+          const hKey = `${h.day_of_week}_${h.period}`;
+          if (usedSchoolHintKeys.has(hKey)) return false;
+          if (occupiedTeacherSet.has(hKey)) return false;
+          return isMatchingClassName(h.class_name, cls.name);
+        });
+
+        if (matchingHint) {
+          const d = matchingHint.day_of_week;
+          const p = matchingHint.period;
+          const primaryConflict = occupiedLabMap.get(`${d}_${p}_${primaryLabKey}`);
+
+          if (!primaryConflict) {
+            chosenDay = d;
+            chosenPeriod = p;
+            chosenRoom = primaryRoom;
+            chosenMatchType = "school_tkb_match";
+            chosenReason = `Khớp chuẩn TKB Nhà trường & ${formatShortLabRoomName(primaryRoom)} đang trống`;
+            usedSchoolHintKeys.add(`${d}_${p}`);
+          } else if (fallbackRoom && fallbackLabKey && !occupiedLabMap.has(`${d}_${p}_${fallbackLabKey}`)) {
+            chosenDay = d;
+            chosenPeriod = p;
+            chosenRoom = fallbackRoom;
+            chosenMatchType = "campus_fallback_lab";
+            chosenReason = `Khớp tiết TKB Trường • Điều phối sang ${formatShortLabRoomName(fallbackRoom)} (do phòng chính có lớp ${primaryConflict.class_name})`;
+            usedSchoolHintKeys.add(`${d}_${p}`);
+          }
+        }
+
+        // BƯỚC 3.2: Nếu không có trong TKB trường (hoặc tiết đó bị kín cả phòng Lab), AI quét 40 tiết trong tuần để tối ưu đa mục tiêu
+        if (chosenDay === -1 || chosenPeriod === -1) {
+          let bestScore = -999999;
+
+          for (let d = 2; d <= 6; d++) {
+            for (let p = 1; p <= 8; p++) {
+              const teacherKey = `${d}_${p}`;
+              if (occupiedTeacherSet.has(teacherKey)) continue; // Giáo viên đã có tiết dạy khác
+
+              const candidateRooms: Array<{
+                room: string;
+                labKey: string;
+                isFallback: boolean;
+                conflictClass?: string;
+              }> = [];
+
+              const primaryOccupied = occupiedLabMap.get(`${d}_${p}_${primaryLabKey}`);
+              if (!primaryOccupied) {
+                candidateRooms.push({
+                  room: primaryRoom,
+                  labKey: primaryLabKey,
+                  isFallback: false,
+                });
+              } else if (fallbackRoom && fallbackLabKey && !occupiedLabMap.has(`${d}_${p}_${fallbackLabKey}`)) {
+                candidateRooms.push({
+                  room: fallbackRoom,
+                  labKey: fallbackLabKey,
+                  isFallback: true,
+                  conflictClass: primaryOccupied.class_name,
+                });
+              }
+
+              for (const cand of candidateRooms) {
+                let score = cand.isFallback ? 75 : 100;
+
+                // Tiêu chí 1: Rải đều các tiết của cùng 1 lớp sang các ngày khác nhau trong tuần
+                const daysUsedByClass = classScheduledDays.get(cKey)!;
+                const isNewDayForClass = !daysUsedByClass.has(d);
+                if (isNewDayForClass) {
+                  score += 45;
+                } else {
+                  score -= 20;
+                }
+
+                // Tiêu chí 2: Cân bằng số tiết giảng dạy trong ngày của giáo viên
+                const currentDayLoad = teacherDayLoad.get(d) || 0;
+                score -= currentDayLoad * 10;
+
+                // Tiêu chí 3: Đồng bộ cơ sở giảng dạy trong cùng buổi (tránh di chuyển giữa 2 cơ sở trong 1 buổi)
+                const sessionKey = `${d}_${p <= 4 ? "morning" : "afternoon"}`;
+                const existingSessionCampus = teacherSessionCampus.get(sessionKey);
+                if (existingSessionCampus) {
+                  if (existingSessionCampus === campusKey) {
+                    score += 18;
+                  } else {
+                    score -= 35;
+                  }
+                }
+
+                // Tiêu chí 4: Ưu tiên khung giờ vàng (Tiết 1-3 buổi sáng & Tiết 5-6 buổi chiều)
+                if (p === 1 || p === 2 || p === 3 || p === 5 || p === 6) {
+                  score += 12;
+                } else if (p === 4 || p === 7) {
+                  score += 6;
+                }
+
+                if (score > bestScore) {
+                  bestScore = score;
+                  chosenDay = d;
+                  chosenPeriod = p;
+                  chosenRoom = cand.room;
+                  if (cand.isFallback) {
+                    chosenMatchType = "campus_fallback_lab";
+                    chosenReason = `Tự động chuyển sang ${formatShortLabRoomName(cand.room)} (phòng chính bận lớp ${cand.conflictClass}) • Không trùng lịch`;
+                  } else {
+                    chosenMatchType = "ai_optimized";
+                    const reasonParts: string[] = [`${formatShortLabRoomName(cand.room)} trống 100%`];
+                    if (isNewDayForClass && requiredPeriods > 1) {
+                      reasonParts.push("Rải đều ngày học trong tuần");
+                    }
+                    reasonParts.push(`Cân bằng tải cho GV (${currentDayLoad + 1} tiết/ngày)`);
+                    chosenReason = reasonParts.join(" • ");
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Nếu tìm được ô tối ưu thì ghi nhận ngay vào bản đồ tạm để các tiết tiếp theo không bao giờ đụng nhau
+        if (chosenDay !== -1 && chosenPeriod !== -1) {
+          const finalLabKey = normalizeLabRoomKey(chosenRoom);
+          occupiedLabMap.set(`${chosenDay}_${chosenPeriod}_${finalLabKey}`, {
+            class_name: cls.name,
+            teacher_name: currentSelectedTeacher22.name,
+          });
+          occupiedTeacherSet.add(`${chosenDay}_${chosenPeriod}`);
+          classScheduledDays.get(cKey)!.add(chosenDay);
+          teacherDayLoad.set(chosenDay, (teacherDayLoad.get(chosenDay) || 0) + 1);
+          const sessionKey = `${chosenDay}_${chosenPeriod <= 4 ? "morning" : "afternoon"}`;
+          teacherSessionCampus.set(sessionKey, campusKey);
+
+          suggestions.push({
+            tempId: `ai_slot_${cls.id}_${periodNumberInWeek}_${Date.now()}_${idx}`,
+            selected: true,
+            class_name: cls.name,
+            grade: String(cls.grade || ""),
+            campus: campusLabel,
+            periodIndex: periodNumberInWeek,
+            totalPeriodsForClass: requiredPeriods,
+            day_of_week: chosenDay,
+            period: chosenPeriod,
+            room: chosenRoom,
+            subject: cls.curriculum ? `Tin học (${cls.curriculum})` : "Tin học",
+            reason: chosenReason,
+            matchType: chosenMatchType,
+          });
+        }
+      }
+    });
+
+    // Sắp xếp danh sách gợi ý theo Thứ -> Tiết để thầy cô dễ rà soát
+    suggestions.sort((a, b) => {
+      if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+      return a.period - b.period;
+    });
+
+    setAiSuggestedSlots(suggestions);
+  };
+
+  // Mở cửa sổ AI Gợi Ý Sắp Xếp Lịch Phòng Lab
+  const handleOpenAiSchedulerModal = () => {
+    if (!canEdit) {
+      showToast("Thầy/Cô chỉ có quyền chạy AI gợi ý xếp lịch cho thời khóa biểu của chính mình!", "warning");
+      return;
+    }
+    const defaultMode: "fill_missing" | "rebuild_all" =
+      activeTeacherSlots22.length > 0 && activeTeacherSlots22.length < totalAssignedPeriodsFromSection3
+        ? "fill_missing"
+        : activeTeacherSlots22.length === 0
+        ? "fill_missing"
+        : "rebuild_all";
+
+    generateAiLabScheduleSuggestions(defaultMode);
+    setIsAiSchedulerModalOpen(true);
+  };
+
+  // Kiểm tra xung đột thời gian thực cho từng dòng trong bảng Gợi ý AI (khi người dùng tự chỉnh sửa Thứ/Tiết/Phòng Lab)
+  const getAiSlotLiveConflict = (item: AiSuggestedLabSlot): { hasConflict: boolean; message: string } => {
+    const targetLabKey = normalizeLabRoomKey(item.room);
+
+    // 1. Kiểm tra xung đột với lịch của giáo viên khác (hoặc lịch đã có của GV này nếu ở chế độ fill_missing)
+    for (const existing of teacherTimetableSlots) {
+      const isOwn = activeTeacherSlots22.some((own) => own.id === existing.id);
+      if (isOwn && aiScheduleMode === "rebuild_all") continue;
+
+      if (existing.day_of_week === item.day_of_week && existing.period === item.period) {
+        if (isOwn) {
+          return {
+            hasConflict: true,
+            message: `Trùng tiết dạy đã xếp của Thầy/Cô (Lớp ${existing.class_name})`,
+          };
+        }
+        if (normalizeLabRoomKey(existing.room) === targetLabKey) {
+          return {
+            hasConflict: true,
+            message: `Phòng Lab đã có lớp ${existing.class_name} (${existing.teacher_name})`,
+          };
+        }
+      }
+    }
+
+    // 2. Kiểm tra xung đột với các dòng đang được tích chọn khác ngay trong bảng gợi ý AI
+    for (const other of aiSuggestedSlots) {
+      if (!other.selected || other.tempId === item.tempId) continue;
+      if (other.day_of_week === item.day_of_week && other.period === item.period) {
+        return {
+          hasConflict: true,
+          message: `Trùng Thứ ${item.day_of_week} • Tiết ${item.period} với lớp ${other.class_name} trong bảng đề xuất`,
+        };
+      }
+    }
+
+    return {
+      hasConflict: false,
+      message: "Phòng Lab trống • Không trùng lịch",
+    };
+  };
+
+  // Cập nhật 1 dòng gợi ý trong bảng khi người dùng tùy chỉnh Thứ / Tiết / Phòng Lab / Checkbox
+  const handleUpdateAiSuggestedSlot = (
+    tempId: string,
+    patch: Partial<Pick<AiSuggestedLabSlot, "selected" | "day_of_week" | "period" | "room">>
+  ) => {
+    setAiSuggestedSlots((prev) =>
+      prev.map((item) => {
+        if (item.tempId !== tempId) return item;
+        const updated = { ...item, ...patch };
+        if (patch.day_of_week !== undefined || patch.period !== undefined || patch.room !== undefined) {
+          updated.reason = "Thầy/Cô đã tùy chỉnh thủ công • Đã kiểm tra chống trùng trực tiếp";
+        }
+        return updated;
+      })
+    );
+  };
+
+  // Phê duyệt & Lưu các tiết do AI đề xuất vào bảng teacher_timetables trên Supabase
+  const handleApplyAiSchedule = async () => {
+    if (!canEdit) {
+      showToast("Thầy/Cô không có quyền lưu lịch cho giáo viên khác!", "warning");
+      return;
+    }
+
+    const selectedItems = aiSuggestedSlots.filter((s) => s.selected);
+    if (selectedItems.length === 0) {
+      showToast("Vui lòng tích chọn ít nhất 1 tiết dạy trong danh sách gợi ý để lưu!", "warning");
+      return;
+    }
+
+    // Kiểm tra xem có dòng nào đang bị cảnh báo xung đột không
+    const conflictingItem = selectedItems.find((item) => getAiSlotLiveConflict(item).hasConflict);
+    if (conflictingItem) {
+      const conflictInfo = getAiSlotLiveConflict(conflictingItem);
+      showToast(
+        `Không thể lưu: Lớp ${conflictingItem.class_name} (Thứ ${conflictingItem.day_of_week} - Tiết ${conflictingItem.period}) đang bị xung đột: ${conflictInfo.message}`,
+        "warning"
+      );
+      return;
+    }
+
+    setIsApplyingAiSchedule(true);
+    try {
+      // Nếu ở chế độ xếp mới toàn bộ tuần theo Phần 3 -> Xóa lịch cũ của GV này trong năm học đang chọn trước
+      if (aiScheduleMode === "rebuild_all") {
+        const { error: delErr } = await supabase
+          .from("teacher_timetables")
+          .delete()
+          .eq("teacher_id", currentSelectedTeacher22.id)
+          .eq("school_year", selectedSchoolYear);
+
+        if (delErr) throw delErr;
+      }
+
+      const recordsToInsert = selectedItems.map((item) => ({
+        school_year: selectedSchoolYear,
+        school_year_id: resolveSchoolYearUUID(selectedSchoolYear),
+        teacher_id: currentSelectedTeacher22.id,
+        teacher_code: currentSelectedTeacher22.code || "GV-ICT",
+        teacher_name: currentSelectedTeacher22.name,
+        day_of_week: item.day_of_week,
+        period: item.period,
+        session: item.period <= 4 ? "morning" : "afternoon",
+        time_slot: PERIOD_TIMES[item.period] || "",
+        class_name: item.class_name.trim(),
+        subject: "Tin học",
+        room: item.room.trim(),
+        notes: `AI Gợi ý chống trùng từ Phân công Phần 3 (${item.reason})`,
+      }));
+
+      const { error } = await supabase.from("teacher_timetables").insert(recordsToInsert);
+      if (error) throw error;
+
+      showToast(
+        `Đã phê duyệt & lưu thành công ${recordsToInsert.length} tiết phòng Lab chống trùng cho ${currentSelectedTeacher22.name}!`,
+        "success"
+      );
+      setIsAiSchedulerModalOpen(false);
+      await loadTeacherSelfTimetables();
+      onScheduleChanged?.();
+    } catch (err: any) {
+      console.error("Lỗi khi lưu lịch gợi ý từ AI:", err);
+      showToast(err?.message || "Không thể lưu lịch gợi ý AI. Vui lòng kiểm tra lại!", "warning");
+    } finally {
+      setIsApplyingAiSchedule(false);
+    }
+  };
+
+  // =========================================================================
   // RENDER ROW CHO PHẦN 2.2 (THU GỌN HIỂN THỊ TRỌN VẸN KHÔNG CẦN THANH CUỘN DỌC)
   // =========================================================================
   const renderSelfManagedRow = (period: number, defaultTime: string) => {
@@ -1734,6 +2288,16 @@ export function TeacherAssignedScheduleSection({
 
                     <Button
                       size="sm"
+                      onClick={handleOpenAiSchedulerModal}
+                      className="font-bold text-xs h-7 px-2.5 bg-gradient-to-r from-sky-600 via-indigo-600 to-sky-700 hover:from-sky-500 hover:via-indigo-500 hover:to-sky-600 text-white border-0 shadow-sm shadow-sky-500/25 cursor-pointer"
+                      title="AI phân tích Bảng Phân Công Chuyên Môn (Phần 3) và gợi ý sắp xếp lịch Phòng Lab đảm bảo 0% trùng tiết giữa các lớp"
+                    >
+                      <Wand2 className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                      AI Gợi Ý Xếp Lịch Phòng Lab
+                    </Button>
+
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={handleAutoSyncFromSchoolSchedule}
                       disabled={isSyncingFromSchool}
@@ -1896,6 +2460,17 @@ export function TeacherAssignedScheduleSection({
                     </strong>{" "}
                     / {totalAssignedPeriodsFromSection3 || 21} tiết
                   </div>
+                  {canEdit && assignedClassesFromSection3.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleOpenAiSchedulerModal}
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-extrabold shadow-2xs transition-colors cursor-pointer"
+                      title="Mở Trợ lý AI tự động xếp lịch phòng Lab chống trùng theo danh sách lớp Phần 3"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-300" />
+                      <span>AI Xếp Tự Động</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -2249,6 +2824,451 @@ export function TeacherAssignedScheduleSection({
               >
                 {isClearingWeek ? "Đang xóa..." : "Xóa Sạch Lịch"}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL AI GỢI Ý SẮP XẾP LỊCH PHÒNG LAB CHỐNG TRÙNG (TỪ PHÂN CÔNG PHẦN 3)   */}
+      {/* ========================================================================= */}
+      {isAiSchedulerModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* HEADER MODAL AI */}
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-sky-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 text-white shadow-md shadow-sky-500/20">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-extrabold text-sm sm:text-base text-white">
+                      Trợ Lý AI Gợi Ý Sắp Xếp Lịch Phòng Lab Chống Trùng
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-black uppercase tracking-wider">
+                      Đầu vào: Bảng Phân Công Chuyên Môn (Phần 3)
+                    </span>
+                  </div>
+                  <p className="text-xs text-sky-200/90 mt-0.5">
+                    Giáo viên: <strong className="text-white">{currentSelectedTeacher22.name}</strong> • Năm học:{" "}
+                    <strong className="text-amber-300">{selectedSchoolYear}</strong> • Đối chiếu chống trùng trực tiếp trên toàn bộ{" "}
+                    <strong className="text-emerald-300">6 Phòng Lab</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAiSchedulerModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                title="Đóng cửa sổ"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* BODY CUỘN DỌC */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1 text-xs">
+              {/* 4 THẺ CHỈ SỐ TỔNG QUAN */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div className="p-3 rounded-2xl bg-sky-50/80 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-800/60">
+                  <div className="text-[10px] font-bold uppercase text-sky-700 dark:text-sky-300">
+                    Đầu vào từ Phần 3
+                  </div>
+                  <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
+                    {assignedClassesFromSection3.length} lớp ({totalAssignedPeriodsFromSection3} tiết/tuần)
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Phân công bởi Tổ trưởng ICT
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60">
+                  <div className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-300">
+                    Lịch đã xếp hiện tại
+                  </div>
+                  <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
+                    {aiScheduleMode === "fill_missing" ? activeTeacherSlots22.length : 0} tiết giữ lại
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                    {aiScheduleMode === "fill_missing"
+                      ? "Giữ nguyên các tiết đã có"
+                      : "Xếp mới lại toàn bộ tuần"}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/60">
+                  <div className="text-[10px] font-bold uppercase text-indigo-700 dark:text-indigo-300">
+                    Tiết AI đề xuất thêm
+                  </div>
+                  <div className="text-base font-black text-indigo-700 dark:text-indigo-300 mt-0.5">
+                    {aiSuggestedSlots.filter((s) => s.selected).length} / {aiSuggestedSlots.length} tiết chọn
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Tự động phân bổ rải đều Thứ 2 - Thứ 6
+                  </div>
+                </div>
+
+                {(() => {
+                  const selectedWithConflicts = aiSuggestedSlots.filter(
+                    (s) => s.selected && getAiSlotLiveConflict(s).hasConflict
+                  );
+                  const isAllClean = selectedWithConflicts.length === 0;
+                  return (
+                    <div
+                      className={`p-3 rounded-2xl border ${
+                        isAllClean
+                          ? "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/60"
+                          : "bg-rose-50/80 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800"
+                      }`}
+                    >
+                      <div
+                        className={`text-[10px] font-bold uppercase ${
+                          isAllClean ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"
+                        }`}
+                      >
+                        Kiểm tra 6 Phòng Lab
+                      </div>
+                      <div
+                        className={`text-base font-black mt-0.5 flex items-center gap-1.5 ${
+                          isAllClean ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600 dark:text-rose-400"
+                        }`}
+                      >
+                        {isAllClean ? (
+                          <>
+                            <ShieldCheck className="w-4 h-4 shrink-0" />
+                            <span>0 trùng lịch (100%)</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            <span>{selectedWithConflicts.length} tiết bị trùng</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                        {isAllClean
+                          ? "Không đụng tiết bất kỳ lớp nào"
+                          : "Vui lòng đổi tiết hoặc phòng Lab"}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* THANH CHỌN CHẾ ĐỘ XẾP LỊCH & NÚT TẠO LẠI */}
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-extrabold text-slate-700 dark:text-slate-200 text-xs">
+                    Chế độ AI gợi ý:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => generateAiLabScheduleSuggestions("fill_missing")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                      aiScheduleMode === "fill_missing"
+                        ? "bg-sky-600 text-white border-sky-600 shadow-xs"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-sky-400"
+                    }`}
+                  >
+                    1. Bổ sung các tiết còn thiếu (Giữ nguyên {activeTeacherSlots22.length} tiết đã xếp)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => generateAiLabScheduleSuggestions("rebuild_all")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                      aiScheduleMode === "rebuild_all"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400"
+                    }`}
+                  >
+                    2. Xếp mới toàn bộ tuần theo Phân công Phần 3 ({totalAssignedPeriodsFromSection3} tiết)
+                  </button>
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => generateAiLabScheduleSuggestions(aiScheduleMode)}
+                  className="font-bold text-xs h-8 px-3 shrink-0"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
+                  Tối ưu lại phương án
+                </Button>
+              </div>
+
+              {/* DANH SÁCH LỚP ĐẦU VÀO TỪ PHẦN 3 & PHÒNG LAB TƯƠNG ỨNG */}
+              {assignedClassesFromSection3.length > 0 && (
+                <div className="p-3 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-amber-900 dark:text-amber-300 text-[11px] flex items-center gap-1.5">
+                      <GraduationCap className="w-4 h-4 text-amber-600" />
+                      Chi tiết các lớp được Tổ trưởng phân công ở Phần 3 & Phòng Lab chỉ định:
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      AI tự động nhận diện Cơ sở & Khối lớp để gán đúng phòng Lab
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {assignedClassesFromSection3.map((cls) => {
+                      const req = Math.max(1, Number(cls.periods_per_week) || 2);
+                      const existingCount =
+                        aiScheduleMode === "fill_missing"
+                          ? activeTeacherSlots22.filter((s) => isMatchingClassName(s.class_name, cls.name)).length
+                          : 0;
+                      const suggestedCount = aiSuggestedSlots.filter(
+                        (s) => s.selected && isMatchingClassName(s.class_name, cls.name)
+                      ).length;
+                      const totalAfter = existingCount + suggestedCount;
+                      const { primaryRoom } = resolveSmartLabRoomsForClass(cls);
+
+                      return (
+                        <div
+                          key={`ai_p3_cls_${cls.id}`}
+                          className={`px-2.5 py-1 rounded-xl border text-[11px] flex items-center gap-1.5 ${
+                            totalAfter >= req
+                              ? "bg-white dark:bg-slate-900 border-emerald-300 dark:border-emerald-800"
+                              : "bg-white dark:bg-slate-900 border-amber-300 dark:border-amber-800"
+                          }`}
+                        >
+                          <span className="font-extrabold text-slate-900 dark:text-white">{cls.name}</span>
+                          <span className="text-[10px] px-1.5 py-0 rounded bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 font-bold">
+                            {formatShortLabRoomName(primaryRoom)}
+                          </span>
+                          <span
+                            className={`text-[10px] font-black ${
+                              totalAfter >= req ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600"
+                            }`}
+                          >
+                            ({totalAfter}/{req} tiết)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* BẢNG CHI TIẾT CÁC TIẾT ĐỀ XUẤT BỞI AI (CÓ THỂ TÙY CHỈNH TRỰC TIẾP) */}
+              {assignedClassesFromSection3.length === 0 ? (
+                <div className="p-8 rounded-2xl border border-dashed border-amber-300 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/20 text-center space-y-2">
+                  <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
+                  <div className="font-extrabold text-sm text-slate-900 dark:text-white">
+                    Giáo viên {currentSelectedTeacher22.name} chưa có lớp được phân công ở Phần 3
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
+                    Trợ lý AI sử dụng dữ liệu đầu vào từ <strong>Phần 3: Bảng Phân Công Chuyên Môn</strong> của Tổ trưởng. Vui lòng phân công lớp giảng dạy cho giáo viên ở Phần 3 trước khi chạy AI xếp lịch.
+                  </p>
+                </div>
+              ) : aiSuggestedSlots.length === 0 ? (
+                <div className="p-8 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/40 dark:bg-emerald-950/20 text-center space-y-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+                  <div className="font-extrabold text-sm text-slate-900 dark:text-white">
+                    Đã xếp đủ 100% số tiết theo Bảng Phân Công Chuyên Môn (Phần 3)!
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
+                    Tất cả {assignedClassesFromSection3.length} lớp ({totalAssignedPeriodsFromSection3} tiết/tuần) của{" "}
+                    <strong>{currentSelectedTeacher22.name}</strong> đều đã được xếp đầy đủ trên thời khóa biểu. Nếu muốn AI sắp xếp lại từ đầu, Thầy/Cô có thể bấm chọn chế độ{" "}
+                    <strong>"2. Xếp mới toàn bộ tuần theo Phân công Phần 3"</strong> ở phía trên.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900">
+                  <div className="px-3.5 py-2 bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={aiSuggestedSlots.length > 0 && aiSuggestedSlots.every((s) => s.selected)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setAiSuggestedSlots((prev) => prev.map((item) => ({ ...item, selected: checked })));
+                        }}
+                        className="w-4 h-4 rounded accent-sky-600 cursor-pointer"
+                      />
+                      <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">
+                        Danh sách {aiSuggestedSlots.length} tiết học do AI đề xuất (Thầy/Cô có thể đổi Thứ, Tiết hoặc Phòng Lab trực tiếp bên dưới)
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold text-sky-700 dark:text-sky-300">
+                      Đã chọn: {aiSuggestedSlots.filter((s) => s.selected).length} tiết
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto max-h-[340px]">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 sticky top-0 z-10 border-b border-slate-200 dark:border-slate-700">
+                        <tr>
+                          <th className="py-2 px-3 w-10 text-center">Chọn</th>
+                          <th className="py-2 px-3">Lớp (Từ Phần 3)</th>
+                          <th className="py-2 px-3">Thứ trong tuần</th>
+                          <th className="py-2 px-3">Tiết học & Khung giờ</th>
+                          <th className="py-2 px-3">Phòng Lab chỉ định</th>
+                          <th className="py-2 px-3">Giải thích của AI & Kiểm tra chống trùng</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {aiSuggestedSlots.map((item) => {
+                          const liveConflict = getAiSlotLiveConflict(item);
+                          return (
+                            <tr
+                              key={item.tempId}
+                              className={`transition-colors ${
+                                !item.selected
+                                  ? "opacity-50 bg-slate-50/40 dark:bg-slate-900/40"
+                                  : liveConflict.hasConflict
+                                  ? "bg-rose-50/50 dark:bg-rose-950/30"
+                                  : "hover:bg-sky-50/40 dark:hover:bg-sky-950/20"
+                              }`}
+                            >
+                              <td className="py-2 px-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={item.selected}
+                                  onChange={(e) =>
+                                    handleUpdateAiSuggestedSlot(item.tempId, { selected: e.target.checked })
+                                  }
+                                  className="w-4 h-4 rounded accent-sky-600 cursor-pointer"
+                                />
+                              </td>
+
+                              <td className="py-2 px-3">
+                                <div className="font-extrabold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                                  <span>Lớp {item.class_name}</span>
+                                  <span className="px-1.5 py-0 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[10px] font-bold">
+                                    Tiết {item.periodIndex}/{item.totalPeriodsForClass}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                  {item.campus}
+                                </div>
+                              </td>
+
+                              <td className="py-2 px-3">
+                                <select
+                                  value={item.day_of_week}
+                                  onChange={(e) =>
+                                    handleUpdateAiSuggestedSlot(item.tempId, {
+                                      day_of_week: Number(e.target.value),
+                                    })
+                                  }
+                                  className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-bold text-slate-800 dark:text-slate-200"
+                                >
+                                  <option value={2}>Thứ Hai</option>
+                                  <option value={3}>Thứ Ba</option>
+                                  <option value={4}>Thứ Tư</option>
+                                  <option value={5}>Thứ Năm</option>
+                                  <option value={6}>Thứ Sáu</option>
+                                </select>
+                              </td>
+
+                              <td className="py-2 px-3">
+                                <select
+                                  value={item.period}
+                                  onChange={(e) =>
+                                    handleUpdateAiSuggestedSlot(item.tempId, {
+                                      period: Number(e.target.value),
+                                    })
+                                  }
+                                  className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-bold text-slate-800 dark:text-slate-200"
+                                >
+                                  {[1, 2, 3, 4, 5, 6, 7, 8].map((p) => (
+                                    <option key={`ai_p_opt_${p}`} value={p}>
+                                      Tiết {p} ({PERIOD_TIMES[p]}) - {p <= 4 ? "Sáng" : "Chiều"}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              <td className="py-2 px-3">
+                                <select
+                                  value={item.room}
+                                  onChange={(e) =>
+                                    handleUpdateAiSuggestedSlot(item.tempId, {
+                                      room: e.target.value,
+                                    })
+                                  }
+                                  className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-bold text-sky-800 dark:text-sky-300"
+                                >
+                                  {SIX_LAB_ROOMS.map((lab) => (
+                                    <option key={`ai_lab_opt_${lab.id}`} value={lab.name}>
+                                      {lab.shortName} ({lab.campus})
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              <td className="py-2 px-3">
+                                {liveConflict.hasConflict ? (
+                                  <div className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-bold text-[11px]">
+                                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                    <span>{liveConflict.message}</span>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-0.5">
+                                    <div className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold text-[11px]">
+                                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                      <span>{liveConflict.message}</span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                      {item.reason}
+                                    </div>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* FOOTER: NGUYÊN TẮC KIỂM CHỨNG CON NGƯỜI & NÚT PHÊ DUYỆT */}
+            <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+              <div className="flex items-start sm:items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+                <ShieldCheck className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5 sm:mt-0" />
+                <span>
+                  <strong>Cơ chế Kiểm chứng Con người:</strong> AI gợi ý phương án tối ưu chống trùng từ Bảng phân công Phần 3; lịch chỉ được áp dụng khi Thầy/Cô bấm <strong>Phê duyệt & Lưu</strong>.
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAiSchedulerModalOpen(false)}
+                  className="font-bold text-xs h-9 px-4"
+                >
+                  Đóng
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleApplyAiSchedule}
+                  disabled={
+                    isApplyingAiSchedule ||
+                    aiSuggestedSlots.filter((s) => s.selected).length === 0 ||
+                    aiSuggestedSlots.some((s) => s.selected && getAiSlotLiveConflict(s).hasConflict)
+                  }
+                  className="font-bold text-xs h-9 px-5 bg-gradient-to-r from-sky-600 via-indigo-600 to-sky-700 hover:from-sky-500 hover:via-indigo-500 hover:to-sky-600 text-white border-0 shadow-md shadow-sky-500/20 cursor-pointer"
+                >
+                  {isApplyingAiSchedule ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Đang Lưu Lịch Phòng Lab...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5 mr-1.5" />
+                      Phê duyệt & Lưu {aiSuggestedSlots.filter((s) => s.selected).length} tiết vào Lịch Phòng Lab
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
