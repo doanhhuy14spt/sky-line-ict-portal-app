@@ -441,14 +441,14 @@ export default function DashboardPage() {
 
       // 2. Tải thời khóa biểu (timetables) từ Supabase kết hợp với 193 tiết phòng Lab
       const periodsTimes: Record<number, string> = {
-        1: "07:30 - 08:15",
-        2: "08:20 - 09:05",
-        3: "09:20 - 10:05",
-        4: "10:10 - 10:55",
-        5: "13:30 - 14:15",
-        6: "14:20 - 15:05",
-        7: "15:20 - 16:05",
-        8: "16:10 - 16:55",
+        1: "08:00 - 08:45",
+        2: "08:50 - 09:35",
+        3: "09:50 - 10:35",
+        4: "10:40 - 11:25",
+        5: "13:15 - 14:00",
+        6: "14:05 - 14:50",
+        7: "15:05 - 15:50",
+        8: "15:55 - 16:40",
       };
 
       // 2. Tải thời khóa biểu 6 phòng Lab từ Supabase (lab_timetables) theo Năm học
@@ -736,14 +736,14 @@ export default function DashboardPage() {
     const { day, period } = selectedSlotForEdit;
 
     const periodsTimes: Record<number, string> = {
-      1: "07:30 - 08:15",
-      2: "08:20 - 09:05",
-      3: "09:20 - 10:05",
-      4: "10:10 - 10:55",
-      5: "13:30 - 14:15",
-      6: "14:20 - 15:05",
-      7: "15:20 - 16:05",
-      8: "16:10 - 16:55",
+      1: "08:00 - 08:45",
+      2: "08:50 - 09:35",
+      3: "09:50 - 10:35",
+      4: "10:40 - 11:25",
+      5: "13:15 - 14:00",
+      6: "14:05 - 14:50",
+      7: "15:05 - 15:50",
+      8: "15:55 - 16:40",
     };
 
     let generatedId = `t_${Date.now()}`;
@@ -1161,9 +1161,6 @@ export default function DashboardPage() {
                         <div>
                           <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                             Phần 1: Lịch phòng Lab
-                            <Badge variant="default" className="text-[10px] font-bold px-2 py-0">
-                              Năm học {selectedSchoolYear}
-                            </Badge>
                           </h2>
                         </div>
                       </div>
@@ -1251,21 +1248,13 @@ export default function DashboardPage() {
                                   : "bg-slate-50 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200"
                               }`}
                             >
-                              <div className="flex items-center justify-between mb-0.5">
-                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
-                                  isSelected
-                                    ? "bg-white/20 text-white"
-                                    : "bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300"
-                                }`}>
-                                  {lab.sheet}
+                              <div className="flex items-center justify-between gap-1 mb-0.5">
+                                <span className="font-extrabold text-[11px] line-clamp-1 leading-tight">
+                                  {lab.name.replace("Sky-Line ", "")}
                                 </span>
-                                <span className={`text-[10px] font-bold ${isSelected ? "text-amber-300" : "text-amber-600 dark:text-amber-400"}`}>
+                                <span className={`text-[10px] font-bold shrink-0 ${isSelected ? "text-amber-300" : "text-amber-600 dark:text-amber-400"}`}>
                                   {labSlotsCount} tiết
                                 </span>
-                              </div>
-
-                              <div className="font-extrabold text-[11px] line-clamp-1 leading-tight">
-                                {lab.name.replace("Sky-Line ", "")}
                               </div>
                               <div className={`text-[9px] truncate leading-tight ${isSelected ? "text-sky-100" : "text-slate-500 dark:text-slate-400"}`}>
                                 GV: {lab.defaultTeacher}
@@ -1315,31 +1304,31 @@ export default function DashboardPage() {
                               <td colSpan={6} className="px-3 py-1 font-black text-sky-900 dark:text-sky-300 text-[11px] tracking-wide">
                                 <span className="inline-flex items-center gap-1.5">
                                   <SunMedium className="w-3.5 h-3.5 text-amber-500" />
-                                  BUỔI SÁNG (07:30 - 10:55 • 4 TIẾT)
+                                  BUỔI SÁNG (08:00 - 11:25 • 4 TIẾT)
                                 </span>
                               </td>
                             </tr>
 
                             {[
-                              { period: 1, time: "07:30 - 08:15" },
-                              { period: 2, time: "08:20 - 09:05" },
+                              { period: 1, time: "08:00 - 08:45" },
+                              { period: 2, time: "08:50 - 09:35" },
                             ].map((slotTime) => renderTimetableRow(slotTime))}
 
                             {/* DÒNG NGHỈ GIẢI LAO SÁNG */}
                             <tr className="bg-amber-50/50 dark:bg-amber-950/20 text-slate-500 dark:text-slate-400 text-[10px] italic">
                               <td className="py-0.5 px-2 text-center bg-amber-100/50 dark:bg-amber-950/40 border-r border-slate-200 dark:border-slate-800 font-semibold text-amber-800 dark:text-amber-300">
-                                09:05 - 09:20
+                                09:35 - 09:50
                               </td>
                               <td colSpan={5} className="py-0.5 px-2 text-center">
                                 <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium">
-                                  <Coffee className="w-3 h-3" /> Giờ ra chơi, ăn phụ & thể dục giữa giờ (15 phút)
+                                  <Coffee className="w-3 h-3" /> Giờ ra chơi & sinh hoạt giữa giờ (15 phút)
                                 </span>
                               </td>
                             </tr>
 
                             {[
-                              { period: 3, time: "09:20 - 10:05" },
-                              { period: 4, time: "10:10 - 10:55" },
+                              { period: 3, time: "09:50 - 10:35" },
+                              { period: 4, time: "10:40 - 11:25" },
                             ].map((slotTime) => renderTimetableRow(slotTime))}
                           </>
                         )}
@@ -1348,7 +1337,7 @@ export default function DashboardPage() {
                         {selectedSessionFilter === "all" && (
                           <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-[11px] font-bold border-y border-slate-200 dark:border-slate-700">
                             <td className="py-1 px-2 text-center bg-slate-200/70 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-800">
-                              11:00 - 13:30
+                              11:25 - 13:15
                             </td>
                             <td colSpan={5} className="py-1 px-2 text-center">
                               🍱 NGHỈ TRƯA, ĂN BÁN TRÚ & NGHỈ NGƠI TẠI CƠ SỞ
@@ -1363,20 +1352,20 @@ export default function DashboardPage() {
                               <td colSpan={6} className="px-3 py-1 font-black text-indigo-900 dark:text-indigo-300 text-[11px] tracking-wide">
                                 <span className="inline-flex items-center gap-1.5">
                                   <Sunset className="w-3.5 h-3.5 text-orange-500" />
-                                  BUỔI CHIỀU (13:30 - 16:55 • 4 TIẾT)
+                                  BUỔI CHIỀU (13:15 - 16:40 • 4 TIẾT)
                                 </span>
                               </td>
                             </tr>
 
                             {[
-                              { period: 5, time: "13:30 - 14:15" },
-                              { period: 6, time: "14:20 - 15:05" },
+                              { period: 5, time: "13:15 - 14:00" },
+                              { period: 6, time: "14:05 - 14:50" },
                             ].map((slotTime) => renderTimetableRow(slotTime))}
 
                             {/* DÒNG NGHỈ GIẢI LAO CHIỀU */}
                             <tr className="bg-amber-50/50 dark:bg-amber-950/20 text-slate-500 dark:text-slate-400 text-[10px] italic">
                               <td className="py-0.5 px-2 text-center bg-amber-100/50 dark:bg-amber-950/40 border-r border-slate-200 dark:border-slate-800 font-semibold text-amber-800 dark:text-amber-300">
-                                15:05 - 15:20
+                                14:50 - 15:05
                               </td>
                               <td colSpan={5} className="py-0.5 px-2 text-center">
                                 <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium">
@@ -1386,8 +1375,8 @@ export default function DashboardPage() {
                             </tr>
 
                             {[
-                              { period: 7, time: "15:20 - 16:05" },
-                              { period: 8, time: "16:10 - 16:55" },
+                              { period: 7, time: "15:05 - 15:50" },
+                              { period: 8, time: "15:55 - 16:40" },
                             ].map((slotTime) => renderTimetableRow(slotTime))}
                           </>
                         )}
