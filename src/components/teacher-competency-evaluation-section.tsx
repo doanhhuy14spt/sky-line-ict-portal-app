@@ -1449,6 +1449,27 @@ export function TeacherCompetencyEvaluationSection({
     const rows = eligibleTeachers.map((teacher, idx) => {
       const rec = evaluationsMap[teacher.id] || buildDefaultRecord(teacher);
       const metrics = computeEvaluationMetrics(rec);
+      const fallbackPeers = peerAssignmentByTeacherId[teacher.id];
+      const peer1Teacher =
+        eligibleTeachers.find(
+          (t) =>
+            t.id === rec.peer1_id ||
+            (Boolean(t.email) &&
+              Boolean(rec.peer1_email) &&
+              t.email.toLowerCase() === rec.peer1_email.toLowerCase())
+        ) ||
+        fallbackPeers?.peer1 ||
+        null;
+      const peer2Teacher =
+        eligibleTeachers.find(
+          (t) =>
+            t.id === rec.peer2_id ||
+            (Boolean(t.email) &&
+              Boolean(rec.peer2_email) &&
+              t.email.toLowerCase() === rec.peer2_email.toLowerCase())
+        ) ||
+        fallbackPeers?.peer2 ||
+        null;
       const peerConfirmedCount =
         (rec.is_peer1_confirmed ? 1 : 0) + (rec.is_peer2_confirmed ? 1 : 0);
       return {
@@ -1456,6 +1477,8 @@ export function TeacherCompetencyEvaluationSection({
         teacher,
         record: rec,
         metrics,
+        peer1Teacher,
+        peer2Teacher,
         peerConfirmedCount,
       };
     });
@@ -1505,6 +1528,7 @@ export function TeacherCompetencyEvaluationSection({
     evaluationsMap,
     buildDefaultRecord,
     computeEvaluationMetrics,
+    peerAssignmentByTeacherId,
   ]);
 
   // Xử lý xác nhận khóa vĩnh viễn
@@ -1699,6 +1723,12 @@ export function TeacherCompetencyEvaluationSection({
                 <tr className="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 font-bold">
                   <th className="py-2.5 px-2.5 text-center w-10">STT</th>
                   <th className="py-2.5 px-3">Họ và Tên Giáo Viên</th>
+                  <th className="py-2.5 px-2.5 bg-indigo-50/40 dark:bg-indigo-950/20">
+                    2 GV Đánh Giá Đồng Cấp
+                    <span className="block text-[10px] font-normal text-indigo-600 dark:text-indigo-400">
+                      (Chỉ TTCM thấy • Ẩn danh với GV)
+                    </span>
+                  </th>
                   <th className="py-2.5 px-2 text-center">
                     Nhóm 1: Chuyên môn
                     <span className="block text-[10px] font-normal text-slate-500">
@@ -1786,6 +1816,38 @@ export function TeacherCompetencyEvaluationSection({
                         </div>
                         <div className="text-[10px] text-slate-500 dark:text-slate-400">
                           {row.teacher.campus}
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-2.5 bg-indigo-50/20 dark:bg-indigo-950/10">
+                        <div className="space-y-1 text-[11px]">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                              1. {row.peer1Teacher?.name || "Chưa phân công"}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded text-[9px] font-bold shrink-0 ${
+                                record.is_peer1_confirmed
+                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                              }`}
+                            >
+                              {record.is_peer1_confirmed ? "Đã chấm" : "Chờ"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                              2. {row.peer2Teacher?.name || "Chưa phân công"}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded text-[9px] font-bold shrink-0 ${
+                                record.is_peer2_confirmed
+                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                              }`}
+                            >
+                              {record.is_peer2_confirmed ? "Đã chấm" : "Chờ"}
+                            </span>
+                          </div>
                         </div>
                       </td>
                       <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">
@@ -2326,6 +2388,32 @@ export function TeacherCompetencyEvaluationSection({
                       ? "🔒 TTCM ĐG: Đã xác nhận"
                       : "⏳ TTCM ĐG: Đang mở"}
                   </Badge>
+
+                  {isLeader && (() => {
+                    const activeSummaryRow = leaderDepartmentSummary.rows.find(
+                      (r) => r.teacher.id === activeSheetTeacher.id
+                    );
+                    if (!activeSummaryRow) return null;
+                    return (
+                      <div className="w-full pt-1.5 mt-1 border-t border-slate-200/70 dark:border-slate-700/70 flex flex-wrap items-center gap-2 text-[11px]">
+                        <span className="font-bold text-indigo-700 dark:text-indigo-300">
+                          👥 2 GV đánh giá đồng cấp (Chỉ Tổ trưởng thấy):
+                        </span>
+                        <span className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 font-bold text-slate-800 dark:text-slate-200">
+                          1. {activeSummaryRow.peer1Teacher?.name || "Chưa phân công"}{" "}
+                          <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
+                            ({activeSheetRecord.is_peer1_confirmed ? "Đã xác nhận" : "Chờ chấm"})
+                          </span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 font-bold text-slate-800 dark:text-slate-200">
+                          2. {activeSummaryRow.peer2Teacher?.name || "Chưa phân công"}{" "}
+                          <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
+                            ({activeSheetRecord.is_peer2_confirmed ? "Đã xác nhận" : "Chờ chấm"})
+                          </span>
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Nút thao tác Lưu nháp & Xác nhận hoàn thành tùy theo vai trò */}
