@@ -1059,15 +1059,15 @@ export function TeacherAssignedScheduleSection({
   };
 
   // =========================================================================
-  // RENDER ROW CHO PHẦN 2.2
+  // RENDER ROW CHO PHẦN 2.2 (THU GỌN HIỂN THỊ TRỌN VẸN KHÔNG CẦN THANH CUỘN DỌC)
   // =========================================================================
   const renderSelfManagedRow = (period: number, defaultTime: string) => {
     return (
       <tr key={`self_tt_row_${period}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
         {/* CỘT 1: TIẾT VÀ GIỜ */}
-        <td className="p-3 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 w-32 shrink-0">
-          <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Tiết {period}</div>
-          <div className="text-[10px] text-slate-500 font-medium">{defaultTime}</div>
+        <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 w-28 shrink-0 align-middle">
+          <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {period}</div>
+          <div className="text-[10px] text-slate-500 font-medium leading-tight">{defaultTime}</div>
         </td>
 
         {/* 5 CỘT: THỨ HAI -> THỨ SÁU (CHIA ĐỀU BẰNG NHAU 100%) */}
@@ -1080,65 +1080,65 @@ export function TeacherAssignedScheduleSection({
           return (
             <td
               key={`self_cell_${dayNum}_${period}`}
-              className={`p-2 transition-all border border-slate-100 dark:border-slate-800/60 relative group w-1/5 overflow-hidden align-top ${
+              className={`py-1 px-1.5 transition-all border border-slate-100 dark:border-slate-800/60 relative group w-1/5 overflow-hidden align-middle ${
                 isToday ? "bg-amber-50/20 dark:bg-amber-950/20" : ""
               }`}
             >
               {slot ? (
-                <div className="p-2.5 rounded-2xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs hover:shadow-md hover:border-amber-400 transition-all space-y-1.5 relative w-full overflow-hidden">
-                  {/* 1. TÊN LỚP */}
-                  <div className="font-extrabold text-slate-900 dark:text-white text-xs tracking-wide truncate">
-                    Lớp: {slot.class_name}
+                <div className="py-1 px-2 rounded-xl bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs hover:shadow-md hover:border-amber-400 transition-all space-y-0.5 relative w-full overflow-hidden">
+                  {/* DÒNG 1: TÊN LỚP + NÚT SỬA/XÓA */}
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="font-extrabold text-slate-900 dark:text-white text-[11px] leading-tight truncate">
+                      Lớp: {slot.class_name}
+                    </div>
+                    {canEdit && (
+                      <div className="flex items-center gap-0.5 shrink-0 opacity-85 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditSlot(slot)}
+                          className="p-0.5 rounded hover:bg-amber-200/60 dark:hover:bg-amber-900/60 text-slate-600 dark:text-slate-300 hover:text-amber-800 transition-colors cursor-pointer"
+                          title="Sửa tiết dạy này"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmSlot(slot)}
+                          className="p-0.5 rounded hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
+                          title="Xóa tiết dạy này"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* 2. PHÒNG LAB (RÚT GỌN TÊN: BỎ "Phòng Lab Sky-Line") */}
+                  {/* DÒNG 2: PHÒNG LAB (RÚT GỌN TÊN: BỎ "Phòng Lab Sky-Line") */}
                   <div
-                    className="flex items-center gap-1.5 text-[10.5px] font-bold text-sky-800 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800/70 px-2 py-0.5 rounded-lg truncate shadow-2xs w-full min-w-0"
+                    className="flex items-center gap-1 text-[10px] font-bold text-sky-800 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800/70 px-1.5 py-0 rounded-md truncate shadow-2xs w-full min-w-0 leading-tight"
                     title={slot.room}
                   >
-                    <Laptop className="w-3 h-3 text-sky-500 shrink-0" />
+                    <Laptop className="w-2.5 h-2.5 text-sky-500 shrink-0" />
                     <span className="truncate">{formatShortLabRoomName(slot.room)}</span>
                   </div>
-
-                  {/* NÚT THAO TÁC SỬA / XÓA - CHỈ HIỂN THỊ NẾU CÓ QUYỀN CHỈNH SỬA (canEdit) */}
-                  {canEdit && (
-                    <div className="pt-1.5 border-t border-amber-200/50 dark:border-amber-900/40 flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditSlot(slot)}
-                        className="p-1 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-900/60 text-slate-600 dark:text-slate-300 hover:text-amber-800 transition-colors"
-                        title="Sửa tiết dạy này"
-                      >
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirmSlot(slot)}
-                        className="p-1 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-500 hover:text-rose-700 transition-colors"
-                        title="Xóa tiết dạy này"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
                 </div>
               ) : canEdit ? (
                 <div
                   onClick={() => handleOpenAddSlot(dayNum, period)}
-                  className="h-16 rounded-2xl border border-dashed border-slate-200/70 dark:border-slate-800/60 hover:border-amber-400 dark:hover:border-amber-600 hover:bg-amber-50/30 dark:hover:bg-amber-950/20 cursor-pointer transition-all flex flex-col items-center justify-center gap-0.5 p-1 select-none group/empty w-full"
+                  className="h-8 rounded-xl border border-dashed border-slate-200/70 dark:border-slate-800/60 hover:border-amber-400 dark:hover:border-amber-600 hover:bg-amber-50/30 dark:hover:bg-amber-950/20 cursor-pointer transition-all flex items-center justify-center gap-1.5 px-1.5 select-none group/empty w-full"
                 >
-                  <span className="text-[11px] font-bold text-slate-300 dark:text-slate-600 group-hover/empty:text-amber-600 dark:group-hover/empty:text-amber-400 transition-colors flex items-center gap-1">
-                    <PlusCircle className="w-3.5 h-3.5 opacity-60 group-hover/empty:opacity-100" />
+                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 group-hover/empty:text-amber-600 dark:group-hover/empty:text-amber-400 transition-colors inline-flex items-center gap-0.5 shrink-0">
+                    <PlusCircle className="w-3 h-3 opacity-60 group-hover/empty:opacity-100" />
                     Xếp tiết
                   </span>
                   {schoolHint && (
-                    <span className="text-[9px] text-amber-600/80 dark:text-amber-400/80 font-medium truncate max-w-full">
+                    <span className="text-[9px] text-amber-600/90 dark:text-amber-400/90 font-semibold truncate max-w-full">
                       💡 TKB: {schoolHint.class_name}
                     </span>
                   )}
                 </div>
               ) : (
-                <div className="h-16 rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/40 flex items-center justify-center text-xs text-slate-300 dark:text-slate-600 select-none cursor-default bg-slate-50/20 dark:bg-slate-900/10 w-full">
+                <div className="h-8 rounded-xl border border-dashed border-slate-100 dark:border-slate-800/40 flex items-center justify-center text-xs text-slate-300 dark:text-slate-600 select-none cursor-default bg-slate-50/20 dark:bg-slate-900/10 w-full">
                   -
                 </div>
               )}
@@ -1643,40 +1643,34 @@ export function TeacherAssignedScheduleSection({
       {/* NỘI DUNG PHẦN 2.2: LỊCH GIẢNG DẠY CỦA TỪNG GIÁO VIÊN (TỰ NHẬP & QUẢN LÝ) */}
       {/* ========================================================================= */}
       {activeSubTab === "2.2" && (
-        <div className="space-y-6">
-          {/* KHUNG TIÊU ĐỀ & CHỌN GIÁO VIÊN */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-center gap-2.5">
-                <span className="p-2.5 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 shadow-xs">
-                  <Users className="w-5 h-5" />
+        <div className="space-y-2.5">
+          {/* KHUNG TIÊU ĐỀ & CHỌN GIÁO VIÊN THU GỌN */}
+          <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-2">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="p-1.5 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 shadow-xs">
+                  <Users className="w-4 h-4" />
                 </span>
-                <div>
-                  <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                    Phần 2.2: Lịch Giảng Dạy Của Từng Giáo Viên
-                    <Badge variant="amber" className="text-[11px] font-bold">
-                      Tự Nhập & Quản Lý Cá Nhân
-                    </Badge>
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Mỗi giáo viên tự xếp lịch giảng dạy theo <strong>danh sách lớp phân công ở Phần 3</strong> và bấm nút{" "}
-                    <strong>"Tự Động Điền Từ TKB Trường"</strong> để nạp ngay các tiết học chính xác từ Phần 2.1.
-                  </p>
-                </div>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  Phần 2.2: Lịch Giảng Dạy Của Từng Giáo Viên
+                  <Badge variant="amber" className="text-[10px] font-bold px-2 py-0">
+                    Tự Nhập & Quản Lý Cá Nhân
+                  </Badge>
+                </h2>
               </div>
 
               {/* NÚT THAO TÁC NHANH: CHỈ HIỂN THỊ NẾU CÓ QUYỀN CHỈNH SỬA (canEdit) */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {canEdit ? (
                   <>
                     <Button
                       size="sm"
                       variant="amber"
                       onClick={() => handleOpenAddSlot(2, 1)}
-                      className="font-bold text-xs shadow-md shadow-amber-500/20"
+                      className="font-bold text-xs h-7 px-2.5 shadow-sm shadow-amber-500/20"
                     >
-                      <PlusCircle className="w-4 h-4 mr-1.5" />
-                      + Xếp Tiết Giảng Dạy Mới
+                      <PlusCircle className="w-3.5 h-3.5 mr-1" />
+                      + Xếp Tiết Mới
                     </Button>
 
                     <Button
@@ -1684,7 +1678,7 @@ export function TeacherAssignedScheduleSection({
                       variant="outline"
                       onClick={handleAutoSyncFromSchoolSchedule}
                       disabled={isSyncingFromSchool}
-                      className="font-bold text-xs hover:border-amber-400 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/30"
+                      className="font-bold text-xs h-7 px-2.5 hover:border-amber-400 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/30"
                       title={`Tự động sao chép các tiết từ TKB nhà trường ứng với tên file: "${teacherMappingConfig22?.fileKeyName || "ICT"}"`}
                     >
                       {isSyncingFromSchool ? (
@@ -1704,7 +1698,7 @@ export function TeacherAssignedScheduleSection({
                       size="sm"
                       variant="outline"
                       onClick={() => setIsClearWeekModalOpen(true)}
-                      className="font-bold text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                      className="font-bold text-xs h-7 px-2.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
                       title="Xóa trắng lịch tuần này để xếp lại"
                     >
                       <Trash2 className="w-3.5 h-3.5 mr-1" />
@@ -1712,9 +1706,9 @@ export function TeacherAssignedScheduleSection({
                     </Button>
                   </>
                 ) : (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold shadow-2xs">
-                    <Eye className="w-4 h-4 text-sky-500 shrink-0" />
-                    <span>Chế độ xem lịch đồng nghiệp (Chỉ đọc)</span>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-bold shadow-2xs">
+                    <Eye className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                    <span>Chế độ Chỉ Xem</span>
                   </div>
                 )}
 
@@ -1722,55 +1716,29 @@ export function TeacherAssignedScheduleSection({
                   size="sm"
                   variant="outline"
                   onClick={() => window.print()}
-                  className="font-bold text-xs"
+                  className="font-bold text-xs h-7 px-2.5"
                 >
                   <Printer className="w-3.5 h-3.5 mr-1 text-slate-600 dark:text-slate-400" />
-                  In TKB (PDF)
+                  In TKB
                 </Button>
               </div>
             </div>
 
-            {/* BỘ CHỌN 8 GIÁO VIÊN DẠNG THẺ (DÀNH CHO TỔ TRƯỞNG & THẦY CÔ CHUYỂN ĐỔI) */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-              <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-amber-500" />
-                  Chọn tài khoản giáo viên để xem & xếp lịch giảng dạy:
-                </span>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
-                    Đang xem: <strong>{currentSelectedTeacher22.name}</strong>{" "}
-                    (Tên TKB: <strong className="text-sky-600 dark:text-sky-400">{teacherMappingConfig22?.fileKeyName}</strong>)
-                  </span>
-                  {canEdit ? (
-                    <Badge variant="emerald" className="text-[10px] font-bold px-2 py-0.5 flex items-center gap-1">
-                      <Check className="w-3 h-3" />
-                      {isLeader ? "Quyền Tổ Trưởng" : "Lịch của bạn (Tự xếp lớp)"}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-[10px] font-bold px-2 py-0.5 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/40 flex items-center gap-1">
-                      <Eye className="w-3 h-3 text-amber-500" />
-                      Lịch đồng nghiệp (Chỉ xem)
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+            {/* BỘ CHỌN 8 GIÁO VIÊN DẠNG THẺ THU GỌN */}
+            <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5">
                 {teachersList.map((t) => {
                   const isSelected = selectedTeacherId22 === t.id;
                   const slotCount = teacherTimetableSlots.filter(
                     (s) => s.teacher_id === t.id || s.teacher_name === t.name
                   ).length;
 
-                  // Kiểm tra có phải chính là tài khoản đang đăng nhập không
                   const isThisTeacher = currentUserProfile?.id === t.id ||
                     (currentUserProfile?.name && t.name && (
                       currentUserProfile.name.toLowerCase().includes(t.name.replace(/^(Thầy|Cô)\s+/i, "").toLowerCase()) ||
                       t.name.toLowerCase().includes(currentUserProfile.name.replace(/^(Thầy|Cô)\s+/i, "").toLowerCase())
                     ));
 
-                  // Lấy tên quy chuẩn trong file
                   const tMap = OFFICIAL_ICT_TEACHERS_MAPPINGS.find(
                     (m) =>
                       t.name.toLowerCase().includes(m.officialName.toLowerCase()) ||
@@ -1785,22 +1753,21 @@ export function TeacherAssignedScheduleSection({
                         setSelectedTeacherId22(t.id);
                         showToast(`Đang hiển thị lịch giảng dạy của: ${t.name}`, "info");
                       }}
-                      className={`p-2.5 rounded-2xl text-left transition-all border cursor-pointer relative ${
+                      className={`py-1.5 px-2 rounded-xl text-left transition-all border cursor-pointer relative ${
                         isSelected
-                          ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white border-amber-500 shadow-md shadow-amber-500/25 scale-[1.02]"
+                          ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white border-amber-500 shadow-sm shadow-amber-500/20"
                           : "bg-slate-50 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200"
                       }`}
                     >
-                      {/* Huy hiệu tài khoản của tôi */}
                       {isThisTeacher && (
-                        <span className="absolute -top-1.5 -right-1 px-1.5 py-0.2 rounded-md bg-emerald-500 text-white text-[8px] font-black uppercase shadow-xs">
+                        <span className="absolute -top-1.5 -right-1 px-1 py-0 rounded bg-emerald-500 text-white text-[8px] font-black uppercase shadow-xs">
                           Của tôi
                         </span>
                       )}
 
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between">
                         <span
-                          className={`text-[10px] font-black px-1.5 py-0.2 rounded-md ${
+                          className={`text-[9px] font-black px-1 py-0 rounded ${
                             isSelected
                               ? "bg-white/20 text-white"
                               : "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
@@ -1812,50 +1779,33 @@ export function TeacherAssignedScheduleSection({
                           {slotCount}t
                         </span>
                       </div>
-                      <div className="font-extrabold text-xs line-clamp-1 leading-snug flex items-center gap-1">
+                      <div className="font-extrabold text-[11px] line-clamp-1 leading-tight flex items-center gap-1 mt-0.5">
                         {!isThisTeacher && !isLeader && <Eye className="w-2.5 h-2.5 text-slate-400 shrink-0" />}
                         <span>{(t.name || "").split("(")[0].replace("Thầy ", "").replace("Cô ", "")}</span>
-                      </div>
-                      <div
-                        className={`text-[9px] truncate ${
-                          isSelected ? "text-amber-100" : "text-slate-500 dark:text-slate-400"
-                        }`}
-                      >
-                        {t.campus || "Sky-Line"}
                       </div>
                     </button>
                   );
                 })}
               </div>
-            </div>
 
-            {/* THẺ TỔNG QUAN PHÂN CÔNG TỪ PHẦN 3 & TIẾN ĐỘ XẾP LỊCH */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-white dark:from-amber-950/40 dark:via-slate-900 dark:to-slate-900 border border-amber-200/90 dark:border-amber-900/60 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
-              <div className="space-y-1.5">
-                <div className="font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                  <span>Hồ Sơ: {currentSelectedTeacher22.name}</span>
-                  <Badge variant="amber" className="text-[10px] font-bold">
-                    Tên TKB: {teacherMappingConfig22?.fileKeyName || "ICT"}
+              {/* THANH TỔNG QUAN PHÂN CÔNG TỪ PHẦN 3 & TIẾN ĐỘ XẾP LỊCH TRÊN 1 DÒNG */}
+              <div className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-white dark:from-amber-950/40 dark:via-slate-900 dark:to-slate-900 border border-amber-200/90 dark:border-amber-900/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-extrabold text-slate-900 dark:text-white text-xs">
+                    {currentSelectedTeacher22.name}
+                  </span>
+                  <Badge variant="amber" className="text-[10px] font-bold px-2 py-0">
+                    {teacherMappingConfig22?.fileKeyName || "ICT"}
                   </Badge>
-                  <Badge variant="secondary" className="text-[10px] font-semibold">
-                    {currentSelectedTeacher22.campus}
-                  </Badge>
-                </div>
-                <div className="text-slate-600 dark:text-slate-400 flex flex-wrap items-center gap-2 text-[11px]">
-                  <span>Chuyên môn: <strong>{currentSelectedTeacher22.specialty}</strong></span>
-                </div>
-
-                {/* DANH SÁCH LỚP PHÂN CÔNG TỪ PHẦN 3 */}
-                <div className="pt-1 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                  <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1 ml-1">
                     <GraduationCap className="w-3.5 h-3.5" />
-                    Lớp được phân công (Phần 3):
+                    Lớp phân công (Phần 3):
                   </span>
                   {assignedClassesFromSection3.length > 0 ? (
                     assignedClassesFromSection3.map((cls) => (
                       <span
                         key={`assigned_c3_${cls.id}`}
-                        className="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 text-[10px] font-extrabold text-slate-800 dark:text-slate-200 border border-amber-200 dark:border-amber-800 shadow-2xs"
+                        className="px-1.5 py-0 rounded-md bg-white dark:bg-slate-800 text-[10px] font-extrabold text-slate-800 dark:text-slate-200 border border-amber-200 dark:border-amber-800"
                       >
                         {cls.name} ({cls.periods_per_week || 2}t)
                       </span>
@@ -1866,39 +1816,46 @@ export function TeacherAssignedScheduleSection({
                     </span>
                   )}
                 </div>
-              </div>
 
-              {/* KHỐI TIẾN ĐỘ ĐÃ XẾP */}
-              <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
-                <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 text-center shadow-xs">
-                  <span className="text-[10px] text-slate-500 block">Tiết Đã Xếp / Phân Công</span>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-base font-black text-amber-600 dark:text-amber-400">
+                {/* KHỐI TIẾN ĐỘ ĐÃ XẾP */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {canEdit ? (
+                    <Badge variant="emerald" className="text-[10px] font-bold px-2 py-0 flex items-center gap-1">
+                      <Check className="w-3 h-3" />
+                      {isLeader ? "Quyền Tổ Trưởng" : "Lịch của bạn"}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] font-bold px-2 py-0 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/40 flex items-center gap-1">
+                      <Eye className="w-3 h-3 text-amber-500" />
+                      Chỉ xem
+                    </Badge>
+                  )}
+                  <div className="px-2.5 py-0.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 text-[11px] font-bold shadow-2xs">
+                    Đã xếp:{" "}
+                    <strong className="text-amber-600 dark:text-amber-400">
                       {activeTeacherSlots22.length}
-                    </span>
-                    <span className="text-xs font-bold text-slate-400">
-                      / {totalAssignedPeriodsFromSection3 || 21} tiết
-                    </span>
+                    </strong>{" "}
+                    / {totalAssignedPeriodsFromSection3 || 21} tiết
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* LƯỚI THỜI KHÓA BIỂU PHẦN 2.2 (THỨ 2 -> THỨ 6 • TIẾT 1 -> 8) */}
-          <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <table className="w-full text-left text-xs border-collapse min-w-[900px] table-fixed">
+          {/* LƯỚI THỜI KHÓA BIỂU PHẦN 2.2 (HIỂN THỊ TRỌN VẸN KHÔNG CẦN CUỘN DỌC) */}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <table className="w-full text-left text-xs border-collapse min-w-[820px] table-fixed">
               <colgroup>
-                <col className="w-32" style={{ width: "128px" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
-                <col style={{ width: "calc((100% - 128px) / 5)" }} />
+                <col className="w-28" style={{ width: "112px" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col style={{ width: "calc((100% - 112px) / 5)" }} />
               </colgroup>
               <thead>
                 <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                  <th className="p-3.5 font-bold w-32 text-center bg-slate-200/60 dark:bg-slate-800">
+                  <th className="py-1.5 px-2 font-bold w-28 text-center bg-slate-200/60 dark:bg-slate-800">
                     Tiết / Giờ
                   </th>
                   {[
@@ -1912,13 +1869,13 @@ export function TeacherAssignedScheduleSection({
                     return (
                       <th
                         key={`h22_${d.day}`}
-                        className={`p-3.5 font-bold text-center w-1/5 ${
+                        className={`py-1.5 px-2 font-bold text-center w-1/5 ${
                           isToday
                             ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-x border-amber-200 dark:border-amber-800"
                             : ""
                         }`}
                       >
-                        {d.label} {isToday && <span className="text-[10px] font-normal block text-amber-600">(Hôm nay)</span>}
+                        {d.label} {isToday && <span className="text-[10px] font-normal text-amber-600 ml-1">(Hôm nay)</span>}
                       </th>
                     );
                   })}
@@ -1927,9 +1884,9 @@ export function TeacherAssignedScheduleSection({
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {/* BUỔI SÁNG (TIẾT 1 -> 4) */}
                 <tr className="bg-amber-50/70 dark:bg-amber-950/40 border-y border-amber-200/80 dark:border-amber-900/60">
-                  <td colSpan={6} className="px-4 py-2 font-black text-amber-900 dark:text-amber-300 text-xs tracking-wide">
-                    <span className="inline-flex items-center gap-2">
-                      <SunMedium className="w-4 h-4 text-amber-500" />
+                  <td colSpan={6} className="px-3 py-1 font-black text-amber-900 dark:text-amber-300 text-[11px] tracking-wide">
+                    <span className="inline-flex items-center gap-1.5">
+                      <SunMedium className="w-3.5 h-3.5 text-amber-500" />
                       BUỔI SÁNG (08:00 - 11:25 • 4 TIẾT)
                     </span>
                   </td>
@@ -1938,26 +1895,26 @@ export function TeacherAssignedScheduleSection({
                 {[1, 2].map((p) => renderSelfManagedRow(p, PERIOD_TIMES[p]))}
 
                 {/* NGHỈ GIẢI LAO SÁNG */}
-                <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-[11px] italic">
-                  <td className="p-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 font-semibold">09:35 - 09:50</td>
-                  <td colSpan={5} className="p-2 text-center">
-                    <span className="inline-flex items-center gap-1.5"><Coffee className="w-3.5 h-3.5 text-amber-500" /> Giờ ra chơi & sinh hoạt giữa giờ (15 phút)</span>
+                <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-[10px] italic">
+                  <td className="py-0.5 px-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 font-semibold">09:35 - 09:50</td>
+                  <td colSpan={5} className="py-0.5 px-2 text-center">
+                    <span className="inline-flex items-center gap-1"><Coffee className="w-3 h-3 text-amber-500" /> Giờ ra chơi & sinh hoạt giữa giờ (15 phút)</span>
                   </td>
                 </tr>
 
                 {[3, 4].map((p) => renderSelfManagedRow(p, PERIOD_TIMES[p]))}
 
                 {/* NGHỈ TRƯA & BÁN TRÚ */}
-                <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-xs font-bold border-y-2 border-slate-200 dark:border-slate-700">
-                  <td className="p-2.5 text-center bg-slate-200/70 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-800">11:25 - 13:15</td>
-                  <td colSpan={5} className="p-2.5 text-center">🍱 NGHỈ TRƯA, ĂN BÁN TRÚ & NGHỈ NGƠI TẠI TRƯỜNG</td>
+                <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-[11px] font-bold border-y border-slate-200 dark:border-slate-700">
+                  <td className="py-1 px-2 text-center bg-slate-200/70 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-800">11:25 - 13:15</td>
+                  <td colSpan={5} className="py-1 px-2 text-center">🍱 NGHỈ TRƯA, ĂN BÁN TRÚ & NGHỈ NGƠI TẠI TRƯỜNG</td>
                 </tr>
 
                 {/* BUỔI CHIỀU (TIẾT 5 -> 8) */}
                 <tr className="bg-indigo-50/70 dark:bg-indigo-950/40 border-y border-indigo-200/80 dark:border-indigo-900/60">
-                  <td colSpan={6} className="px-4 py-2 font-black text-indigo-900 dark:text-indigo-300 text-xs tracking-wide">
-                    <span className="inline-flex items-center gap-2">
-                      <Sunset className="w-4 h-4 text-orange-500" />
+                  <td colSpan={6} className="px-3 py-1 font-black text-indigo-900 dark:text-indigo-300 text-[11px] tracking-wide">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Sunset className="w-3.5 h-3.5 text-orange-500" />
                       BUỔI CHIỀU (13:15 - 16:40 • 4 TIẾT)
                     </span>
                   </td>
@@ -1966,10 +1923,10 @@ export function TeacherAssignedScheduleSection({
                 {[5, 6].map((p) => renderSelfManagedRow(p, PERIOD_TIMES[p]))}
 
                 {/* NGHỈ GIẢI LAO CHIỀU */}
-                <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-[11px] italic">
-                  <td className="p-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 font-semibold">14:50 - 15:05</td>
-                  <td colSpan={5} className="p-2 text-center">
-                    <span className="inline-flex items-center gap-1.5"><Coffee className="w-3.5 h-3.5 text-amber-500" /> Giờ ăn xế & giải lao chiều (15 phút)</span>
+                <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-[10px] italic">
+                  <td className="py-0.5 px-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 font-semibold">14:50 - 15:05</td>
+                  <td colSpan={5} className="py-0.5 px-2 text-center">
+                    <span className="inline-flex items-center gap-1"><Coffee className="w-3 h-3 text-amber-500" /> Giờ ăn xế & giải lao chiều (15 phút)</span>
                   </td>
                 </tr>
 
