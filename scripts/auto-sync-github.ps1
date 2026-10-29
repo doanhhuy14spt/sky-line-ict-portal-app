@@ -42,7 +42,7 @@ function Invoke-GitSync {
     git commit -m "$commitMsg" 2>$null | Out-Null
 
     # Day len nhanh main cua GitHub (Tu dong kich hoat Vercel build & deploy)
-    git push origin main 2>&1 | Out-Host
+    git push origin main --quiet
     if ($LASTEXITCODE -eq 0) {
         Write-Host "[$timestamp] HOAN TAT! Da dong bo len GitHub (doanhhuy14spt/sky-line-ict-portal-app) va Vercel." -ForegroundColor Green
         return $true
