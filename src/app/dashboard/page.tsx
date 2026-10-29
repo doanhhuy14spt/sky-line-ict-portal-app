@@ -1567,23 +1567,7 @@ export default function DashboardPage() {
                         </div>
                       </CardHeader>
 
-                      <CardContent className="space-y-2 text-xs text-slate-600 dark:text-slate-400 pt-1">
-                        <div>
-                          Họ và tên:{" "}
-                          <strong className="text-slate-900 dark:text-white">{teacher.name}</strong>
-                        </div>
-                        <div>
-                          Chức vụ:{" "}
-                          <strong
-                            className={
-                              teacher.role.includes("Tổ trưởng")
-                                ? "text-amber-600 dark:text-amber-400"
-                                : "text-sky-700 dark:text-sky-300"
-                            }
-                          >
-                            {teacher.role}
-                          </strong>
-                        </div>
+                      <CardContent className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 pt-1">
                         <div>
                           Email:{" "}
                           <strong className="text-slate-800 dark:text-slate-200">{teacher.email}</strong>
