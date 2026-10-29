@@ -1705,8 +1705,8 @@ export function TeacherAssignedScheduleSection({
   const renderSelfManagedRow = (period: number, defaultTime: string) => {
     return (
       <tr key={`self_tt_row_${period}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-        {/* CỘT 1: TIẾT VÀ GIỜ */}
-        <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 w-28 shrink-0 align-middle">
+        {/* CỘT 1: TIẾT VÀ GIỜ (GHIM CỐ ĐỊNH KHI VUỐT NGANG TRÊN ĐIỆN THOẠI) */}
+        <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 w-24 sm:w-28 shrink-0 align-middle sticky left-0 z-10">
           <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {period}</div>
           <div className="text-[10px] text-slate-500 font-medium leading-tight">{defaultTime}</div>
         </td>
@@ -2032,19 +2032,19 @@ export function TeacherAssignedScheduleSection({
           </div>
 
           {/* LƯỚI THỜI KHÓA BIỂU PHẦN 2.1 (THỨ 2 -> THỨ 6 • TIẾT 1 -> 8) - GỌN TRONG 1 MÀN HÌNH */}
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+          <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
             <table className="w-full text-left text-xs border-collapse min-w-[760px] table-fixed">
               <colgroup>
-                <col className="w-28" style={{ width: "112px" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col className="w-24 sm:w-28" style={{ width: "100px" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
               </colgroup>
               <thead>
                 <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-2 px-2 font-bold w-28 text-center bg-slate-200/60 dark:bg-slate-800">
+                  <th className="py-2 px-2 font-bold w-24 sm:w-28 text-center bg-slate-200/80 dark:bg-slate-800 sticky left-0 z-10 border-r border-slate-200 dark:border-slate-700">
                     Tiết / Giờ
                   </th>
                   {[
@@ -2108,7 +2108,7 @@ export function TeacherAssignedScheduleSection({
                     {[1, 2].map((p) => {
                       return (
                         <tr key={`r21_${p}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 align-middle sticky left-0 z-10">
                             <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {p}</div>
                             <div className="text-[10px] text-slate-500 font-medium leading-tight">{PERIOD_TIMES[p]}</div>
                           </td>
@@ -2150,7 +2150,7 @@ export function TeacherAssignedScheduleSection({
                     {[3, 4].map((p) => {
                       return (
                         <tr key={`r21_${p}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 align-middle sticky left-0 z-10">
                             <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {p}</div>
                             <div className="text-[10px] text-slate-500 font-medium leading-tight">{PERIOD_TIMES[p]}</div>
                           </td>
@@ -2199,7 +2199,7 @@ export function TeacherAssignedScheduleSection({
                     {[5, 6].map((p) => {
                       return (
                         <tr key={`r21_${p}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 align-middle sticky left-0 z-10">
                             <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {p}</div>
                             <div className="text-[10px] text-slate-500 font-medium leading-tight">{PERIOD_TIMES[p]}</div>
                           </td>
@@ -2241,7 +2241,7 @@ export function TeacherAssignedScheduleSection({
                     {[7, 8].map((p) => {
                       return (
                         <tr key={`r21_${p}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+                          <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 align-middle sticky left-0 z-10">
                             <div className="font-extrabold text-slate-800 dark:text-slate-200 text-xs leading-tight">Tiết {p}</div>
                             <div className="text-[10px] text-slate-500 font-medium leading-tight">{PERIOD_TIMES[p]}</div>
                           </td>
@@ -2505,19 +2505,19 @@ export function TeacherAssignedScheduleSection({
           </div>
 
           {/* LƯỚI THỜI KHÓA BIỂU PHẦN 2.2 (HIỂN THỊ TRỌN VẸN KHÔNG CẦN CUỘN DỌC) */}
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+          <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
             <table className="w-full text-left text-xs border-collapse min-w-[820px] table-fixed">
               <colgroup>
-                <col className="w-28" style={{ width: "112px" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
-                <col style={{ width: "calc((100% - 112px) / 5)" }} />
+                <col className="w-24 sm:w-28" style={{ width: "100px" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
+                <col style={{ width: "calc((100% - 100px) / 5)" }} />
               </colgroup>
               <thead>
                 <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-1.5 px-2 font-bold w-28 text-center bg-slate-200/60 dark:bg-slate-800">
+                  <th className="py-1.5 px-2 font-bold w-24 sm:w-28 text-center bg-slate-200/80 dark:bg-slate-800 sticky left-0 z-10 border-r border-slate-200 dark:border-slate-700">
                     Tiết / Giờ
                   </th>
                   {[

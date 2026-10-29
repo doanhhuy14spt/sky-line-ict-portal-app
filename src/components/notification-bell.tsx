@@ -279,9 +279,9 @@ export function NotificationBell({
         )}
       </button>
 
-      {/* KHUNG DROPDOWN DANH SÁCH THÔNG BÁO */}
+      {/* KHUNG DROPDOWN DANH SÁCH THÔNG BÁO (TỐI ƯU HIỂN THỊ TRÊN CẢ ĐIỆN THOẠI & MÁY TÍNH) */}
       {isOpen && (
-        <div className="absolute right-0 mt-2.5 w-[340px] sm:w-[400px] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xl shadow-black/40 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2.5 sm:w-[400px] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xl shadow-black/40 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {/* Header khung thông báo */}
           <div className="p-3.5 bg-gradient-to-r from-slate-50 via-sky-50/40 to-slate-50 dark:from-slate-900 dark:via-slate-800/80 dark:to-slate-900 border-b border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between gap-2">

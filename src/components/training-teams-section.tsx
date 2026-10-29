@@ -923,8 +923,8 @@ export function TrainingTeamsSection({
             </div>
           </div>
         ) : (
-          <div className="w-full overflow-x-auto md:overflow-x-visible">
-            <table className="w-full table-fixed text-left border-collapse text-xs">
+          <div className="w-full overflow-x-auto custom-scrollbar">
+            <table className="w-full min-w-[940px] lg:min-w-full table-fixed text-left border-collapse text-xs">
               <colgroup>
                 <col className="w-[4%]" />
                 <col className="w-[13%]" />

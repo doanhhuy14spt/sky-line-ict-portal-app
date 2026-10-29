@@ -954,10 +954,11 @@ export function AchievementsSection({
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. BẢNG DANH SÁCH THÀNH TÍCH (RỘNG 100% MÀN HÌNH, KHÔNG CUỘN NGANG)       */}
+      {/* 2. BẢNG DANH SÁCH THÀNH TÍCH (RỘNG 100% TRÊN PC, VUỐT MƯỢT TRÊN MOBILE)   */}
       {/* ========================================================================= */}
       <div className="w-full rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
-        <table className="w-full table-fixed text-left border-collapse text-xs">
+        <div className="w-full overflow-x-auto custom-scrollbar">
+        <table className="w-full min-w-[880px] lg:min-w-full table-fixed text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               <th className="py-3.5 px-2 text-center w-[4%]">STT</th>
@@ -1194,6 +1195,7 @@ export function AchievementsSection({
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* ========================================================================= */}

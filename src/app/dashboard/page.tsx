@@ -851,7 +851,7 @@ export default function DashboardPage() {
   const renderTimetableRow = (slotTime: { period: number; time: string }) => {
     return (
       <tr key={slotTime.period} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-        <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+        <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 align-middle sticky left-0 z-10">
           <div className="font-extrabold text-xs text-slate-800 dark:text-slate-200 leading-tight">Tiết {slotTime.period}</div>
           <div className="text-[10px] text-slate-500 font-medium leading-tight">{slotTime.time}</div>
         </td>
@@ -916,10 +916,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
-      {/* TOAST THÔNG BÁO NỔI */}
+      {/* TOAST THÔNG BÁO NỔI (TƯƠNG THÍCH CẢ ĐIỆN THOẠI & MÁY TÍNH) */}
       {toastMessage && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-sm font-semibold animate-in fade-in slide-in-from-bottom-5 duration-300 ${
+          className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-6 sm:right-6 sm:max-w-md z-50 flex items-center gap-3 px-4 sm:px-5 py-3.5 rounded-2xl shadow-2xl border text-xs sm:text-sm font-semibold animate-in fade-in slide-in-from-bottom-5 duration-300 ${
             toastMessage.type === "success"
               ? "bg-slate-900 text-white dark:bg-sky-600 border-sky-400/30"
               : toastMessage.type === "warning"
@@ -927,69 +927,186 @@ export default function DashboardPage() {
               : "bg-slate-800 text-white border-slate-700"
           }`}
         >
-          {toastMessage.type === "success" && <CheckCircle2 className="w-5 h-5 text-emerald-400 dark:text-white" />}
-          {toastMessage.type === "warning" && <AlertTriangle className="w-5 h-5 text-amber-200" />}
-          {toastMessage.type === "info" && <Info className="w-5 h-5 text-sky-400" />}
-          <span>{toastMessage.text}</span>
+          {toastMessage.type === "success" && <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400 dark:text-white" />}
+          {toastMessage.type === "warning" && <AlertTriangle className="w-5 h-5 shrink-0 text-amber-200" />}
+          {toastMessage.type === "info" && <Info className="w-5 h-5 shrink-0 text-sky-400" />}
+          <span className="leading-snug">{toastMessage.text}</span>
         </div>
       )}
 
       {/* TOP HEADER: THANH TIÊU ĐỀ TRÊN CÙNG (LOGO, CƠ SỞ, SÁNG/TỐI, TÀI KHOẢN) */}
       <header className="sticky top-0 z-40 w-full border-b border-slate-200/90 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 shadow-xs transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-          {/* Logo & Nhận diện Sky-Line */}
-          <Link href="/" className="flex items-center gap-3 group shrink-0">
-            <div className="h-10 px-2.5 py-1.5 rounded-xl bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/20 flex items-center justify-center shadow-md shadow-sky-600/15 select-none group-hover:scale-105 transition-transform">
-              <img
-                src="/LogoSKL.png"
-                alt="Logo Trường Sky-Line"
-                className="h-7 w-auto object-contain"
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
+            {/* Logo & Nhận diện Sky-Line */}
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0 min-w-0">
+              <div className="h-9 sm:h-10 px-2 sm:px-2.5 py-1.5 rounded-xl bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/20 flex items-center justify-center shadow-md shadow-sky-600/15 select-none group-hover:scale-105 transition-transform shrink-0">
+                <img
+                  src="/LogoSKL.png"
+                  alt="Logo Trường Sky-Line"
+                  className="h-6 sm:h-7 w-auto object-contain"
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-sm sm:text-lg tracking-tight bg-gradient-to-r from-sky-700 via-sky-600 to-amber-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-amber-400 truncate">
+                    SKY-LINE ICT PORTAL
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block font-medium">
+                  Cổng Quản Trị & Vận Hành Chuyên Môn
+                </p>
+              </div>
+            </Link>
+
+            {/* Khu vực công cụ & Tài khoản góc trên bên phải */}
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+              {/* Bộ chọn Năm học tương tác linh hoạt (Hiển thị trên màn hình từ md trở lên) */}
+              <div className="hidden md:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <Calendar className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+                <span className="hidden lg:inline text-slate-500 dark:text-slate-400">Năm học:</span>
+                <select
+                  aria-label="Chọn năm học"
+                  value={selectedSchoolYear}
+                  onChange={(e) => {
+                    setSelectedSchoolYear(e.target.value);
+                    showToast(`Đã chuyển sang xem dữ liệu Năm học ${e.target.value}!`, "info");
+                  }}
+                  className="bg-transparent font-bold text-sky-700 dark:text-sky-400 focus:outline-none cursor-pointer"
+                >
+                  <option value="2026-2027" className="dark:bg-slate-900">2026 - 2027</option>
+                  <option value="2025-2026" className="dark:bg-slate-900">2025 - 2026</option>
+                  <option value="2024-2025" className="dark:bg-slate-900">2024 - 2025</option>
+                </select>
+              </div>
+
+              {/* Bộ chọn Cơ sở (5 Cơ sở Sky-Line - Hiển thị trên màn hình từ md trở lên) */}
+              <div className="hidden md:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+                <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <select
+                  aria-label="Chọn cơ sở trường"
+                  value={selectedCampus}
+                  onChange={(e) => {
+                    setSelectedCampus(e.target.value);
+                    showToast(`Đã lọc dữ liệu theo: ${campuses.find((c) => c.id === e.target.value)?.name}`, "info");
+                  }}
+                  className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                >
+                  {campuses.map((c) => (
+                    <option key={c.id} value={c.id} className="dark:bg-slate-900">
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Khiên Bảo Mật Danh Tính Học Sinh (Tự động bật với Khách hoặc bật nhanh khi Trình chiếu) */}
+              {isGuest ? (
+                <div
+                  className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] sm:text-xs font-bold select-none"
+                  title="Tài khoản Khách tự động ẩn danh họ tên học sinh theo chuẩn An toàn dữ liệu Sky-Line"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="hidden sm:inline">Đã ẩn danh HS</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isStudentPrivacyMode;
+                    setIsStudentPrivacyMode(next);
+                    showToast(
+                      next
+                        ? "Đã bật Khiên Bảo Mật Học Sinh (Chế độ Trình chiếu: Tự động viết tắt họ tên học sinh)!"
+                        : "Đã tắt chế độ ẩn danh (Hiển thị đầy đủ họ tên học sinh phục vụ nghiệp vụ nội bộ).",
+                      "info"
+                    );
+                  }}
+                  className={`inline-flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    isStudentPrivacyMode
+                      ? "bg-emerald-600 text-white border-emerald-500 shadow-xs"
+                      : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                  }`}
+                  title={
+                    isStudentPrivacyMode
+                      ? "Đang bật chế độ ẩn danh tên học sinh (Bấm để hiện lại tên đầy đủ)"
+                      : "Bật chế độ ẩn danh tên học sinh khi trình chiếu công khai"
+                  }
+                >
+                  <ShieldCheck
+                    className={`w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0 ${
+                      isStudentPrivacyMode ? "text-white" : "text-emerald-600 dark:text-emerald-400"
+                    }`}
+                  />
+                  <span className="hidden md:inline">
+                    {isStudentPrivacyMode ? "Đang ẩn danh HS" : "Bảo mật HS"}
+                  </span>
+                </button>
+              )}
+
+              {/* Nút Chuông Thông Báo Hoạt Động Hệ Thống */}
+              <NotificationBell
+                supabase={supabase}
+                currentUserProfile={currentUserProfile}
+                onNavigateTab={handleTabChange}
+                showToast={showToast}
+              />
+
+              {/* Nút Đổi giao diện Sáng / Tối */}
+              <button
+                type="button"
+                onClick={handleToggleTheme}
+                className="p-2 sm:p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 transition-all cursor-pointer"
+                title={isDark ? "Chuyển sang Chế độ Sáng" : "Chuyển sang Chế độ Tối"}
+                aria-label="Đổi giao diện Sáng / Tối"
+              >
+                {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-sky-600" />}
+              </button>
+
+              {/* LOGO TÀI KHOẢN ĐĂNG NHẬP Ở GÓC TRÊN BÊN PHẢI & THOÁT KHỎI TÀI KHOẢN */}
+              <UserNav
+                user={currentUserProfile}
+                onLogout={handleLogout}
+                onSwitchProfile={(profile) => {
+                  setCurrentUserProfile(profile);
+                  showToast(
+                    `Đã chuyển đổi góc nhìn sang: ${profile.name} (${profile.role === "leader" ? "Tổ Trưởng" : "Giáo Viên"})`,
+                    "info"
+                  );
+                }}
               />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-sky-700 via-sky-600 to-amber-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-amber-400">
-                  SKY-LINE ICT PORTAL
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block font-medium">
-                Cổng Quản Trị & Vận Hành Chuyên Môn
-              </p>
-            </div>
-          </Link>
+          </div>
 
-          {/* Khu vực công cụ & Tài khoản góc trên bên phải */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Bộ chọn Năm học tương tác linh hoạt */}
-            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300">
+          {/* THANH CHỌN NHANH NĂM HỌC & CƠ SỞ DÀNH RIÊNG CHO ĐIỆN THOẠI (HIỂN THỊ GỌN GÀNG TRÊN SMARTPHONE) */}
+          <div className="grid grid-cols-2 gap-2 pb-2 md:hidden">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300">
               <Calendar className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-              <span className="hidden lg:inline text-slate-500 dark:text-slate-400">Năm học:</span>
               <select
-                aria-label="Chọn năm học"
+                aria-label="Chọn năm học trên điện thoại"
                 value={selectedSchoolYear}
                 onChange={(e) => {
                   setSelectedSchoolYear(e.target.value);
                   showToast(`Đã chuyển sang xem dữ liệu Năm học ${e.target.value}!`, "info");
                 }}
-                className="bg-transparent font-bold text-sky-700 dark:text-sky-400 focus:outline-none cursor-pointer"
+                className="w-full bg-transparent font-bold text-sky-700 dark:text-sky-400 focus:outline-none cursor-pointer truncate"
               >
-                <option value="2026-2027" className="dark:bg-slate-900">2026 - 2027</option>
-                <option value="2025-2026" className="dark:bg-slate-900">2025 - 2026</option>
-                <option value="2024-2025" className="dark:bg-slate-900">2024 - 2025</option>
+                <option value="2026-2027" className="dark:bg-slate-900">NH: 2026 - 2027</option>
+                <option value="2025-2026" className="dark:bg-slate-900">NH: 2025 - 2026</option>
+                <option value="2024-2025" className="dark:bg-slate-900">NH: 2024 - 2025</option>
               </select>
             </div>
 
-            {/* Bộ chọn Cơ sở (5 Cơ sở Sky-Line) */}
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium">
               <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <select
-                aria-label="Chọn cơ sở trường"
+                aria-label="Chọn cơ sở trường trên điện thoại"
                 value={selectedCampus}
                 onChange={(e) => {
                   setSelectedCampus(e.target.value);
                   showToast(`Đã lọc dữ liệu theo: ${campuses.find((c) => c.id === e.target.value)?.name}`, "info");
                 }}
-                className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                className="w-full bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate"
               >
                 {campuses.map((c) => (
                   <option key={c.id} value={c.id} className="dark:bg-slate-900">
@@ -998,93 +1115,17 @@ export default function DashboardPage() {
                 ))}
               </select>
             </div>
-
-            {/* Khiên Bảo Mật Danh Tính Học Sinh (Tự động bật với Khách hoặc bật nhanh khi Trình chiếu) */}
-            {isGuest ? (
-              <div
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold select-none"
-                title="Tài khoản Khách tự động ẩn danh họ tên học sinh theo chuẩn An toàn dữ liệu Sky-Line"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>Đã ẩn danh HS</span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !isStudentPrivacyMode;
-                  setIsStudentPrivacyMode(next);
-                  showToast(
-                    next
-                      ? "Đã bật Khiên Bảo Mật Học Sinh (Chế độ Trình chiếu: Tự động viết tắt họ tên học sinh)!"
-                      : "Đã tắt chế độ ẩn danh (Hiển thị đầy đủ họ tên học sinh phục vụ nghiệp vụ nội bộ).",
-                    "info"
-                  );
-                }}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                  isStudentPrivacyMode
-                    ? "bg-emerald-600 text-white border-emerald-500 shadow-xs"
-                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-                }`}
-                title={
-                  isStudentPrivacyMode
-                    ? "Đang bật chế độ ẩn danh tên học sinh (Bấm để hiện lại tên đầy đủ)"
-                    : "Bật chế độ ẩn danh tên học sinh khi trình chiếu công khai"
-                }
-              >
-                <ShieldCheck
-                  className={`w-3.5 h-3.5 shrink-0 ${
-                    isStudentPrivacyMode ? "text-white" : "text-emerald-600 dark:text-emerald-400"
-                  }`}
-                />
-                <span className="hidden md:inline">
-                  {isStudentPrivacyMode ? "Đang ẩn danh HS" : "Bảo mật HS"}
-                </span>
-              </button>
-            )}
-
-            {/* Nút Chuông Thông Báo Hoạt Động Hệ Thống */}
-            <NotificationBell
-              supabase={supabase}
-              currentUserProfile={currentUserProfile}
-              onNavigateTab={handleTabChange}
-              showToast={showToast}
-            />
-
-            {/* Nút Đổi giao diện Sáng / Tối */}
-            <button
-              type="button"
-              onClick={handleToggleTheme}
-              className="p-2 sm:p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 transition-all cursor-pointer"
-              title={isDark ? "Chuyển sang Chế độ Sáng" : "Chuyển sang Chế độ Tối"}
-              aria-label="Đổi giao diện Sáng / Tối"
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-sky-600" />}
-            </button>
-
-            {/* LOGO TÀI KHOẢN ĐĂNG NHẬP Ở GÓC TRÊN BÊN PHẢI & THOÁT KHỎI TÀI KHOẢN */}
-            <UserNav
-              user={currentUserProfile}
-              onLogout={handleLogout}
-              onSwitchProfile={(profile) => {
-                setCurrentUserProfile(profile);
-                showToast(
-                  `Đã chuyển đổi góc nhìn sang: ${profile.name} (${profile.role === "leader" ? "Tổ Trưởng" : "Giáo Viên"})`,
-                  "info"
-                );
-              }}
-            />
           </div>
         </div>
       </header>
 
       {/* THANH ĐIỀU HƯỚNG DASHBOARD (THANH TABS CHUYÊN MÔN & TÁC VỤ NHANH) */}
-      <div className="sticky top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-2">
-            {/* Dãy nút chuyển đổi chuyên mục trên cùng 1 dòng (Single-line Segmented Tabs) */}
+      <div className="sticky top-[88px] md:top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 shadow-xs">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div ref={deptDataMenuRef} className="py-2 relative">
+            {/* Dãy nút chuyển đổi chuyên mục trên cùng 1 dòng (Vuốt ngang mượt trên điện thoại, trải đều 1 dòng trên máy tính) */}
             <div
-              className="w-full bg-slate-100/95 dark:bg-slate-800/90 p-1 rounded-2xl flex items-center justify-between gap-1 border border-slate-200/80 dark:border-slate-700/80"
+              className="w-full overflow-x-auto no-scrollbar bg-slate-100/95 dark:bg-slate-800/90 p-1 rounded-2xl flex items-center justify-between gap-1 border border-slate-200/80 dark:border-slate-700/80"
             >
               {[
                 { id: "dashboard", label: "Tổng Quan", icon: Layers },
@@ -1104,7 +1145,7 @@ export default function DashboardPage() {
                       setIsDeptDataMenuOpen(false);
                       handleTabChange(tab.id as any);
                     }}
-                    className={`flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap px-2 lg:px-3 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer ${
+                    className={`shrink-0 lg:flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap px-2.5 lg:px-3 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer ${
                       isActive
                         ? "bg-white text-sky-700 dark:bg-slate-900 dark:text-sky-300 shadow-sm border border-slate-200/80 dark:border-slate-700/80"
                         : "text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
@@ -1117,55 +1158,53 @@ export default function DashboardPage() {
               })}
 
               {/* MỤC "DỮ LIỆU CỦA TỔ" XỔ DANH SÁCH THEO NĂM HỌC */}
-              <div ref={deptDataMenuRef} className="relative flex-1 flex">
-                <button
-                  type="button"
-                  onClick={() => setIsDeptDataMenuOpen((prev) => !prev)}
-                  className={`w-full inline-flex items-center justify-center gap-1.5 whitespace-nowrap px-2 lg:px-3 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer ${
-                    isDeptDataMenuOpen
-                      ? "bg-white text-sky-700 dark:bg-slate-900 dark:text-sky-300 shadow-sm border border-slate-200/80 dark:border-slate-700/80"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
+              <button
+                type="button"
+                onClick={() => setIsDeptDataMenuOpen((prev) => !prev)}
+                className={`shrink-0 lg:flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap px-2.5 lg:px-3 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer ${
+                  isDeptDataMenuOpen
+                    ? "bg-white text-sky-700 dark:bg-slate-900 dark:text-sky-300 shadow-sm border border-slate-200/80 dark:border-slate-700/80"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
+                }`}
+              >
+                <FolderOpen className={`w-3.5 h-3.5 shrink-0 ${isDeptDataMenuOpen ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`} />
+                <span>Dữ liệu của tổ</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
+                    isDeptDataMenuOpen ? "rotate-180 text-sky-600 dark:text-sky-400" : "text-slate-400"
                   }`}
-                >
-                  <FolderOpen className={`w-3.5 h-3.5 shrink-0 ${isDeptDataMenuOpen ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`} />
-                  <span>Dữ liệu của tổ</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
-                      isDeptDataMenuOpen ? "rotate-180 text-sky-600 dark:text-sky-400" : "text-slate-400"
-                    }`}
-                  />
-                </button>
-
-                {isDeptDataMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
-                      Kho lưu trữ OneDrive theo năm học
-                    </div>
-                    <div className="p-1 space-y-0.5">
-                      {departmentDataLinks.map((item) => (
-                        <a
-                          key={item.schoolYear}
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => {
-                            setIsDeptDataMenuOpen(false);
-                            showToast(`Đang mở kho Dữ liệu của tổ (${item.label})...`, "info");
-                          }}
-                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 transition-colors cursor-pointer group"
-                        >
-                          <span className="inline-flex items-center gap-2">
-                            <FolderOpen className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
-                            <span>{item.label}</span>
-                          </span>
-                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                />
+              </button>
             </div>
+
+            {isDeptDataMenuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-60 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
+                  Kho lưu trữ OneDrive theo năm học
+                </div>
+                <div className="p-1 space-y-0.5">
+                  {departmentDataLinks.map((item) => (
+                    <a
+                      key={item.schoolYear}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        setIsDeptDataMenuOpen(false);
+                        showToast(`Đang mở kho Dữ liệu của tổ (${item.label})...`, "info");
+                      }}
+                      className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 transition-colors cursor-pointer group"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <FolderOpen className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
+                        <span>{item.label}</span>
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1394,10 +1433,10 @@ export default function DashboardPage() {
                   </div>
 
                   {/* BẢNG LƯỚI THỜI KHÓA BIỂU 8 TIẾT (BUỔI SÁNG 4 TIẾT, BUỔI CHIỀU 4 TIẾT) - GỌN TRONG 1 MÀN HÌNH */}
-                  <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                  <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
                     <table className="w-full text-left text-xs border-collapse min-w-[760px] table-fixed">
                       <colgroup>
-                        <col className="w-28" />
+                        <col className="w-24 sm:w-28" />
                         <col className="w-1/5" />
                         <col className="w-1/5" />
                         <col className="w-1/5" />
@@ -1406,7 +1445,7 @@ export default function DashboardPage() {
                       </colgroup>
                       <thead>
                         <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                          <th className="py-2 px-2 font-bold w-28 text-center bg-slate-200/60 dark:bg-slate-800">Tiết / Giờ</th>
+                          <th className="py-2 px-2 font-bold w-24 sm:w-28 text-center bg-slate-200/80 dark:bg-slate-800 sticky left-0 z-10 border-r border-slate-200 dark:border-slate-700">Tiết / Giờ</th>
                           {[
                             { day: 2, label: "Thứ Hai" },
                             { day: 3, label: "Thứ Ba" },
