@@ -34,6 +34,7 @@ export interface DepartmentTaskItem {
   assignee_email?: string | null;
   deadline: string; // Định dạng YYYY-MM-DD
   status: "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ";
+  assignee_statuses?: Record<string, "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ"> | null;
   evidence?: string | null; // Cột Minh chứng (chèn link / văn bản)
   notes: string;
   created_by?: string | null;
@@ -193,6 +194,91 @@ export function AssignedTasksSection({
     [currentUserProfile, isLeader, isGuest]
   );
 
+  // Kiểm tra tên giáo viên trên 1 dòng có phải là tài khoản đang đăng nhập hay không
+  const isTeacherNameCurrentLogin = useCallback(
+    (teacherName: string): boolean => {
+      if (!currentUserProfile || isGuest || !teacherName) return false;
+      const clean = (s: string) =>
+        (s || "")
+          .replace(/^(Thầy|Cô)\s+/i, "")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const targetClean = clean(teacherName);
+      const currentClean = clean(currentUserProfile.name || "");
+      if (targetClean && currentClean && (targetClean === currentClean || targetClean.includes(currentClean) || currentClean.includes(targetClean))) {
+        return true;
+      }
+
+      const matchedProfile = teachersList.find(
+        (t) => clean(t.name) === targetClean || t.name?.trim().toLowerCase() === teacherName.trim().toLowerCase()
+      );
+      if (matchedProfile) {
+        if (currentUserProfile.id && matchedProfile.id === currentUserProfile.id) return true;
+        if (
+          currentUserProfile.email &&
+          matchedProfile.email &&
+          matchedProfile.email.toLowerCase() === currentUserProfile.email.toLowerCase()
+        ) {
+          return true;
+        }
+      }
+      return false;
+    },
+    [currentUserProfile, isGuest, teachersList]
+  );
+
+  // Kiểm tra quyền chỉnh sửa ô Tình trạng của từng giáo viên trong công việc
+  const canEditTeacherStatusInTask = useCallback(
+    (teacherName: string): boolean => {
+      if (!currentUserProfile || isGuest) return false;
+      if (isLeader) return true; // Tổ trưởng có quyền chỉnh sửa tình trạng của mọi giáo viên
+      return isTeacherNameCurrentLogin(teacherName); // Giáo viên chỉ chỉnh được dòng tên của chính mình
+    },
+    [currentUserProfile, isGuest, isLeader, isTeacherNameCurrentLogin]
+  );
+
+  // Lấy tình trạng riêng của 1 giáo viên trong công việc
+  const getTeacherStatusInTask = useCallback(
+    (
+      task: DepartmentTaskItem,
+      teacherName: string
+    ): "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ" => {
+      const map = task.assignee_statuses || {};
+      const trimmed = (teacherName || "").trim();
+      if (map[trimmed]) return map[trimmed];
+
+      const clean = (s: string) =>
+        (s || "")
+          .replace(/^(Thầy|Cô)\s+/i, "")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
+      const targetClean = clean(trimmed);
+      for (const [k, v] of Object.entries(map)) {
+        if (k.trim().toLowerCase() === trimmed.toLowerCase() || clean(k) === targetClean) {
+          return v;
+        }
+      }
+      return task.status || "Đang thực hiện";
+    },
+    []
+  );
+
+  // Tự động tổng hợp tình trạng chung của công việc từ tình trạng riêng của từng giáo viên
+  const computeOverallTaskStatus = (
+    teacherNames: string[],
+    statusesMap: Record<string, "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ">,
+    fallbackStatus: "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ"
+  ): "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ" => {
+    if (teacherNames.length === 0) return fallbackStatus;
+    const list = teacherNames.map((n) => statusesMap[n] || fallbackStatus);
+    if (list.every((s) => s === "Hoàn thành")) return "Hoàn thành";
+    if (list.some((s) => s === "Trễ tiến độ")) return "Trễ tiến độ";
+    return "Đang thực hiện";
+  };
+
   // =========================================================================
   // TẢI DỮ LIỆU TỪ SUPABASE (ĐỒNG BỘ THEO NĂM HỌC ĐANG CHỌN)
   // =========================================================================
@@ -247,8 +333,24 @@ export function AssignedTasksSection({
         (task.evidence && task.evidence.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (task.notes && task.notes.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // 2. Lọc theo tình trạng
-      const matchStatus = statusFilter === "all" || task.status === statusFilter;
+      // 2. Lọc theo tình trạng (Hỗ trợ lọc theo tình trạng riêng của từng giáo viên hoặc tình trạng tổng)
+      const matchStatus = (() => {
+        if (statusFilter === "all") return true;
+        if (teacherFilter !== "all") {
+          return getTeacherStatusInTask(task, teacherFilter) === statusFilter;
+        }
+        if (onlyMyTasks && currentUserProfile?.name) {
+          return getTeacherStatusInTask(task, currentUserProfile.name) === statusFilter;
+        }
+        const tNames = (task.assignee_name || "")
+          .split(",")
+          .map((n) => n.trim())
+          .filter(Boolean);
+        return (
+          task.status === statusFilter ||
+          tNames.some((n) => getTeacherStatusInTask(task, n) === statusFilter)
+        );
+      })();
 
       // 2.5. Lọc theo tháng deadline
       const matchMonth = (() => {
@@ -281,6 +383,8 @@ export function AssignedTasksSection({
     teacherFilter,
     onlyMyTasks,
     isMyAssignedTask,
+    getTeacherStatusInTask,
+    currentUserProfile?.name,
     parseDeadlineMonthYear,
     currentMonthNumber,
     currentYearNumber,
@@ -368,6 +472,14 @@ export function AssignedTasksSection({
 
     setIsSubmittingAdd(true);
     try {
+      const initialAssigneeStatuses: Record<
+        string,
+        "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ"
+      > = {};
+      selectedTeachers.forEach((t) => {
+        initialAssigneeStatuses[t.name] = addFormData.status;
+      });
+
       const newRecord = {
         task_content: addFormData.task_content.trim(),
         assignee_id: selectedTeachers[0]?.id || null,
@@ -376,6 +488,7 @@ export function AssignedTasksSection({
         assignee_email: combinedEmails || null,
         deadline: addFormData.deadline,
         status: addFormData.status,
+        assignee_statuses: initialAssigneeStatuses,
         evidence: addFormData.evidence.trim(),
         notes: addFormData.notes.trim(),
         created_by: currentUserProfile?.id || null,
@@ -489,6 +602,22 @@ export function AssignedTasksSection({
 
     setIsSubmittingEdit(true);
     try {
+      const nextAssigneeStatuses: Record<
+        string,
+        "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ"
+      > = {};
+      const statusChangedInModal = editFormData.status !== editingTask.status;
+      selectedTeachers.forEach((t) => {
+        nextAssigneeStatuses[t.name] = statusChangedInModal
+          ? editFormData.status
+          : getTeacherStatusInTask(editingTask, t.name);
+      });
+      const nextOverallStatus = computeOverallTaskStatus(
+        selectedTeachers.map((t) => t.name),
+        nextAssigneeStatuses,
+        editFormData.status
+      );
+
       const updateData = {
         task_content: editFormData.task_content.trim(),
         assignee_id: selectedTeachers[0]?.id || null,
@@ -496,7 +625,8 @@ export function AssignedTasksSection({
         assignee_name: combinedNames,
         assignee_email: combinedEmails || null,
         deadline: editFormData.deadline,
-        status: editFormData.status,
+        status: nextOverallStatus,
+        assignee_statuses: nextAssigneeStatuses,
         evidence: editFormData.evidence.trim(),
         notes: editFormData.notes.trim(),
         updated_at: new Date().toISOString(),
@@ -546,33 +676,69 @@ export function AssignedTasksSection({
   };
 
   // =========================================================================
-  // 4. GIÁO VIÊN CẬP NHẬT TIẾN ĐỘ Ở CỘT TÌNH TRẠNG (CHỈ ÁP DỤNG VIỆC ĐƯỢC PHÂN CÔNG)
+  // 4. CẬP NHẬT TIẾN ĐỘ RIÊNG CỦA TỪNG GIÁO VIÊN Ở CỘT TÌNH TRẠNG
   // =========================================================================
-  const handleUpdateStatus = async (
+  const handleUpdateTeacherStatus = async (
     task: DepartmentTaskItem,
+    teacherName: string,
     newStatus: "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ"
   ) => {
-    if (!isMyAssignedTask(task)) {
-      showToast("Thầy/Cô không được phân công công việc này nên không thể cập nhật tiến độ!", "warning");
+    if (!canEditTeacherStatusInTask(teacherName)) {
+      showToast(
+        `Thầy/Cô chỉ được phép cập nhật tình trạng của chính mình (không thể đổi tình trạng của ${teacherName})!`,
+        "warning"
+      );
       return;
     }
 
+    const teacherNamesList = (task.assignee_name || "")
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean);
+
+    const nextAssigneeStatuses: Record<
+      string,
+      "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ"
+    > = {};
+    teacherNamesList.forEach((tName) => {
+      nextAssigneeStatuses[tName] = getTeacherStatusInTask(task, tName);
+    });
+    nextAssigneeStatuses[teacherName] = newStatus;
+
+    const nextOverallStatus = computeOverallTaskStatus(
+      teacherNamesList,
+      nextAssigneeStatuses,
+      newStatus
+    );
+
     try {
       setTasksList((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t))
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: nextOverallStatus,
+                assignee_statuses: nextAssigneeStatuses,
+              }
+            : t
+        )
       );
 
       const { error } = await supabase
         .from("department_tasks")
         .update({
-          status: newStatus,
+          status: nextOverallStatus,
+          assignee_statuses: nextAssigneeStatuses,
           updated_at: new Date().toISOString(),
         })
         .eq("id", task.id);
 
       if (error) throw error;
 
-      showToast(`Đã cập nhật tiến độ sang "${newStatus}"!`, "success");
+      showToast(
+        `Đã cập nhật tình trạng của ${teacherName} sang "${newStatus}"!`,
+        "success"
+      );
     } catch (err: any) {
       console.error("Lỗi cập nhật tình trạng:", err);
       showToast(err.message || "Lỗi khi cập nhật tình trạng công việc!", "warning");
@@ -990,27 +1156,40 @@ export function AssignedTasksSection({
                       )}
                     </td>
 
-                    {/* 3. GIÁO VIÊN PHỤ TRÁCH (HIỂN THỊ 1 HOẶC NHIỀU GIÁO VIÊN) */}
-                    <td className="py-3.5 px-3">
-                      <div className="flex flex-wrap gap-1">
-                        {teacherNamesList.map((tName, idx) => (
-                          <div
-                            key={idx}
-                            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/70 shadow-2xs max-w-full"
-                          >
-                            <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-500 to-sky-700 text-white font-black text-[10px] flex items-center justify-center shrink-0">
-                              {tName.charAt(0)}
+                    {/* 3. GIÁO VIÊN PHỤ TRÁCH (DÀN THẲNG HÀNG 1-1 VỚI CỘT TÌNH TRẠNG) */}
+                    <td className="py-3.5 px-3 align-top">
+                      <div className="flex flex-col gap-1.5">
+                        {teacherNamesList.map((tName, idx) => {
+                          const isCurrentLoginRow = isTeacherNameCurrentLogin(tName);
+                          return (
+                            <div
+                              key={idx}
+                              className={`inline-flex items-center gap-1.5 px-2.5 h-7 rounded-xl border shadow-2xs max-w-full ${
+                                isCurrentLoginRow
+                                  ? "bg-sky-50/90 dark:bg-sky-950/60 border-sky-400/80 dark:border-sky-600 ring-1 ring-sky-400/30"
+                                  : "bg-white/90 dark:bg-slate-800 border-slate-200/80 dark:border-slate-700/70"
+                              }`}
+                            >
+                              <div
+                                className={`w-4.5 h-4.5 rounded-full text-white font-black text-[9px] flex items-center justify-center shrink-0 ${
+                                  isCurrentLoginRow
+                                    ? "bg-gradient-to-tr from-sky-500 to-amber-500"
+                                    : "bg-gradient-to-tr from-sky-500 to-sky-700"
+                                }`}
+                              >
+                                {tName.replace(/^(Thầy|Cô)\s+/i, "").charAt(0) || tName.charAt(0)}
+                              </div>
+                              <span className="font-bold text-slate-800 dark:text-slate-200 text-[11px] leading-tight truncate">
+                                {tName}
+                              </span>
                             </div>
-                            <span className="font-bold text-slate-800 dark:text-slate-200 text-[11px] leading-tight break-words">
-                              {tName}
-                            </span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </td>
 
                     {/* 4. DEADLINE */}
-                    <td className="py-3.5 px-2 text-center">
+                    <td className="py-3.5 px-2 text-center align-middle">
                       <div
                         className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-xl font-bold text-[11px] whitespace-nowrap ${
                           isCurrentMonthDeadline
@@ -1034,53 +1213,62 @@ export function AssignedTasksSection({
                       </div>
                     </td>
 
-                    {/* 5. TÌNH TRẠNG (HOÀN THÀNH, ĐANG THỰC HIỆN, TRỄ TIẾN ĐỘ) */}
-                    <td className="py-3.5 px-2 text-center">
-                      {isAssignedToCurrent ? (
-                        <div className="inline-block relative max-w-full">
-                          <select
-                            aria-label="Cập nhật tình trạng công việc"
-                            value={task.status}
-                            onChange={(e) =>
-                              handleUpdateStatus(
-                                task,
-                                e.target.value as "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ"
-                              )
-                            }
-                            className={`h-7 px-2 pr-5 rounded-full text-[11px] font-black border transition-all cursor-pointer focus:outline-none appearance-none max-w-full truncate ${
-                              task.status === "Hoàn thành"
-                                ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 shadow-2xs"
-                                : task.status === "Trễ tiến độ"
-                                ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 shadow-2xs"
-                                : "bg-sky-50 dark:bg-sky-950/60 border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 shadow-2xs"
-                            }`}
-                            title="Bấm để cập nhật tiến độ công việc"
-                          >
-                            <option value="Đang thực hiện">⏳ Đang thực hiện</option>
-                            <option value="Hoàn thành">✅ Hoàn thành</option>
-                            <option value="Trễ tiến độ">⚠️ Trễ tiến độ</option>
-                          </select>
-                          <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-400">
-                            ▼
-                          </span>
-                        </div>
-                      ) : (
-                        <Badge
-                          variant={
-                            task.status === "Hoàn thành"
-                              ? "emerald"
-                              : task.status === "Trễ tiến độ"
-                              ? "destructive"
-                              : "default"
-                          }
-                          className="font-bold text-[11px] px-2 py-0.5 whitespace-nowrap"
-                        >
-                          {task.status === "Hoàn thành" && <CheckCircle2 className="w-3 h-3 mr-1" />}
-                          {task.status === "Đang thực hiện" && <Clock className="w-3 h-3 mr-1" />}
-                          {task.status === "Trễ tiến độ" && <AlertTriangle className="w-3 h-3 mr-1" />}
-                          {task.status}
-                        </Badge>
-                      )}
+                    {/* 5. TÌNH TRẠNG RIÊNG CHO TỪNG GIÁO VIÊN (THẲNG HÀNG 1-1 VỚI GIÁO VIÊN PHỤ TRÁCH) */}
+                    <td className="py-3.5 px-2 text-center align-top">
+                      <div className="flex flex-col items-center gap-1.5">
+                        {teacherNamesList.map((tName, idx) => {
+                          const teacherStatus = getTeacherStatusInTask(task, tName);
+                          const canChangeThisTeacher = canEditTeacherStatusInTask(tName);
+
+                          return canChangeThisTeacher ? (
+                            <div key={idx} className="inline-block relative w-full max-w-[140px]">
+                              <select
+                                aria-label={`Cập nhật tình trạng công việc của ${tName}`}
+                                value={teacherStatus}
+                                onChange={(e) =>
+                                  handleUpdateTeacherStatus(
+                                    task,
+                                    tName,
+                                    e.target.value as "Đang thực hiện" | "Hoàn thành" | "Trễ tiến độ"
+                                  )
+                                }
+                                className={`w-full h-7 px-2 pr-5 rounded-full text-[11px] font-black border transition-all cursor-pointer focus:outline-none appearance-none truncate ${
+                                  teacherStatus === "Hoàn thành"
+                                    ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 shadow-2xs"
+                                    : teacherStatus === "Trễ tiến độ"
+                                    ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 shadow-2xs"
+                                    : "bg-sky-50 dark:bg-sky-950/60 border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 shadow-2xs"
+                                }`}
+                                title={`Bấm để cập nhật tình trạng của ${tName}`}
+                              >
+                                <option value="Đang thực hiện">⏳ Đang thực hiện</option>
+                                <option value="Hoàn thành">✅ Hoàn thành</option>
+                                <option value="Trễ tiến độ">⚠️ Trễ tiến độ</option>
+                              </select>
+                              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-400">
+                                ▼
+                              </span>
+                            </div>
+                          ) : (
+                            <div
+                              key={idx}
+                              className={`inline-flex items-center justify-center w-full max-w-[140px] h-7 px-2.5 rounded-full text-[11px] font-bold border whitespace-nowrap ${
+                                teacherStatus === "Hoàn thành"
+                                  ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300"
+                                  : teacherStatus === "Trễ tiến độ"
+                                  ? "bg-rose-50/70 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300"
+                                  : "bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                              }`}
+                              title={`Tình trạng của ${tName}: ${teacherStatus}`}
+                            >
+                              {teacherStatus === "Hoàn thành" && <CheckCircle2 className="w-3 h-3 mr-1 shrink-0 text-emerald-500" />}
+                              {teacherStatus === "Đang thực hiện" && <Clock className="w-3 h-3 mr-1 shrink-0 text-sky-500" />}
+                              {teacherStatus === "Trễ tiến độ" && <AlertTriangle className="w-3 h-3 mr-1 shrink-0 text-rose-500" />}
+                              <span className="truncate">{teacherStatus}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </td>
 
                     {/* 6. MINH CHỨNG (PHÍA SAU TÌNH TRẠNG, PHÍA TRƯỚC GHI CHÚ) */}
