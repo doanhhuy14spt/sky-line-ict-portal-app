@@ -34,6 +34,11 @@ import {
   GraduationCap,
   Eye,
   RefreshCw,
+  Pencil,
+  Phone,
+  Mail,
+  Briefcase,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -195,13 +200,16 @@ export default function DashboardPage() {
     }
   }, [currentUserProfile?.role, timetableSubTab]);
 
-  // Danh bạ giáo viên (Profiles) từ Supabase & file LichPhongLab.xlsx
+  // Danh bạ giáo viên (Profiles) từ Supabase
   const [teachersList, setTeachersList] = useState([
     {
       id: "a0000001-0000-0000-0000-000000000001",
       name: "Thầy Đỗ Anh Huy",
       email: "huyda@skylineschool.edu.vn",
+      phone: "",
+      campusId: "all",
       campus: "Bao quát 5 Cơ sở",
+      roleCode: "leader" as "leader" | "teacher",
       role: "Tổ trưởng chuyên môn",
       specialty: "Quản trị hệ thống, Huấn luyện HSG Robotics Quốc Tế",
       lab: "Quản trị toàn bộ 6 phòng Lab",
@@ -210,66 +218,100 @@ export default function DashboardPage() {
       id: "a0000001-0000-0000-0000-000000000002",
       name: "Thầy Đồng Nguyên Tuấn",
       email: "tuandn@skylineschool.edu.vn",
+      phone: "",
+      campusId: "riverside",
       campus: "Sky-Line Riverside",
+      roleCode: "teacher" as "leader" | "teacher",
       role: "Giáo viên",
       specialty: "Robotics Lego Spike Prime & STEM Trung học",
-      lab: "Phụ trách Lab Riverside Trung Học",
+      lab: "Phòng Lab Sky-Line Riverside Trung Học",
     },
     {
       id: "a0000001-0000-0000-0000-000000000003",
       name: "Cô Đào Thị Mỹ Linh",
       email: "linhdtm@skylineschool.edu.vn",
+      phone: "",
+      campusId: "riverside",
       campus: "Sky-Line Riverside",
+      roleCode: "teacher" as "leader" | "teacher",
       role: "Giáo viên",
       specialty: "Tin Học Tiểu Học & Lập Trình Scratch",
-      lab: "Phụ trách Lab Riverside Tiểu Học",
+      lab: "Phòng Lab Sky-Line Riverside Tiểu Học",
     },
     {
       id: "a0000001-0000-0000-0000-000000000004",
       name: "Cô Lương Thị Ngọc Ánh",
       email: "anhltn@skylineschool.edu.vn",
-      campus: "Sky-Line Hill",
+      phone: "",
+      campusId: "international",
+      campus: "Sky-Line Global",
+      roleCode: "teacher" as "leader" | "teacher",
       role: "Giáo viên",
       specialty: "Tin Học Song Ngữ & Ứng Dụng AI Giáo Dục",
-      lab: "Phụ trách Lab Sky-Line Hill",
+      lab: "Phòng Lab Sky-Line Global",
     },
     {
       id: "a0000001-0000-0000-0000-000000000005",
       name: "Cô Nguyễn Thị Mỹ Tâm",
       email: "tamntm@skylineschool.edu.vn",
+      phone: "",
+      campusId: "international",
       campus: "Sky-Line Global",
+      roleCode: "teacher" as "leader" | "teacher",
       role: "Giáo viên",
       specialty: "Tin Học Quốc Tế Cambridge IGCSE & Computer Science",
-      lab: "Phụ trách Lab Sky-Line Global",
+      lab: "Phòng Lab Sky-Line Global",
     },
     {
       id: "a0000001-0000-0000-0000-000000000006",
       name: "Cô Trịnh Thị Đăng",
       email: "dangtt@skylineschool.edu.vn",
+      phone: "",
+      campusId: "beach",
       campus: "Sky-Line Beach",
+      roleCode: "teacher" as "leader" | "teacher",
       role: "Giáo viên",
       specialty: "Lập Trình Python & Đồ Họa Kỹ Thuật Số",
-      lab: "Phụ trách Lab Sky-Line Beach",
+      lab: "Phòng Lab Sky-Line Beach",
     },
     {
       id: "a0000001-0000-0000-0000-000000000007",
       name: "Cô Phạm Thị Thanh Bình",
       email: "binhptt@skylineschool.edu.vn",
-      campus: "Sky-Line Riverside",
+      phone: "",
+      campusId: "hill",
+      campus: "Sky-Line Hill",
+      roleCode: "teacher" as "leader" | "teacher",
       role: "Giáo viên",
       specialty: "STEM Robotics & Trí Tuệ Nhân Tạo Tiểu Học",
-      lab: "Phụ trách Lab Chuyên Môn",
+      lab: "Phòng Lab Sky-Line Hill",
     },
     {
       id: "a0000001-0000-0000-0000-000000000008",
       name: "Cô Trần Thị Phi Yến",
       email: "yenttp@skylineschool.edu.vn",
+      phone: "",
+      campusId: "central",
       campus: "Sky-Line Central",
+      roleCode: "teacher" as "leader" | "teacher",
       role: "Giáo viên",
       specialty: "Tin Học Đồ Họa & Thiết Kế Đa Phương Tiện",
-      lab: "Phụ trách Lab Sky-Line Central",
+      lab: "Phòng Lab Sky-Line Central",
     },
   ]);
+
+  // --- STATE CHỈNH SỬA THÔNG TIN CÁ NHÂN TRONG TAB NHÂN SỰ ICT ---
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [editProfileForm, setEditProfileForm] = useState({
+    id: "",
+    name: "",
+    roleCode: "teacher" as "leader" | "teacher",
+    email: "",
+    phone: "",
+    campusId: "riverside",
+    lab: "",
+  });
 
   // Khởi tạo và đồng bộ chế độ Sáng / Tối từ bộ nhớ trình duyệt (Mặc định: Chế độ Tối)
   useEffect(() => {
@@ -481,15 +523,28 @@ export default function DashboardPage() {
       // 5. Tải hồ sơ giáo viên (profiles)
       const { data: profilesData } = await supabase.from("profiles").select("*");
       if (profilesData && profilesData.length > 0) {
+        const sortedProfiles = [...profilesData].sort((a: any, b: any) => {
+          if (a.role === "leader" && b.role !== "leader") return -1;
+          if (a.role !== "leader" && b.role === "leader") return 1;
+          return String(a.id).localeCompare(String(b.id));
+        });
         setTeachersList(
-          profilesData.map((p: any) => ({
+          sortedProfiles.map((p: any) => ({
             id: p.id,
             name: p.full_name,
             email: p.email,
-            campus: campuses.find((c) => c.id === p.campus_id)?.name || "Sky-Line Riverside",
+            phone: p.phone_number || "",
+            campusId: p.campus_id || (p.role === "leader" ? "all" : "riverside"),
+            campus:
+              p.campus_id === "all"
+                ? "Bao quát 5 Cơ sở"
+                : campuses.find((c) => c.id === p.campus_id)?.name || "Sky-Line Riverside",
+            roleCode: (p.role === "leader" ? "leader" : "teacher") as "leader" | "teacher",
             role: p.role === "leader" ? "Tổ trưởng chuyên môn" : "Giáo viên",
             specialty: p.specialty || "Robotics STEM & Tin Học",
-            lab: p.lab_management || "Phòng Lab STEM",
+            lab:
+              p.lab_management ||
+              (p.role === "leader" ? "Quản trị toàn bộ 6 phòng Lab" : "Chưa phân công"),
           }))
         );
       }
@@ -1377,34 +1432,476 @@ export default function DashboardPage() {
                     Danh Bạ Đội Ngũ Nhân Sự Tổ ICT ({teachersList.length} Thầy Cô)
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Hồ sơ chuyên trách, cơ sở công tác và phân công chuyên môn của 8 thành viên Tổ Tin Học & Robotics Sky-Line
+                    Mỗi tài khoản có quyền chỉnh sửa thông tin cá nhân của chính mình; thông tin của các thầy cô khác ở chế độ chỉ xem.
                   </p>
                 </div>
+
+                {/* Nút chỉnh sửa nhanh hồ sơ của chính mình */}
+                {(() => {
+                  const myTeacherObj = teachersList.find(
+                    (t) =>
+                      t.id === currentUserProfile.id ||
+                      t.email?.toLowerCase() === currentUserProfile.email?.toLowerCase()
+                  );
+                  if (!myTeacherObj) return null;
+                  return (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditProfileForm({
+                          id: myTeacherObj.id,
+                          name: myTeacherObj.name,
+                          roleCode: myTeacherObj.roleCode || (myTeacherObj.role.includes("Tổ trưởng") ? "leader" : "teacher"),
+                          email: myTeacherObj.email,
+                          phone: myTeacherObj.phone || "",
+                          campusId: myTeacherObj.campusId || "riverside",
+                          lab: myTeacherObj.lab || "",
+                        });
+                        setIsEditProfileModalOpen(true);
+                      }}
+                      className="font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-sky-600/20 cursor-pointer shrink-0"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Chỉnh sửa hồ sơ của tôi
+                    </Button>
+                  );
+                })()}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {teachersList.map((teacher, idx) => (
-                  <Card key={teacher.id || idx} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-sky-700 text-white font-bold flex items-center justify-center shadow-xs">
-                          {teacher.name.charAt(0)}
+                {teachersList.map((teacher, idx) => {
+                  const isOwnProfile =
+                    teacher.id === currentUserProfile.id ||
+                    (Boolean(teacher.email) &&
+                      Boolean(currentUserProfile.email) &&
+                      teacher.email.toLowerCase() === currentUserProfile.email.toLowerCase());
+
+                  const avatarInitial =
+                    teacher.name
+                      .replace(/^(Thầy|Cô)\s+/i, "")
+                      .trim()
+                      .charAt(0)
+                      .toUpperCase() || teacher.name.charAt(0);
+
+                  return (
+                    <Card
+                      key={teacher.id || idx}
+                      className={`transition-all relative overflow-hidden ${
+                        isOwnProfile
+                          ? "border-sky-500/70 dark:border-sky-500/60 shadow-md shadow-sky-500/10 ring-1 ring-sky-500/30"
+                          : "hover:shadow-md border-slate-200/90 dark:border-slate-800"
+                      }`}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className={`w-11 h-11 rounded-2xl text-white font-extrabold text-base flex items-center justify-center shadow-xs shrink-0 ${
+                                teacher.role.includes("Tổ trưởng")
+                                  ? "bg-gradient-to-tr from-sky-600 via-sky-500 to-amber-500"
+                                  : "bg-gradient-to-tr from-sky-600 to-sky-700"
+                              }`}
+                            >
+                              {avatarInitial}
+                            </div>
+                            <div className="min-w-0">
+                              <CardTitle className="text-sm sm:text-[15px] font-extrabold text-slate-900 dark:text-white truncate">
+                                {teacher.name}
+                              </CardTitle>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                <Badge
+                                  variant={teacher.role.includes("Tổ trưởng") ? "amber" : "secondary"}
+                                  className="text-[10px]"
+                                >
+                                  {teacher.role}
+                                </Badge>
+                                {isOwnProfile && (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800">
+                                    Hồ sơ của bạn
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* PHÂN QUYỀN: CHỈ CHÍNH CHỦ TÀI KHOẢN MỚI CÓ NÚT CHỈNH SỬA */}
+                          {isOwnProfile ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditProfileForm({
+                                  id: teacher.id,
+                                  name: teacher.name,
+                                  roleCode: teacher.roleCode || (teacher.role.includes("Tổ trưởng") ? "leader" : "teacher"),
+                                  email: teacher.email,
+                                  phone: teacher.phone || "",
+                                  campusId: teacher.campusId || "riverside",
+                                  lab: teacher.lab || "",
+                                });
+                                setIsEditProfileModalOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/80 dark:hover:bg-sky-900 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 text-[11px] font-bold transition-colors cursor-pointer shrink-0"
+                              title="Chỉnh sửa thông tin cá nhân của bạn"
+                            >
+                              <Pencil className="w-3 h-3" />
+                              <span>Chỉnh sửa</span>
+                            </button>
+                          ) : (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-[10px] font-semibold shrink-0 select-none"
+                              title="Bạn chỉ có quyền xem thông tin của thầy cô khác"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>Chỉ xem</span>
+                            </span>
+                          )}
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="space-y-2 text-xs text-slate-600 dark:text-slate-400 pt-1">
+                        <div>
+                          Họ và tên:{" "}
+                          <strong className="text-slate-900 dark:text-white">{teacher.name}</strong>
                         </div>
                         <div>
-                          <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">{teacher.name}</CardTitle>
-                          <Badge variant={teacher.role.includes("Tổ trưởng") ? "amber" : "secondary"} className="text-[10px] mt-0.5">{teacher.role}</Badge>
+                          Chức vụ:{" "}
+                          <strong
+                            className={
+                              teacher.role.includes("Tổ trưởng")
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-sky-700 dark:text-sky-300"
+                            }
+                          >
+                            {teacher.role}
+                          </strong>
+                        </div>
+                        <div>
+                          Email:{" "}
+                          <strong className="text-slate-800 dark:text-slate-200">{teacher.email}</strong>
+                        </div>
+                        <div>
+                          SĐT:{" "}
+                          {teacher.phone ? (
+                            <strong className="text-emerald-700 dark:text-emerald-400">{teacher.phone}</strong>
+                          ) : (
+                            <span className="italic text-slate-400 dark:text-slate-500">Chưa cập nhật</span>
+                          )}
+                        </div>
+                        <div>
+                          Cơ sở:{" "}
+                          <strong className="text-slate-800 dark:text-slate-200">{teacher.campus}</strong>
+                        </div>
+                        <div>
+                          Kiêm nhiệm:{" "}
+                          <span className="text-amber-700 dark:text-amber-400 font-semibold">
+                            {teacher.lab || "Chưa phân công"}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* MODAL CHỈNH SỬA THÔNG TIN CÁ NHÂN (CHỈ DÀNH CHO CHÍNH CHỦ TÀI KHOẢN) */}
+              {isEditProfileModalOpen && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+                  onClick={() => {
+                    if (!isSavingProfile) setIsEditProfileModalOpen(false);
+                  }}
+                >
+                  <div
+                    className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in zoom-in-95 duration-200"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                          <Pencil className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                            Chỉnh Sửa Thông Tin Cá Nhân
+                          </h3>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Cập nhật hồ sơ cá nhân của bạn trên hệ thống Nhân sự ICT
+                          </p>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
-                      <div>Email: <strong className="text-slate-800 dark:text-slate-200">{teacher.email}</strong></div>
-                      <div>Cơ sở: <strong className="text-slate-800 dark:text-slate-200">{teacher.campus}</strong></div>
-                      <div>Thế mạnh: <span className="text-sky-700 dark:text-sky-300 font-semibold">{teacher.specialty}</span></div>
-                      <div>Kiêm nhiệm: <span className="text-amber-700 dark:text-amber-400 font-semibold">{teacher.lab}</span></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditProfileModalOpen(false)}
+                        disabled={isSavingProfile}
+                        className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer"
+                        title="Đóng"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        // Kiểm tra bảo mật kép: chỉ cho phép lưu nếu đúng là hồ sơ của chính mình
+                        const isReallyMine =
+                          editProfileForm.id === currentUserProfile.id ||
+                          editProfileForm.email.toLowerCase() === currentUserProfile.email.toLowerCase();
+                        if (!isReallyMine) {
+                          showToast("Bạn chỉ có quyền chỉnh sửa thông tin cá nhân của chính mình!", "warning");
+                          return;
+                        }
+
+                        if (!editProfileForm.name.trim()) {
+                          showToast("Vui lòng nhập Họ và tên!", "warning");
+                          return;
+                        }
+
+                        setIsSavingProfile(true);
+                        const campusLabel =
+                          editProfileForm.campusId === "all"
+                            ? "Bao quát 5 Cơ sở"
+                            : campuses.find((c) => c.id === editProfileForm.campusId)?.name || "Sky-Line Riverside";
+                        const roleLabel =
+                          editProfileForm.roleCode === "leader" ? "Tổ trưởng chuyên môn" : "Giáo viên";
+
+                        try {
+                          // 1. Gọi hàm RPC bảo mật trên Supabase
+                          const { data: rpcRes, error: rpcErr } = await supabase.rpc(
+                            "update_own_teacher_profile",
+                            {
+                              p_profile_id: editProfileForm.id,
+                              p_full_name: editProfileForm.name.trim(),
+                              p_role: editProfileForm.roleCode,
+                              p_email: editProfileForm.email.trim(),
+                              p_phone_number: editProfileForm.phone.trim(),
+                              p_campus_id: editProfileForm.campusId,
+                              p_lab_management: editProfileForm.lab.trim(),
+                            }
+                          );
+
+                          if (rpcErr || (rpcRes && rpcRes.success === false)) {
+                            // Dự phòng cập nhật trực tiếp qua bảng profiles (được bảo vệ bởi RLS auth.uid() = id)
+                            const { error: directErr } = await supabase
+                              .from("profiles")
+                              .update({
+                                full_name: editProfileForm.name.trim(),
+                                role: editProfileForm.roleCode,
+                                email: editProfileForm.email.trim(),
+                                phone_number: editProfileForm.phone.trim(),
+                                campus_id: editProfileForm.campusId,
+                                lab_management: editProfileForm.lab.trim(),
+                                updated_at: new Date().toISOString(),
+                              })
+                              .eq("id", editProfileForm.id);
+
+                            if (directErr) {
+                              throw new Error(rpcRes?.message || directErr.message);
+                            }
+                          }
+
+                          // 2. Cập nhật tức thì danh sách giáo viên trên giao diện
+                          setTeachersList((prev) =>
+                            prev.map((t) =>
+                              t.id === editProfileForm.id
+                                ? {
+                                    ...t,
+                                    name: editProfileForm.name.trim(),
+                                    roleCode: editProfileForm.roleCode,
+                                    role: roleLabel,
+                                    email: editProfileForm.email.trim(),
+                                    phone: editProfileForm.phone.trim(),
+                                    campusId: editProfileForm.campusId,
+                                    campus: campusLabel,
+                                    lab: editProfileForm.lab.trim() || "Chưa phân công",
+                                  }
+                                : t
+                            )
+                          );
+
+                          // 3. Đồng bộ luôn thông tin tài khoản ở góc trên bên phải
+                          setCurrentUserProfile((prev) => ({
+                            ...prev,
+                            name: editProfileForm.name.trim(),
+                            email: editProfileForm.email.trim(),
+                            role: editProfileForm.roleCode,
+                            campus:
+                              editProfileForm.campusId === "all"
+                                ? "Sky-Line Riverside (Bao quát 5 cơ sở)"
+                                : `Cơ sở ${campusLabel}`,
+                          }));
+
+                          setIsEditProfileModalOpen(false);
+                          showToast("Đã lưu thay đổi thông tin cá nhân thành công!", "success");
+                        } catch (err: any) {
+                          showToast(
+                            "Không thể lưu thay đổi: " + (err?.message || "Vui lòng kiểm tra lại kết nối"),
+                            "warning"
+                          );
+                        } finally {
+                          setIsSavingProfile(false);
+                        }
+                      }}
+                      className="space-y-3.5 text-xs"
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* 1. Họ và tên */}
+                        <div>
+                          <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+                            <User className="w-3.5 h-3.5 text-sky-600" />
+                            Họ và tên: <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            value={editProfileForm.name}
+                            onChange={(e) => setEditProfileForm({ ...editProfileForm, name: e.target.value })}
+                            placeholder="Ví dụ: Thầy Đỗ Anh Huy"
+                            required
+                          />
+                        </div>
+
+                        {/* 2. Chức vụ */}
+                        <div>
+                          <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+                            <Briefcase className="w-3.5 h-3.5 text-amber-500" />
+                            Chức vụ:
+                          </label>
+                          <select
+                            aria-label="Chọn chức vụ"
+                            value={editProfileForm.roleCode}
+                            onChange={(e) =>
+                              setEditProfileForm({
+                                ...editProfileForm,
+                                roleCode: e.target.value as "leader" | "teacher",
+                              })
+                            }
+                            className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          >
+                            <option value="leader">Tổ trưởng chuyên môn</option>
+                            <option value="teacher">Giáo viên</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* 3. Email */}
+                        <div>
+                          <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+                            <Mail className="w-3.5 h-3.5 text-sky-600" />
+                            Email: <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            type="email"
+                            value={editProfileForm.email}
+                            onChange={(e) => setEditProfileForm({ ...editProfileForm, email: e.target.value })}
+                            placeholder="Ví dụ: huyda@skylineschool.edu.vn"
+                            required
+                          />
+                        </div>
+
+                        {/* 4. Số điện thoại (SĐT) */}
+                        <div>
+                          <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+                            <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                            Số điện thoại (SĐT):
+                          </label>
+                          <Input
+                            type="tel"
+                            value={editProfileForm.phone}
+                            onChange={(e) => setEditProfileForm({ ...editProfileForm, phone: e.target.value })}
+                            placeholder="Nhập số điện thoại liên hệ"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* 5. Cơ sở */}
+                        <div>
+                          <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+                            <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                            Cơ sở công tác:
+                          </label>
+                          <select
+                            aria-label="Chọn cơ sở công tác"
+                            value={editProfileForm.campusId}
+                            onChange={(e) =>
+                              setEditProfileForm({ ...editProfileForm, campusId: e.target.value })
+                            }
+                            className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          >
+                            <option value="all">Bao quát 5 Cơ sở</option>
+                            <option value="riverside">Sky-Line Riverside</option>
+                            <option value="central">Sky-Line Central</option>
+                            <option value="international">Sky-Line Global</option>
+                            <option value="hill">Sky-Line Hill</option>
+                            <option value="beach">Sky-Line Beach</option>
+                          </select>
+                        </div>
+
+                        {/* 6. Kiêm nhiệm */}
+                        <div>
+                          <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+                            <Laptop className="w-3.5 h-3.5 text-sky-600" />
+                            Kiêm nhiệm:
+                          </label>
+                          <Input
+                            value={editProfileForm.lab}
+                            onChange={(e) => setEditProfileForm({ ...editProfileForm, lab: e.target.value })}
+                            placeholder="Ví dụ: Phòng Lab Sky-Line Riverside Trung Học"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Gợi ý chọn nhanh Kiêm nhiệm phòng Lab */}
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                          Chọn nhanh nhiệm vụ kiêm nhiệm:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            "Quản trị toàn bộ 6 phòng Lab",
+                            "Phòng Lab Sky-Line Riverside Tiểu Học",
+                            "Phòng Lab Sky-Line Riverside Trung Học",
+                            "Phòng Lab Sky-Line Central",
+                            "Phòng Lab Sky-Line Global",
+                            "Phòng Lab Sky-Line Hill",
+                            "Phòng Lab Sky-Line Beach",
+                            "Không kiêm nhiệm",
+                          ].map((suggestion) => (
+                            <button
+                              key={suggestion}
+                              type="button"
+                              onClick={() => setEditProfileForm({ ...editProfileForm, lab: suggestion })}
+                              className={`text-[10px] px-2.5 py-1 rounded-lg border font-semibold transition-colors cursor-pointer ${
+                                editProfileForm.lab === suggestion
+                                  ? "bg-sky-600 text-white border-sky-600"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-sky-400"
+                              }`}
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsEditProfileModalOpen(false)}
+                          disabled={isSavingProfile}
+                        >
+                          Hủy bỏ
+                        </Button>
+                        <Button type="submit" size="sm" isLoading={isSavingProfile}>
+                          <Check className="w-4 h-4 mr-1" />
+                          Lưu thay đổi
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </main>
