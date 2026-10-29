@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SIX_LAB_MANAGERS } from "@/components/lab-devices-section";
 import { ClassItem } from "@/components/teaching-assignment-section";
+import { maskStudentName } from "@/lib/student-privacy";
 
 interface OverviewSectionProps {
   supabase: SupabaseClient;
@@ -46,6 +47,7 @@ interface OverviewSectionProps {
   classesList: ClassItem[];
   timetableSlotsCount: number;
   rawTeacherTimetables: any[];
+  isStudentPrivacyActive?: boolean;
   onNavigateTab: (
     tab: "dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers"
   ) => void;
@@ -60,8 +62,10 @@ export function OverviewSection({
   teachersList,
   classesList,
   rawTeacherTimetables,
+  isStudentPrivacyActive,
   onNavigateTab,
 }: OverviewSectionProps) {
+  const shouldMaskStudent = Boolean(isStudentPrivacyActive || currentUserProfile?.role === "guest");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [devicesData, setDevicesData] = useState<any[]>([]);
   const [tasksData, setTasksData] = useState<any[]>([]);
@@ -750,7 +754,7 @@ export function OverviewSection({
                           </span>
                         ) : (
                           <span>
-                            HS: <strong>{ach.student_name}</strong> ({ach.class_name})
+                            HS: <strong>{maskStudentName(ach.student_name, shouldMaskStudent)}</strong> ({ach.class_name})
                           </span>
                         )}
                       </div>
@@ -769,7 +773,7 @@ export function OverviewSection({
                   >
                     <div className="min-w-0 space-y-0.5">
                       <div className="text-xs font-extrabold text-slate-900 dark:text-white truncate">
-                        🎓 HS Đội tuyển: {team.student_name} ({team.class_name})
+                        🎓 HS Đội tuyển: {maskStudentName(team.student_name, shouldMaskStudent)} ({team.class_name})
                       </div>
                       <div className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
                         Bồi dưỡng: <strong>{team.teacher_name}</strong> • Định hướng:{" "}

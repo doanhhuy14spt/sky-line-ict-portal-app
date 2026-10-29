@@ -25,12 +25,14 @@ import {
   School,
   Medal,
   Tag,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClassItem } from "@/components/teaching-assignment-section";
+import { maskStudentName } from "@/lib/student-privacy";
 
 export interface CompetitionCatalogItem {
   id: string;
@@ -81,6 +83,7 @@ interface AchievementsSectionProps {
   classesList: ClassItem[];
   teachersList: TeacherProfileOption[];
   selectedSchoolYear?: string;
+  isStudentPrivacyActive?: boolean;
 }
 
 const COMPETITION_LEVELS = [
@@ -110,10 +113,12 @@ export function AchievementsSection({
   classesList: propClassesList,
   teachersList,
   selectedSchoolYear = "2026-2027",
+  isStudentPrivacyActive,
 }: AchievementsSectionProps) {
   const router = useRouter();
   const isLeader = currentUserProfile?.role === "leader";
   const isGuest = currentUserProfile?.role === "guest";
+  const shouldMaskStudent = Boolean(isStudentPrivacyActive || isGuest);
 
   // =========================================================================
   // 1. STATE DỮ LIỆU TỪ SUPABASE (THÀNH TÍCH, CUỘC THI, LỚP HỌC)
@@ -628,11 +633,12 @@ export function AchievementsSection({
   const filteredAchievements = useMemo(() => {
     return achievements.filter((item) => {
       const q = searchTerm.toLowerCase().trim();
+      const displayedStudentName = maskStudentName(item.student_name, shouldMaskStudent);
       const matchSearch =
         !q ||
         item.competition_name?.toLowerCase().includes(q) ||
         item.level?.toLowerCase().includes(q) ||
-        item.student_name?.toLowerCase().includes(q) ||
+        displayedStudentName?.toLowerCase().includes(q) ||
         item.class_name?.toLowerCase().includes(q) ||
         item.achievement_result?.toLowerCase().includes(q) ||
         item.teacher_name?.toLowerCase().includes(q);
@@ -647,7 +653,7 @@ export function AchievementsSection({
 
       return matchSearch && matchComp && matchLevel && matchTarget;
     });
-  }, [achievements, searchTerm, competitionFilter, levelFilter, targetFilter]);
+  }, [achievements, searchTerm, competitionFilter, levelFilter, targetFilter, shouldMaskStudent]);
 
   const stats = useMemo(() => {
     const total = achievements.length;
@@ -740,6 +746,12 @@ export function AchievementsSection({
                     ? "👁️ Quyền Khách (Chế độ Chỉ Xem)"
                     : "👩‍🏫 Quyền Giáo Viên (Khai báo & Cập nhật Thành tích)"}
                 </Badge>
+                {shouldMaskStudent && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    Đã ẩn danh danh tính học sinh
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {isLeader
@@ -1040,8 +1052,11 @@ export function AchievementsSection({
                     {/* CỘT 5: HỌ VÀ TÊN HỌC SINH */}
                     <td className="py-3.5 px-2.5">
                       {isStudent && item.student_name ? (
-                        <span className="font-bold text-slate-800 dark:text-slate-200 break-words">
-                          {item.student_name}
+                        <span className="font-bold text-slate-800 dark:text-slate-200 break-words inline-flex items-center gap-1.5">
+                          {shouldMaskStudent && (
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          )}
+                          <span>{maskStudentName(item.student_name, shouldMaskStudent)}</span>
                         </span>
                       ) : null}
                     </td>
@@ -1067,7 +1082,15 @@ export function AchievementsSection({
                     <td className="py-3.5 px-2.5">
                       <div className="flex items-center justify-between gap-1">
                         <div className="flex-1 min-w-0">
-                          {rawLink ? (
+                          {rawLink && isStudent && shouldMaskStudent ? (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80 font-bold text-[10px] max-w-full"
+                              title="Minh chứng cá nhân của học sinh được bảo mật trong chế độ công khai"
+                            >
+                              <ShieldCheck className="w-3 h-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                              <span className="truncate">Bảo mật minh chứng HS</span>
+                            </span>
+                          ) : rawLink ? (
                             <a
                               href={hrefLink}
                               target="_blank"

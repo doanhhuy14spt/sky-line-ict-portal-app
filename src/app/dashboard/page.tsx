@@ -61,6 +61,7 @@ import { AchievementsSection, AchievementItem } from "@/components/achievements-
 import { OverviewSection } from "@/components/overview-section";
 import { SiteFooter } from "@/components/site-footer";
 import { NotificationBell } from "@/components/notification-bell";
+import { maskStudentName } from "@/lib/student-privacy";
 
 interface TimetableSlot {
   id: string;
@@ -225,6 +226,9 @@ export default function DashboardPage() {
 
   // Kiểm tra vai trò tài khoản: Tổ trưởng chuyên môn mới có quyền truy cập Phần 3
   const isLeader = currentUserProfile?.role === "leader";
+  const isGuest = currentUserProfile?.role === "guest";
+  const [isStudentPrivacyMode, setIsStudentPrivacyMode] = useState(false);
+  const isStudentPrivacyActive = isGuest || isStudentPrivacyMode;
 
   // Phân quyền bảo vệ: Nếu là giáo viên thì tự động chuyển khỏi Phần 3
   useEffect(() => {
@@ -995,6 +999,50 @@ export default function DashboardPage() {
               </select>
             </div>
 
+            {/* Khiên Bảo Mật Danh Tính Học Sinh (Tự động bật với Khách hoặc bật nhanh khi Trình chiếu) */}
+            {isGuest ? (
+              <div
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold select-none"
+                title="Tài khoản Khách tự động ẩn danh họ tên học sinh theo chuẩn An toàn dữ liệu Sky-Line"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>Đã ẩn danh HS</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !isStudentPrivacyMode;
+                  setIsStudentPrivacyMode(next);
+                  showToast(
+                    next
+                      ? "Đã bật Khiên Bảo Mật Học Sinh (Chế độ Trình chiếu: Tự động viết tắt họ tên học sinh)!"
+                      : "Đã tắt chế độ ẩn danh (Hiển thị đầy đủ họ tên học sinh phục vụ nghiệp vụ nội bộ).",
+                    "info"
+                  );
+                }}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                  isStudentPrivacyMode
+                    ? "bg-emerald-600 text-white border-emerald-500 shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                }`}
+                title={
+                  isStudentPrivacyMode
+                    ? "Đang bật chế độ ẩn danh tên học sinh (Bấm để hiện lại tên đầy đủ)"
+                    : "Bật chế độ ẩn danh tên học sinh khi trình chiếu công khai"
+                }
+              >
+                <ShieldCheck
+                  className={`w-3.5 h-3.5 shrink-0 ${
+                    isStudentPrivacyMode ? "text-white" : "text-emerald-600 dark:text-emerald-400"
+                  }`}
+                />
+                <span className="hidden md:inline">
+                  {isStudentPrivacyMode ? "Đang ẩn danh HS" : "Bảo mật HS"}
+                </span>
+              </button>
+            )}
+
             {/* Nút Chuông Thông Báo Hoạt Động Hệ Thống */}
             <NotificationBell
               supabase={supabase}
@@ -1150,6 +1198,7 @@ export default function DashboardPage() {
               classesList={classesList}
               timetableSlotsCount={timetableSlots.length}
               rawTeacherTimetables={rawTeacherTimetables}
+              isStudentPrivacyActive={isStudentPrivacyActive}
               onNavigateTab={handleTabChange}
             />
           )}
@@ -1530,6 +1579,7 @@ export default function DashboardPage() {
               classesList={classesList}
               teachersList={teachersList}
               selectedSchoolYear={selectedSchoolYear}
+              isStudentPrivacyActive={isStudentPrivacyActive}
             />
           )}
 
@@ -1542,6 +1592,7 @@ export default function DashboardPage() {
               classesList={classesList}
               teachersList={teachersList}
               selectedSchoolYear={selectedSchoolYear}
+              isStudentPrivacyActive={isStudentPrivacyActive}
             />
           )}
 
@@ -1813,7 +1864,7 @@ export default function DashboardPage() {
                                     ) : (
                                       <>
                                         <span className="font-bold text-sky-600 dark:text-sky-400">
-                                          [HS: {ach.student_name}
+                                          [HS: {maskStudentName(ach.student_name, isStudentPrivacyActive)}
                                           {ach.class_name ? ` - Lớp ${ach.class_name}` : ""}]
                                         </span>{" "}
                                         <strong className="text-amber-600 dark:text-amber-400">

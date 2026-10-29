@@ -23,11 +23,13 @@ import {
   Target,
   Compass,
   Users,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ClassItem } from "@/components/teaching-assignment-section";
+import { maskStudentName } from "@/lib/student-privacy";
 
 export interface TrainingTeamItem {
   id: string;
@@ -61,6 +63,7 @@ interface TrainingTeamsSectionProps {
   classesList: ClassItem[];
   teachersList: any[];
   selectedSchoolYear?: string;
+  isStudentPrivacyActive?: boolean;
 }
 
 export const RESULT_OPTIONS = [
@@ -96,10 +99,12 @@ export function TrainingTeamsSection({
   classesList: propClassesList,
   teachersList,
   selectedSchoolYear = "2026-2027",
+  isStudentPrivacyActive,
 }: TrainingTeamsSectionProps) {
   const router = useRouter();
   const isLeader = currentUserProfile?.role === "leader";
   const isGuest = currentUserProfile?.role === "guest";
+  const shouldMaskStudent = Boolean(isStudentPrivacyActive || isGuest);
 
   // =========================================================================
   // 1. STATE DỮ LIỆU ĐỘI TUYỂN & DANH SÁCH LỚP TỪ SUPABASE
@@ -248,11 +253,12 @@ export function TrainingTeamsSection({
   // =========================================================================
   const filteredTeams = useMemo(() => {
     return teamList.filter((item) => {
-      // 1. Tìm kiếm từ khóa
+      // 1. Tìm kiếm từ khóa (bảo vệ không lộ tên thật qua ô tìm kiếm khi đang bật ẩn danh)
       const q = searchTerm.trim().toLowerCase();
+      const displayedStudentName = maskStudentName(item.student_name, shouldMaskStudent);
       const matchSearch =
         !q ||
-        item.student_name?.toLowerCase().includes(q) ||
+        displayedStudentName?.toLowerCase().includes(q) ||
         item.class_name?.toLowerCase().includes(q) ||
         item.teacher_name?.toLowerCase().includes(q) ||
         item.orientation?.toLowerCase().includes(q) ||
@@ -305,6 +311,7 @@ export function TrainingTeamsSection({
     resultFilter,
     onlyMyStudents,
     currentUserProfile,
+    shouldMaskStudent,
   ]);
 
   const stats = useMemo(() => {
@@ -614,6 +621,12 @@ export function TrainingTeamsSection({
                 <Badge variant="amber" className="text-xs font-bold">
                   Năm học {selectedSchoolYear}
                 </Badge>
+                {shouldMaskStudent && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    Đã ẩn danh danh tính học sinh
+                  </span>
+                )}
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Theo dõi danh sách học sinh đội tuyển, giáo viên bồi dưỡng, định hướng và đối chiếu Mục tiêu kì vọng (khóa cố định sau khi xác nhận) với Thành tích thực tế.
@@ -940,8 +953,11 @@ export function TrainingTeamsSection({
 
                       {/* Cột 2: Họ và tên học sinh */}
                       <td className="py-3.5 px-2.5 align-middle break-words">
-                        <div className="font-extrabold text-slate-900 dark:text-white text-xs leading-snug">
-                          {item.student_name}
+                        <div className="font-extrabold text-slate-900 dark:text-white text-xs leading-snug flex items-center gap-1.5">
+                          {shouldMaskStudent && (
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          )}
+                          <span>{maskStudentName(item.student_name, shouldMaskStudent)}</span>
                         </div>
                       </td>
 
