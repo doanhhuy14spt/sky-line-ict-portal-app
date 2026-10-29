@@ -220,7 +220,7 @@ export default function DashboardPage() {
     email: "huyda@skylineschool.edu.vn",
     name: "Thầy Đỗ Anh Huy",
     role: "leader",
-    campus: "Sky-Line Riverside (Bao quát 5 cơ sở)",
+    campus: "Sky-Line Riverside",
   });
 
   // Kiểm tra vai trò tài khoản: Tổ trưởng chuyên môn mới có quyền truy cập Phần 3
@@ -453,17 +453,14 @@ export default function DashboardPage() {
           .single();
 
         if (profile) {
+          const matchedCampusName =
+            campuses.find((c) => c.id === profile.campus_id && c.id !== "all")?.name || "Sky-Line Riverside";
           setCurrentUserProfile({
             id: profile.id,
             email: profile.email || authUser.email || "",
             name: profile.full_name || authUser.email || "Giáo Viên",
             role: (profile.role as "leader" | "teacher" | "guest") || "teacher",
-            campus:
-              profile.role === "leader"
-                ? "Sky-Line Riverside (Bao quát 5 cơ sở)"
-                : profile.role === "guest"
-                ? "Toàn hệ thống Sky-Line (Chế độ Chỉ Xem)"
-                : `Cơ sở Sky-Line (${campuses.find((c) => c.id === profile.campus_id)?.name || "Riverside"})`,
+            campus: matchedCampusName,
           });
         }
       }

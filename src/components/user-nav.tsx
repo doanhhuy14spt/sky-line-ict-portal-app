@@ -53,9 +53,30 @@ export function UserNav({
       name: "Thầy Đỗ Anh Huy",
       email: "huyda@skylineschool.edu.vn",
       role: "leader" as const,
-      campus: "Sky-Line Riverside (Bao quát 5 cơ sở)",
+      campus: "Sky-Line Riverside",
     }
   );
+
+  const campusNameMap: Record<string, string> = {
+    riverside: "Sky-Line Riverside",
+    central: "Sky-Line Central",
+    beach: "Sky-Line Beach",
+    hill: "Sky-Line Hill",
+    international: "Sky-Line Global",
+    all: "Sky-Line Riverside",
+  };
+
+  const formatCleanCampusName = (rawCampus?: string): string => {
+    if (!rawCampus) return "Sky-Line Riverside";
+    if (campusNameMap[rawCampus]) return campusNameMap[rawCampus];
+    // Loại bỏ phần chú thích trong ngoặc như "(Bao quát 5 cơ sở)" hoặc tiền tố "Cơ sở Sky-Line (...)"
+    const parenMatch = rawCampus.match(/^Cơ sở Sky-Line \((.+)\)$/i);
+    if (parenMatch) {
+      const inner = parenMatch[1].trim();
+      return inner.startsWith("Sky-Line") ? inner : `Sky-Line ${inner}`;
+    }
+    return rawCampus.replace(/\s*\(.*?\)\s*/g, "").trim() || "Sky-Line Riverside";
+  };
 
   // Tự động tải thông tin tài khoản thật từ Supabase Auth nếu chưa có từ component cha
   useEffect(() => {
@@ -89,12 +110,7 @@ export function UserNav({
               name: profile.full_name || authUser.email || "Giáo Viên",
               email: profile.email || authUser.email || "",
               role: (profile.role as "leader" | "teacher" | "guest") || "teacher",
-              campus:
-                profile.role === "leader"
-                  ? "Sky-Line Riverside (Bao quát 5 cơ sở)"
-                  : profile.role === "guest"
-                  ? "Toàn hệ thống Sky-Line (Chế độ Chỉ Xem)"
-                  : `Cơ sở Sky-Line (${profile.campus_id || "Riverside"})`,
+              campus: campusNameMap[profile.campus_id] || "Sky-Line Riverside",
             });
           }
         }
@@ -262,7 +278,7 @@ export function UserNav({
                   <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                     <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-2 shrink-0">
                       <Mail className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                      Email công vụ:
+                      Email nội bộ:
                     </span>
                     <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">
                       {user.email}
@@ -275,7 +291,7 @@ export function UserNav({
                       Cơ sở công tác:
                     </span>
                     <span className="font-semibold text-slate-800 dark:text-slate-100 text-right">
-                      {user.campus}
+                      {formatCleanCampusName(user.campus)}
                     </span>
                   </div>
                 </div>
