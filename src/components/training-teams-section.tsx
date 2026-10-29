@@ -38,6 +38,7 @@ export interface TrainingTeamItem {
   class_name: string;
   teacher_id?: string | null;
   teacher_name: string;
+  competency_assessment?: string;
   orientation: string;
   expected_goal: string;
   is_goal_locked: boolean;
@@ -80,6 +81,14 @@ const ORIENTATION_SUGGESTIONS = [
   "Lập trình Python",
   "Olympic Tin học",
   "Sáng tạo KHKT",
+];
+
+const COMPETENCY_SUGGESTIONS = [
+  "Tư duy thuật toán xuất sắc",
+  "Nhạy bén logic & giải quyết vấn đề",
+  "Kỹ năng lập trình & lắp ráp tốt",
+  "Sáng tạo, chủ động nghiên cứu",
+  "Nền tảng tốt, cần rèn thêm tốc độ",
 ];
 
 const GOAL_SUGGESTIONS = [
@@ -159,6 +168,7 @@ export function TrainingTeamsSection({
     class_name: "",
     teacher_id: "",
     teacher_name: "",
+    competency_assessment: "",
     orientation: "",
     expected_goal: "",
     actual_achievement: "",
@@ -261,6 +271,7 @@ export function TrainingTeamsSection({
         displayedStudentName?.toLowerCase().includes(q) ||
         item.class_name?.toLowerCase().includes(q) ||
         item.teacher_name?.toLowerCase().includes(q) ||
+        item.competency_assessment?.toLowerCase().includes(q) ||
         item.orientation?.toLowerCase().includes(q) ||
         item.expected_goal?.toLowerCase().includes(q) ||
         item.actual_achievement?.toLowerCase().includes(q) ||
@@ -384,6 +395,7 @@ export function TrainingTeamsSection({
       class_name: defaultClass,
       teacher_id: myTeacherProfile?.id || currentUserProfile?.id || "",
       teacher_name: currentUserProfile?.name || myTeacherProfile?.name || "",
+      competency_assessment: "",
       orientation: "",
       expected_goal: "",
       actual_achievement: "",
@@ -409,6 +421,7 @@ export function TrainingTeamsSection({
       class_name: item.class_name || "",
       teacher_id: item.teacher_id || "",
       teacher_name: item.teacher_name || "",
+      competency_assessment: item.competency_assessment || "",
       orientation: item.orientation || "",
       expected_goal: item.expected_goal || "",
       actual_achievement: item.actual_achievement || "",
@@ -462,6 +475,7 @@ export function TrainingTeamsSection({
           class_name: formData.class_name.trim(),
           teacher_id: lockedTeacherId,
           teacher_name: lockedTeacherName,
+          competency_assessment: formData.competency_assessment.trim(),
           orientation: formData.orientation.trim(),
           expected_goal: formData.expected_goal.trim(),
           is_goal_locked: true, // Khóa ngay sau khi nhập xong
@@ -499,6 +513,7 @@ export function TrainingTeamsSection({
           class_name: formData.class_name.trim(),
           teacher_id: editingItem.teacher_id || null,
           teacher_name: editingItem.teacher_name,
+          competency_assessment: formData.competency_assessment.trim(),
           orientation: formData.orientation.trim(),
           expected_goal: finalExpectedGoal,
           is_goal_locked: true,
@@ -912,14 +927,15 @@ export function TrainingTeamsSection({
             <table className="w-full table-fixed text-left border-collapse text-xs">
               <colgroup>
                 <col className="w-[4%]" />
-                <col className="w-[15%]" />
-                <col className="w-[8%]" />
-                <col className="w-[15%]" />
                 <col className="w-[13%]" />
-                <col className="w-[13%]" />
-                <col className="w-[13%]" />
-                <col className="w-[12%]" />
                 <col className="w-[7%]" />
+                <col className="w-[13%]" />
+                <col className="w-[14%]" />
+                <col className="w-[11%]" />
+                <col className="w-[11%]" />
+                <col className="w-[11%]" />
+                <col className="w-[10%]" />
+                <col className="w-[6%]" />
               </colgroup>
               <thead>
                 <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 uppercase text-[11px] font-extrabold tracking-wider">
@@ -927,6 +943,7 @@ export function TrainingTeamsSection({
                   <th className="py-3.5 px-2.5">Họ và Tên Học Sinh</th>
                   <th className="py-3.5 px-2 text-center">Lớp</th>
                   <th className="py-3.5 px-2.5">Giáo Viên Bồi Dưỡng</th>
+                  <th className="py-3.5 px-2.5">Đánh Giá Năng Lực</th>
                   <th className="py-3.5 px-2.5">Định Hướng</th>
                   <th className="py-3.5 px-2.5">Mục Tiêu Kì Vọng</th>
                   <th className="py-3.5 px-2.5">Thành Tích Thực Tế</th>
@@ -978,7 +995,21 @@ export function TrainingTeamsSection({
                         </div>
                       </td>
 
-                      {/* Cột 5: Định hướng */}
+                      {/* Cột 5: Đánh giá năng lực */}
+                      <td className="py-3.5 px-2.5 align-middle break-words">
+                        {item.competency_assessment && item.competency_assessment.trim() ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/50 text-cyan-800 dark:text-cyan-300 border border-cyan-200/70 dark:border-cyan-800 font-bold text-[11px] leading-snug">
+                            <Sparkles className="w-3 h-3 shrink-0 text-cyan-600 dark:text-cyan-400" />
+                            <span>{item.competency_assessment}</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">
+                            Chưa đánh giá
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Cột 6: Định hướng */}
                       <td className="py-3.5 px-2.5 align-middle break-words">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900 font-bold text-[11px] leading-snug">
                           <Compass className="w-3 h-3 shrink-0 text-indigo-500" />
@@ -1245,7 +1276,41 @@ export function TrainingTeamsSection({
                 />
               </div>
 
-              {/* Hàng 3: Định hướng bồi dưỡng */}
+              {/* Hàng 3: Đánh giá năng lực học sinh */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 dark:text-slate-200 block">
+                  Đánh Giá Năng Lực:
+                </label>
+                <Input
+                  type="text"
+                  value={formData.competency_assessment}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      competency_assessment: e.target.value,
+                    }))
+                  }
+                  placeholder="Nhập nhận xét, đánh giá năng lực học sinh (tư duy logic, kỹ năng lập trình, lắp ráp...)"
+                  className="h-10 text-xs rounded-xl"
+                />
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] text-slate-400">Chọn nhanh:</span>
+                  {COMPETENCY_SUGGESTIONS.map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, competency_assessment: sug }))
+                      }
+                      className="px-2.5 py-0.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-950/60 dark:hover:bg-cyan-900/60 border border-cyan-200/60 dark:border-cyan-800/60 text-cyan-800 dark:text-cyan-300 font-semibold text-[11px] transition-colors cursor-pointer"
+                    >
+                      {sug}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hàng 4: Định hướng bồi dưỡng */}
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-700 dark:text-slate-200 block">
                   Định Hướng Bồi Dưỡng: <span className="text-rose-500">*</span>
