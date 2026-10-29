@@ -54,7 +54,7 @@ import { TeacherAssignedScheduleSection } from "@/components/teacher-assigned-sc
 import { LabDevicesSection } from "@/components/lab-devices-section";
 import { AssignedTasksSection } from "@/components/assigned-tasks-section";
 import { TrainingTeamsSection } from "@/components/training-teams-section";
-import { AchievementsSection } from "@/components/achievements-section";
+import { AchievementsSection, AchievementItem } from "@/components/achievements-section";
 import { OverviewSection } from "@/components/overview-section";
 import { SiteFooter } from "@/components/site-footer";
 import { NotificationBell } from "@/components/notification-bell";
@@ -109,6 +109,9 @@ export default function DashboardPage() {
 
   // --- STATE DANH SÁCH LỚP HỌC & PHÂN CÔNG CHUYÊN MÔN (PHẦN 3) ---
   const [classesList, setClassesList] = useState<ClassItem[]>([]);
+
+  // --- STATE DANH SÁCH THÀNH TÍCH THEO NĂM HỌC (ĐỒNG BỘ SANG TAB NHÂN SỰ ICT) ---
+  const [teacherAchievementsList, setTeacherAchievementsList] = useState<AchievementItem[]>([]);
 
   // --- STATE THỜI KHÓA BIỂU (Làm sạch ô trống, sẵn sàng để xếp mới) ---
   const [timetableSlots, setTimetableSlots] = useState<TimetableSlot[]>([]);
@@ -560,6 +563,15 @@ export default function DashboardPage() {
         .order("name", { ascending: true });
 
       setClassesList(classesData || []);
+
+      // 7. Tải danh sách thành tích của Giáo viên & Học sinh từ Supabase (achievements) theo Năm học
+      const { data: achievementsData } = await supabase
+        .from("achievements")
+        .select("*")
+        .eq("school_year", selectedSchoolYear)
+        .order("created_at", { ascending: false });
+
+      setTeacherAchievementsList((achievementsData as AchievementItem[]) || []);
     } catch (err) {
       console.error("Lỗi đồng bộ Supabase:", err);
     }
@@ -591,6 +603,22 @@ export default function DashboardPage() {
     }
   }, [timetableSubTab, loadLabScheduleFromTeacherTimetables]);
 
+  // Tự động làm mới danh sách thành tích khi chuyển sang tab Nhân sự ICT hoặc đổi Năm học
+  useEffect(() => {
+    if (activeTab === "teachers") {
+      supabase
+        .from("achievements")
+        .select("*")
+        .eq("school_year", selectedSchoolYear)
+        .order("created_at", { ascending: false })
+        .then(({ data }) => {
+          if (data) {
+            setTeacherAchievementsList(data as AchievementItem[]);
+          }
+        });
+    }
+  }, [activeTab, selectedSchoolYear, supabase]);
+
   useEffect(() => {
     loadDashboardData();
 
@@ -615,6 +643,14 @@ export default function DashboardPage() {
           .order("grade", { ascending: true })
           .order("name", { ascending: true });
         setClassesList(refreshedClasses || []);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "achievements" }, async () => {
+        const { data: refreshedAchievements } = await supabase
+          .from("achievements")
+          .select("*")
+          .eq("school_year", selectedSchoolYear)
+          .order("created_at", { ascending: false });
+        setTeacherAchievementsList((refreshedAchievements as AchievementItem[]) || []);
       })
       .subscribe();
 
@@ -1492,6 +1528,19 @@ export default function DashboardPage() {
                       .charAt(0)
                       .toUpperCase() || teacher.name.charAt(0);
 
+                  const normalizeName = (s?: string) =>
+                    (s || "")
+                      .toLowerCase()
+                      .replace(/^(thầy|cô)\s+/i, "")
+                      .replace(/\s+/g, " ")
+                      .trim();
+                  const normTeacherName = normalizeName(teacher.name);
+                  const teacherAchievements = teacherAchievementsList.filter((ach) => {
+                    if (ach.user_id && ach.user_id === teacher.id) return true;
+                    const normAchTeacher = normalizeName(ach.teacher_name);
+                    return Boolean(normTeacherName && normAchTeacher && normAchTeacher === normTeacherName);
+                  });
+
                   return (
                     <Card
                       key={teacher.id || idx}
@@ -1589,6 +1638,55 @@ export default function DashboardPage() {
                           <span className="text-amber-700 dark:text-amber-400 font-semibold">
                             {teacher.lab || "Chưa phân công"}
                           </span>
+                        </div>
+                        <div>
+                          Thành tích:{" "}
+                          {teacherAchievements.length === 0 ? (
+                            <span className="italic text-slate-400 dark:text-slate-500">Chưa cập nhật</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100/80 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800/70">
+                              <Trophy className="w-2.5 h-2.5 text-amber-500" />
+                              {teacherAchievements.length} giải thưởng ({selectedSchoolYear})
+                            </span>
+                          )}
+                          {teacherAchievements.length > 0 && (
+                            <div className="mt-1.5 space-y-1 pl-2.5 border-l-2 border-amber-400/60 dark:border-amber-500/50">
+                              {teacherAchievements.map((ach) => {
+                                const isTeacherAward = ach.achievement_of === "Giáo viên đạt giải";
+                                return (
+                                  <div
+                                    key={ach.id}
+                                    className="text-[11px] leading-snug text-slate-700 dark:text-slate-300"
+                                  >
+                                    {isTeacherAward ? (
+                                      <>
+                                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                          [GV đạt giải]
+                                        </span>{" "}
+                                        <strong className="text-amber-600 dark:text-amber-400">
+                                          {ach.achievement_result}
+                                        </strong>{" "}
+                                        — {ach.competition_name}{" "}
+                                        <span className="text-slate-400 dark:text-slate-500">({ach.level})</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="font-bold text-sky-600 dark:text-sky-400">
+                                          [HS: {ach.student_name}
+                                          {ach.class_name ? ` - Lớp ${ach.class_name}` : ""}]
+                                        </span>{" "}
+                                        <strong className="text-amber-600 dark:text-amber-400">
+                                          {ach.achievement_result}
+                                        </strong>{" "}
+                                        — {ach.competition_name}{" "}
+                                        <span className="text-slate-400 dark:text-slate-500">({ach.level})</span>
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
