@@ -718,9 +718,9 @@ export default function DashboardPage() {
   const renderTimetableRow = (slotTime: { period: number; time: string }) => {
     return (
       <tr key={slotTime.period} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-        <td className="p-3 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-          <div className="font-extrabold text-slate-800 dark:text-slate-200">Tiết {slotTime.period}</div>
-          <div className="text-[10px] text-slate-500 font-medium">{slotTime.time}</div>
+        <td className="py-1 px-2 text-center bg-slate-50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800 align-middle">
+          <div className="font-extrabold text-xs text-slate-800 dark:text-slate-200 leading-tight">Tiết {slotTime.period}</div>
+          <div className="text-[10px] text-slate-500 font-medium leading-tight">{slotTime.time}</div>
         </td>
 
         {[2, 3, 4, 5, 6].map((dayNum) => {
@@ -742,33 +742,33 @@ export default function DashboardPage() {
           return (
             <td
               key={dayNum}
-              className="p-2 border border-slate-100 dark:border-slate-800/60 select-none cursor-default align-middle"
+              className="py-1 px-1.5 border border-slate-100 dark:border-slate-800/60 select-none cursor-default align-middle"
             >
               {visibleSlots.length > 0 ? (
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   {visibleSlots.map((slot) => (
                     <div
                       key={slot.id}
-                      className="p-2.5 rounded-2xl bg-white dark:bg-slate-800/95 border border-sky-200/80 dark:border-sky-800/70 shadow-2xs text-center space-y-1"
+                      className="py-1 px-2 rounded-xl bg-white dark:bg-slate-800/95 border border-sky-200/80 dark:border-sky-800/70 shadow-2xs text-center space-y-0.5"
                     >
                       {/* NỘI DUNG 1: TÊN LỚP */}
-                      <div className="font-extrabold text-xs px-2.5 py-0.5 rounded-lg bg-sky-50 dark:bg-sky-950/70 text-sky-800 dark:text-sky-200 border border-sky-200/80 dark:border-sky-800 shadow-2xs tracking-wide inline-block">
+                      <div className="font-extrabold text-[11px] px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/70 text-sky-800 dark:text-sky-200 border border-sky-200/80 dark:border-sky-800 shadow-2xs tracking-wide inline-block leading-none">
                         {slot.class_name}
                       </div>
                       {/* NỘI DUNG 2: HỌ VÀ TÊN GIÁO VIÊN GIẢNG DẠY */}
-                      <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate flex items-center justify-center gap-1">
-                        <span className="text-sky-600 dark:text-sky-400 text-xs">👤</span>
+                      <div className="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate flex items-center justify-center gap-1 leading-tight">
+                        <span className="text-sky-600 dark:text-sky-400 text-[10px]">👤</span>
                         <span className="truncate">{slot.teacher_name}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : isFilteredOut ? (
-                <div className="h-14 rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/60 flex items-center justify-center text-[10px] text-slate-400 dark:text-slate-600 italic select-none">
+                <div className="h-8 rounded-xl border border-dashed border-slate-100 dark:border-slate-800/60 flex items-center justify-center text-[10px] text-slate-400 dark:text-slate-600 italic select-none">
                   (Khác GV lọc)
                 </div>
               ) : (
-                <div className="h-14 rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/60 flex items-center justify-center text-slate-300 dark:text-slate-700 font-bold select-none text-xs">
+                <div className="h-8 rounded-xl border border-dashed border-slate-100 dark:border-slate-800/60 flex items-center justify-center text-slate-300 dark:text-slate-700 font-bold select-none text-xs">
                   -
                 </div>
               )}
@@ -948,7 +948,7 @@ export default function DashboardPage() {
 
       {/* MAIN CONTENT AREA */}
       {!isLoadingTab && (
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex-1 w-full">
           {/* TAB 1: DASHBOARD OVERVIEW (TRANG TỔNG QUAN MỚI ĐỒNG BỘ DỮ LIỆU THỰC TẾ) */}
           {activeTab === "dashboard" && (
             <OverviewSection
@@ -967,23 +967,23 @@ export default function DashboardPage() {
 
           {/* TAB 2: TKB & LỊCH PHÒNG LAB (GỒM 2 PHẦN NỘI DUNG) */}
           {activeTab === "timetable" && (
-            <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="space-y-3 animate-in fade-in duration-200">
               {/* THANH ĐIỀU KHIỂN CHUYỂN ĐỔI 3 PHẦN NỘI DUNG */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-2.5 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 shadow-xs">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 p-2 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 shadow-xs">
                 <div className="inline-flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
                   <button
                     onClick={() => {
                       setTimetableSubTab("lab_view");
-                      showToast("Đang xem Phần 1: Thời khóa biểu theo 6 phòng Lab", "info");
+                      showToast("Đang xem Phần 1: Lịch phòng Lab", "info");
                     }}
-                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                       timetableSubTab === "lab_view"
                         ? "bg-sky-600 text-white shadow-sm scale-[1.01]"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     <Building2 className="w-4 h-4" />
-                    <span>Phần 1: Lịch Theo 6 Phòng Lab</span>
+                    <span>Phần 1: Lịch phòng Lab</span>
                   </button>
 
                   <button
@@ -991,7 +991,7 @@ export default function DashboardPage() {
                       setTimetableSubTab("teacher_view");
                       showToast("Đang xem Phần 2: Lịch giảng dạy cá nhân từng giáo viên (TKB CÁ NHÂN)", "info");
                     }}
-                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                       timetableSubTab === "teacher_view"
                         ? "bg-amber-600 text-white shadow-sm scale-[1.01]"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -1011,7 +1011,7 @@ export default function DashboardPage() {
                         setTimetableSubTab("assignment_view");
                         showToast("Đang xem Phần 3: Phân công chuyên môn & Danh sách lớp học", "info");
                       }}
-                      className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                         timetableSubTab === "assignment_view"
                           ? "bg-emerald-600 text-white shadow-sm scale-[1.01]"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -1036,36 +1036,31 @@ export default function DashboardPage() {
               </div>
 
               {/* ========================================================================= */}
-              {/* PHẦN 1: THỜI KHÓA BIỂU GIẢNG DẠY THEO TỪNG PHÒNG LAB                      */}
+              {/* PHẦN 1: LỊCH PHÒNG LAB                                                    */}
               {/* ========================================================================= */}
               {timetableSubTab === "lab_view" && (
-                <div className="space-y-6 animate-in fade-in duration-200">
-                  {/* KHUNG TIÊU ĐỀ & BỘ CHỌN 6 PHÒNG LAB */}
-                  <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="p-2 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400">
-                            <Building2 className="w-5 h-5" />
-                          </span>
-                          <div>
-                            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                              Phần 1: Thời Khóa Biểu Giảng Dạy Theo Từng Phòng Lab
-                              <Badge variant="default" className="text-[11px] font-bold">
-                                Năm học {selectedSchoolYear}
-                              </Badge>
-                            </h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              Học sinh học <strong>4 tiết sáng</strong> (07:30 - 10:55) và <strong>4 tiết chiều</strong> (13:30 - 16:55). Dữ liệu chi tiết từ kế hoạch 6 phòng Lab.
-                            </p>
-                          </div>
+                <div className="space-y-3 animate-in fade-in duration-200">
+                  {/* KHUNG TIÊU ĐỀ & BỘ CHỌN 6 PHÒNG LAB GỌN GÀNG */}
+                  <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-2.5">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1.5 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400">
+                          <Building2 className="w-4 h-4" />
+                        </span>
+                        <div>
+                          <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                            Phần 1: Lịch phòng Lab
+                            <Badge variant="default" className="text-[10px] font-bold px-2 py-0">
+                              Năm học {selectedSchoolYear}
+                            </Badge>
+                          </h2>
                         </div>
                       </div>
 
-                      {/* CÔNG CỤ LỌC PHỤ: THEO GIÁO VIÊN & BUỔI HỌC */}
-                      <div className="flex flex-wrap items-center gap-2.5">
+                      {/* CÔNG CỤ LỌC PHỤ: THEO GIÁO VIÊN, BUỔI HỌC & ĐỒNG BỘ */}
+                      <div className="flex flex-wrap items-center gap-2">
                         {/* Lọc theo Giáo viên */}
-                        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+                        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
                           <Users className="w-3.5 h-3.5 text-sky-600" />
                           <select
                             aria-label="Lọc theo giáo viên giảng dạy"
@@ -1083,7 +1078,7 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Lọc theo buổi (Sáng / Chiều) */}
-                        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+                        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
                           <Clock className="w-3.5 h-3.5 text-amber-500" />
                           <select
                             aria-label="Lọc theo buổi học"
@@ -1100,23 +1095,32 @@ export default function DashboardPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => showToast(`Đã xuất Thời khóa biểu phòng Lab năm học ${selectedSchoolYear} sẵn sàng để in!`, "info")}
-                          className="font-bold text-xs"
+                          onClick={() => {
+                            loadLabScheduleFromTeacherTimetables();
+                            showToast("Đã đồng bộ lại dữ liệu thời khóa biểu phòng Lab!", "success");
+                          }}
+                          className="font-bold text-xs h-7 px-2.5"
+                          title="Làm mới dữ liệu từ cơ sở dữ liệu"
                         >
-                          <Printer className="w-4 h-4 mr-1 text-slate-600 dark:text-slate-400" />
+                          <RefreshCw className={`w-3.5 h-3.5 mr-1 ${isLoadingLabSchedule ? "animate-spin" : ""}`} />
+                          Đồng bộ
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => showToast(`Đã xuất Thời khóa biểu phòng Lab năm học ${selectedSchoolYear} sẵn sàng để in!`, "info")}
+                          className="font-bold text-xs h-7 px-2.5"
+                        >
+                          <Printer className="w-3.5 h-3.5 mr-1 text-slate-600 dark:text-slate-400" />
                           In TKB (PDF)
                         </Button>
                       </div>
                     </div>
 
-                    {/* THANH CHỌN 6 PHÒNG LAB SKY-LINE (DẠNG THẺ CHUYÊN DỤNG) */}
+                    {/* THANH CHỌN 6 PHÒNG LAB SKY-LINE (DẠNG THẺ GỌN) */}
                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                      <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1.5">
-                        <Laptop className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Chọn 1 trong 6 Phòng Lab Sky-Line để xem lịch chi tiết:</span>
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                         {LAB_ROOMS.map((lab) => {
                           const isSelected = selectedLab === lab.id;
                           const labSlotsCount = rawTeacherTimetables.filter(
@@ -1130,14 +1134,14 @@ export default function DashboardPage() {
                                 setSelectedLab(lab.id);
                                 showToast(`Đang hiển thị lịch: ${lab.name} (${labSlotsCount} tiết/tuần)`, "info");
                               }}
-                              className={`p-3 rounded-2xl text-left transition-all border cursor-pointer relative overflow-hidden group ${
+                              className={`p-2 rounded-xl text-left transition-all border cursor-pointer relative overflow-hidden group ${
                                 isSelected
-                                  ? "bg-gradient-to-br from-sky-600 to-sky-700 text-white border-sky-500 shadow-md shadow-sky-600/25 scale-[1.02]"
+                                  ? "bg-gradient-to-br from-sky-600 to-sky-700 text-white border-sky-500 shadow-sm shadow-sky-600/25"
                                   : "bg-slate-50 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200"
                               }`}
                             >
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
                                   isSelected
                                     ? "bg-white/20 text-white"
                                     : "bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300"
@@ -1149,10 +1153,10 @@ export default function DashboardPage() {
                                 </span>
                               </div>
 
-                              <div className="font-extrabold text-xs line-clamp-1 leading-snug">
+                              <div className="font-extrabold text-[11px] line-clamp-1 leading-tight">
                                 {lab.name.replace("Sky-Line ", "")}
                               </div>
-                              <div className={`text-[10px] mt-0.5 truncate ${isSelected ? "text-sky-100" : "text-slate-500 dark:text-slate-400"}`}>
+                              <div className={`text-[9px] truncate leading-tight ${isSelected ? "text-sky-100" : "text-slate-500 dark:text-slate-400"}`}>
                                 GV: {lab.defaultTeacher}
                               </div>
                             </button>
@@ -1160,59 +1164,13 @@ export default function DashboardPage() {
                         })}
                       </div>
                     </div>
-
-                    {/* THẺ TÓM TẮT THÔNG TIN PHÒNG LAB HIỆN TẠI (CHẾ ĐỘ XEM ĐỒNG BỘ TỪ LỊCH GIÁO VIÊN) */}
-                    {(() => {
-                      const currentLabObj = LAB_ROOMS.find((l) => l.id === selectedLab);
-                      const currentLabSlots = rawTeacherTimetables.filter(
-                        (s) => isSlotInLabRoom(s.room, selectedLab)
-                      );
-
-                      return currentLabObj ? (
-                        <div className="p-3.5 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-900/60 flex flex-wrap items-center justify-between gap-3 text-xs">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold shadow-2xs">
-                              <Bot className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-sky-900 dark:text-sky-200 text-sm">
-                                {currentLabObj.name} ({currentLabObj.sheet})
-                              </div>
-                              <div className="text-slate-600 dark:text-slate-400 text-[11px]">
-                                Giáo viên phụ trách chính: <strong>{currentLabObj.defaultTeacher}</strong> • Tổng cộng <strong>{currentLabSlots.length} tiết giảng dạy/tuần</strong>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 shadow-2xs">
-                              <Eye className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                              Chế độ chỉ xem (Đồng bộ từ Lịch GV)
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                loadLabScheduleFromTeacherTimetables();
-                                showToast("Đã đồng bộ lại dữ liệu thời khóa biểu phòng Lab!", "success");
-                              }}
-                              className="font-bold text-xs h-8"
-                              title="Làm mới dữ liệu từ cơ sở dữ liệu"
-                            >
-                              <RefreshCw className={`w-3.5 h-3.5 mr-1 ${isLoadingLabSchedule ? "animate-spin" : ""}`} />
-                              Đồng bộ
-                            </Button>
-                          </div>
-                        </div>
-                      ) : null;
-                    })()}
                   </div>
 
-                  {/* BẢNG LƯỚI THỜI KHÓA BIỂU 8 TIẾT (BUỔI SÁNG 4 TIẾT, BUỔI CHIỀU 4 TIẾT) - ĐỒNG BỘ 5 CỘT CÂN ĐỐI */}
-                  <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-                    <table className="w-full text-left text-xs border-collapse min-w-[900px] table-fixed">
+                  {/* BẢNG LƯỚI THỜI KHÓA BIỂU 8 TIẾT (BUỔI SÁNG 4 TIẾT, BUỔI CHIỀU 4 TIẾT) - GỌN TRONG 1 MÀN HÌNH */}
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                    <table className="w-full text-left text-xs border-collapse min-w-[760px] table-fixed">
                       <colgroup>
-                        <col className="w-32" />
+                        <col className="w-28" />
                         <col className="w-1/5" />
                         <col className="w-1/5" />
                         <col className="w-1/5" />
@@ -1221,7 +1179,7 @@ export default function DashboardPage() {
                       </colgroup>
                       <thead>
                         <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                          <th className="p-3.5 font-bold w-32 text-center bg-slate-200/60 dark:bg-slate-800">Tiết / Giờ</th>
+                          <th className="py-2 px-2 font-bold w-28 text-center bg-slate-200/60 dark:bg-slate-800">Tiết / Giờ</th>
                           {[
                             { day: 2, label: "Thứ Hai" },
                             { day: 3, label: "Thứ Ba" },
@@ -1231,7 +1189,7 @@ export default function DashboardPage() {
                           ].map((d) => (
                             <th
                               key={d.day}
-                              className="p-3.5 font-bold text-center"
+                              className="py-2 px-2 font-bold text-center"
                             >
                               {d.label}
                             </th>
@@ -1243,9 +1201,9 @@ export default function DashboardPage() {
                         {(selectedSessionFilter === "all" || selectedSessionFilter === "morning") && (
                           <>
                             <tr className="bg-sky-50/70 dark:bg-sky-950/40 border-y border-sky-200/80 dark:border-sky-900/60">
-                              <td colSpan={6} className="px-4 py-2 font-black text-sky-900 dark:text-sky-300 text-xs tracking-wide">
-                                <span className="inline-flex items-center gap-2">
-                                  <SunMedium className="w-4 h-4 text-amber-500" />
+                              <td colSpan={6} className="px-3 py-1 font-black text-sky-900 dark:text-sky-300 text-[11px] tracking-wide">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <SunMedium className="w-3.5 h-3.5 text-amber-500" />
                                   BUỔI SÁNG (07:30 - 10:55 • 4 TIẾT)
                                 </span>
                               </td>
@@ -1257,13 +1215,13 @@ export default function DashboardPage() {
                             ].map((slotTime) => renderTimetableRow(slotTime))}
 
                             {/* DÒNG NGHỈ GIẢI LAO SÁNG */}
-                            <tr className="bg-amber-50/50 dark:bg-amber-950/20 text-slate-500 dark:text-slate-400 text-[11px] italic">
-                              <td className="p-2 text-center bg-amber-100/50 dark:bg-amber-950/40 border-r border-slate-200 dark:border-slate-800 font-semibold text-amber-800 dark:text-amber-300">
+                            <tr className="bg-amber-50/50 dark:bg-amber-950/20 text-slate-500 dark:text-slate-400 text-[10px] italic">
+                              <td className="py-0.5 px-2 text-center bg-amber-100/50 dark:bg-amber-950/40 border-r border-slate-200 dark:border-slate-800 font-semibold text-amber-800 dark:text-amber-300">
                                 09:05 - 09:20
                               </td>
-                              <td colSpan={5} className="p-2 text-center">
-                                <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-medium">
-                                  <Coffee className="w-3.5 h-3.5" /> Giờ ra chơi, ăn phụ & thể dục giữa giờ (15 phút)
+                              <td colSpan={5} className="py-0.5 px-2 text-center">
+                                <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium">
+                                  <Coffee className="w-3 h-3" /> Giờ ra chơi, ăn phụ & thể dục giữa giờ (15 phút)
                                 </span>
                               </td>
                             </tr>
@@ -1277,11 +1235,11 @@ export default function DashboardPage() {
 
                         {/* DÒNG NGHỈ TRƯA & BÁN TRÚ NẾU HIỂN THỊ CẢ NGÀY */}
                         {selectedSessionFilter === "all" && (
-                          <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-xs font-bold border-y-2 border-slate-200 dark:border-slate-700">
-                            <td className="p-2.5 text-center bg-slate-200/70 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-800">
+                          <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-[11px] font-bold border-y border-slate-200 dark:border-slate-700">
+                            <td className="py-1 px-2 text-center bg-slate-200/70 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-800">
                               11:00 - 13:30
                             </td>
-                            <td colSpan={5} className="p-2.5 text-center">
+                            <td colSpan={5} className="py-1 px-2 text-center">
                               🍱 NGHỈ TRƯA, ĂN BÁN TRÚ & NGHỈ NGƠI TẠI CƠ SỞ
                             </td>
                           </tr>
@@ -1291,9 +1249,9 @@ export default function DashboardPage() {
                         {(selectedSessionFilter === "all" || selectedSessionFilter === "afternoon") && (
                           <>
                             <tr className="bg-indigo-50/70 dark:bg-indigo-950/40 border-y border-indigo-200/80 dark:border-indigo-900/60">
-                              <td colSpan={6} className="px-4 py-2 font-black text-indigo-900 dark:text-indigo-300 text-xs tracking-wide">
-                                <span className="inline-flex items-center gap-2">
-                                  <Sunset className="w-4 h-4 text-orange-500" />
+                              <td colSpan={6} className="px-3 py-1 font-black text-indigo-900 dark:text-indigo-300 text-[11px] tracking-wide">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Sunset className="w-3.5 h-3.5 text-orange-500" />
                                   BUỔI CHIỀU (13:30 - 16:55 • 4 TIẾT)
                                 </span>
                               </td>
@@ -1305,13 +1263,13 @@ export default function DashboardPage() {
                             ].map((slotTime) => renderTimetableRow(slotTime))}
 
                             {/* DÒNG NGHỈ GIẢI LAO CHIỀU */}
-                            <tr className="bg-amber-50/50 dark:bg-amber-950/20 text-slate-500 dark:text-slate-400 text-[11px] italic">
-                              <td className="p-2 text-center bg-amber-100/50 dark:bg-amber-950/40 border-r border-slate-200 dark:border-slate-800 font-semibold text-amber-800 dark:text-amber-300">
+                            <tr className="bg-amber-50/50 dark:bg-amber-950/20 text-slate-500 dark:text-slate-400 text-[10px] italic">
+                              <td className="py-0.5 px-2 text-center bg-amber-100/50 dark:bg-amber-950/40 border-r border-slate-200 dark:border-slate-800 font-semibold text-amber-800 dark:text-amber-300">
                                 15:05 - 15:20
                               </td>
-                              <td colSpan={5} className="p-2 text-center">
-                                <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-medium">
-                                  <Coffee className="w-3.5 h-3.5" /> Giờ ăn xế & giải lao chiều (15 phút)
+                              <td colSpan={5} className="py-0.5 px-2 text-center">
+                                <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium">
+                                  <Coffee className="w-3 h-3" /> Giờ ăn xế & giải lao chiều (15 phút)
                                 </span>
                               </td>
                             </tr>
