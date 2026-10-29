@@ -136,6 +136,23 @@ export const formatShortLabRoomName = (room?: string): string => {
   );
 };
 
+// Hàm chuẩn hóa mã phòng Lab để đối chiếu chống trùng phòng Lab tại cùng 1 tiết học
+export const normalizeLabRoomKey = (room?: string): string => {
+  if (!room) return "";
+  const r = room.toLowerCase().trim();
+  if (r.includes("tiểu học") || r.includes("cs1-th") || (r.includes("riverside") && !r.includes("trung học"))) {
+    return "riverside_primary";
+  }
+  if (r.includes("trung học") || r.includes("cs1-trh")) {
+    return "riverside_secondary";
+  }
+  if (r.includes("central") || r.includes("cs2")) return "central";
+  if (r.includes("global") || r.includes("quốc tế") || r.includes("cs3")) return "global";
+  if (r.includes("hill") || r.includes("cs4")) return "hill";
+  if (r.includes("beach") || r.includes("cs5")) return "beach";
+  return r;
+};
+
 // =========================================================================
 // BẢNG ÁNH XẠ NĂM HỌC SANG UUID CHUẨN TRONG SUPABASE
 // =========================================================================
@@ -317,6 +334,7 @@ export function TeacherAssignedScheduleSection({
   const [slotModalMode, setSlotModalMode] = useState<"add" | "edit">("add");
   const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
   const [isSubmittingSlot, setIsSubmittingSlot] = useState(false);
+  const [slotConflictError, setSlotConflictError] = useState<string | null>(null);
   const [slotFormData, setSlotFormData] = useState({
     day_of_week: 2,
     period: 1,
@@ -791,6 +809,7 @@ export function TeacherAssignedScheduleSection({
       room: SIX_LAB_ROOMS[0].name,
       notes: "",
     });
+    setSlotConflictError(null);
     setSlotModalMode("add");
     setEditingSlotId(null);
     setIsSlotModalOpen(true);
@@ -815,14 +834,16 @@ export function TeacherAssignedScheduleSection({
       room: matchedRoom ? matchedRoom.name : SIX_LAB_ROOMS[0].name,
       notes: slot.notes || "",
     });
+    setSlotConflictError(null);
     setSlotModalMode("edit");
     setEditingSlotId(slot.id);
     setIsSlotModalOpen(true);
   };
 
-  // Lưu tiết dạy vào Supabase teacher_timetables
+  // Lưu tiết dạy vào Supabase teacher_timetables (Chống trùng phòng Lab tuyệt đối: mỗi tiết của mỗi phòng Lab chỉ duy nhất 1 lớp học)
   const handleSaveSlot = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSlotConflictError(null);
     if (!canEdit) {
       showToast("Thầy/Cô không có quyền chỉnh sửa thời khóa biểu của giáo viên này!", "warning");
       return;
@@ -838,6 +859,37 @@ export function TeacherAssignedScheduleSection({
 
     setIsSubmittingSlot(true);
     try {
+      // KIỂM TRA CHỐNG TRÙNG PHÒNG LAB TẠI CÙNG TIẾT HỌC TRÊN TOÀN HỆ THỐNG
+      const { data: latestPeriodSlots } = await supabase
+        .from("teacher_timetables")
+        .select("*")
+        .eq("school_year", selectedSchoolYear)
+        .eq("day_of_week", slotFormData.day_of_week)
+        .eq("period", slotFormData.period);
+
+      const existingOwnSlot = slotMap22.get(`${slotFormData.day_of_week}_${slotFormData.period}`);
+      const ignoreSlotId = slotModalMode === "edit" ? editingSlotId : existingOwnSlot?.id;
+      const targetLabKey = normalizeLabRoomKey(slotFormData.room);
+
+      const slotsToCheck =
+        latestPeriodSlots && latestPeriodSlots.length > 0
+          ? latestPeriodSlots
+          : teacherTimetableSlots.filter(
+              (s) => s.day_of_week === slotFormData.day_of_week && s.period === slotFormData.period
+            );
+
+      const conflictingLabSlot = slotsToCheck.find(
+        (s: any) => s.id !== ignoreSlotId && normalizeLabRoomKey(s.room) === targetLabKey
+      );
+
+      if (conflictingLabSlot) {
+        const conflictMsg = "Tiết dạy này tại phòng Lab đã có lớp học, vui lòng chọn tiết khác";
+        setSlotConflictError(conflictMsg);
+        showToast(conflictMsg, "warning");
+        setIsSubmittingSlot(false);
+        return;
+      }
+
       const timeSlot = PERIOD_TIMES[slotFormData.period] || "";
       const session = slotFormData.period <= 4 ? "morning" : "afternoon";
 
@@ -905,9 +957,16 @@ export function TeacherAssignedScheduleSection({
       setIsSlotModalOpen(false);
       await loadTeacherSelfTimetables();
       onScheduleChanged?.();
-    } catch (err: any) {
+      } catch (err: any) {
       console.error("Lỗi lưu tiết dạy:", err);
-      showToast(err.message || "Lỗi khi lưu vào cơ sở dữ liệu!", "warning");
+      const errMsg = String(err?.message || "");
+      if (errMsg.toLowerCase().includes("tiết dạy này tại phòng lab đã có lớp học")) {
+        const conflictMsg = "Tiết dạy này tại phòng Lab đã có lớp học, vui lòng chọn tiết khác";
+        setSlotConflictError(conflictMsg);
+        showToast(conflictMsg, "warning");
+      } else {
+        showToast(err.message || "Lỗi khi lưu vào cơ sở dữ liệu!", "warning");
+      }
     } finally {
       setIsSubmittingSlot(false);
     }
@@ -2039,7 +2098,10 @@ export function TeacherAssignedScheduleSection({
                 </label>
                 <select
                   value={slotFormData.room}
-                  onChange={(e) => setSlotFormData({ ...slotFormData, room: e.target.value })}
+                  onChange={(e) => {
+                    setSlotFormData({ ...slotFormData, room: e.target.value });
+                    setSlotConflictError(null);
+                  }}
                   className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/40 shadow-2xs"
                   required
                 >
@@ -2050,6 +2112,14 @@ export function TeacherAssignedScheduleSection({
                   ))}
                 </select>
               </div>
+
+              {/* THÔNG BÁO CẢNH BÁO TRÙNG PHÒNG LAB KHI BẤM LƯU TIẾT DẠY */}
+              {slotConflictError && (
+                <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 flex items-start gap-2 text-rose-700 dark:text-rose-300 text-xs font-bold animate-in fade-in duration-150">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                  <span>{slotConflictError}</span>
+                </div>
+              )}
 
               {/* 2 NÚT BẤM: HỦY BỎ VÀ LƯU TIẾT DẠY */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
