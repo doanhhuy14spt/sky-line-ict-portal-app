@@ -83,7 +83,7 @@ interface TeacherAssignedScheduleSectionProps {
     id: string;
     email: string;
     name: string;
-    role: "leader" | "teacher";
+    role: "leader" | "teacher" | "guest";
     campus: string;
   };
   onScheduleChanged?: () => void;
@@ -286,6 +286,7 @@ export function TeacherAssignedScheduleSection({
   currentUserProfile,
   onScheduleChanged,
 }: TeacherAssignedScheduleSectionProps) {
+  const isGuest = currentUserProfile?.role === "guest";
   // Chuyển đổi giữa 2 phần: 2.1 (TKB Nhà Trường) & 2.2 (Lịch Tự Nhập Của Giáo Viên)
   const [activeSubTab, setActiveSubTab] = useState<"2.1" | "2.2">("2.1");
 
@@ -1214,32 +1215,36 @@ export function TeacherAssignedScheduleSection({
 
               {/* NÚT IMPORT EXCEL & LÀM MỚI */}
               <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                  accept=".xlsx,.xls"
-                  className="hidden"
-                />
-                <Button
-                  size="sm"
-                  variant="amber"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isImporting}
-                  className="font-bold text-xs h-7 px-2.5 shadow-sm shadow-amber-500/20"
-                >
-                  {isImporting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                      Đang Import TKB...
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="w-3.5 h-3.5 mr-1" />
-                      Import File TKB Nhà Trường (.xlsx)
-                    </>
-                  )}
-                </Button>
+                {!isGuest && (
+                  <>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".xlsx,.xls"
+                      className="hidden"
+                    />
+                    <Button
+                      size="sm"
+                      variant="amber"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isImporting}
+                      className="font-bold text-xs h-7 px-2.5 shadow-sm shadow-amber-500/20"
+                    >
+                      {isImporting ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                          Đang Import TKB...
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="w-3.5 h-3.5 mr-1" />
+                          Import File TKB Nhà Trường (.xlsx)
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
 
                 <Button
                   size="sm"

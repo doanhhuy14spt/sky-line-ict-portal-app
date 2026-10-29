@@ -75,7 +75,7 @@ interface AchievementsSectionProps {
     id: string;
     email: string;
     name: string;
-    role: "leader" | "teacher";
+    role: "leader" | "teacher" | "guest";
     campus: string;
   };
   classesList: ClassItem[];
@@ -113,6 +113,7 @@ export function AchievementsSection({
 }: AchievementsSectionProps) {
   const router = useRouter();
   const isLeader = currentUserProfile?.role === "leader";
+  const isGuest = currentUserProfile?.role === "guest";
 
   // =========================================================================
   // 1. STATE DỮ LIỆU TỪ SUPABASE (THÀNH TÍCH, CUỘC THI, LỚP HỌC)
@@ -730,15 +731,21 @@ export function AchievementsSection({
                   Quản Lý Thành Tích Cuộc Thi & Kì Thi Chuyên Môn ICT
                 </h2>
                 <Badge
-                  variant={isLeader ? "amber" : "default"}
+                  variant={isLeader ? "amber" : isGuest ? "outline" : "default"}
                   className="text-[11px] font-bold"
                 >
-                  {isLeader ? "👑 Quyền Tổ Trưởng (Quản lý Cuộc thi & Thành tích)" : "👩‍🏫 Quyền Giáo Viên (Khai báo & Cập nhật Thành tích)"}
+                  {isLeader
+                    ? "👑 Quyền Tổ Trưởng (Quản lý Cuộc thi & Thành tích)"
+                    : isGuest
+                    ? "👁️ Quyền Khách (Chế độ Chỉ Xem)"
+                    : "👩‍🏫 Quyền Giáo Viên (Khai báo & Cập nhật Thành tích)"}
                 </Badge>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {isLeader
                   ? "Tổ trưởng chuyên môn có quyền thêm, sửa, xóa danh mục các cuộc thi / kì thi và quản lý toàn bộ thành tích của Giáo viên & Học sinh."
+                  : isGuest
+                  ? "Tài khoản Khách được phép xem và lọc toàn bộ bảng vàng thành tích của Giáo viên & Học sinh Tổ ICT theo năm học."
                   : "Giáo viên chọn cuộc thi / kì thi từ danh sách của Tổ trưởng và có toàn quyền thêm, sửa, xóa các thông tin từ cột 'Thành tích của' về sau."}
               </p>
             </div>
@@ -758,15 +765,17 @@ export function AchievementsSection({
               </Button>
             )}
 
-            {/* NÚT THÊM THÀNH TÍCH MỚI (CHO CẢ GIÁO VIÊN VÀ TỔ TRƯỞNG) */}
-            <Button
-              size="sm"
-              onClick={handleOpenAddAchievement}
-              className="font-bold text-xs h-9 bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-md shadow-amber-600/20 cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4 mr-1.5" />
-              + Thêm Thành Tích Mới
-            </Button>
+            {/* NÚT THÊM THÀNH TÍCH MỚI (CHO CẢ GIÁO VIÊN VÀ TỔ TRƯỞNG, ẨN VỚI KHÁCH) */}
+            {!isGuest && (
+              <Button
+                size="sm"
+                onClick={handleOpenAddAchievement}
+                className="font-bold text-xs h-9 bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-md shadow-amber-600/20 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4 mr-1.5" />
+                + Thêm Thành Tích Mới
+              </Button>
+            )}
 
             <Button
               size="sm"
@@ -1070,7 +1079,7 @@ export function AchievementsSection({
                               <span className="truncate">Xem minh chứng</span>
                               <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-75" />
                             </a>
-                          ) : (
+                          ) : !isGuest ? (
                             <button
                               onClick={() => {
                                 setQuickEditEvidenceItem(item);
@@ -1081,39 +1090,49 @@ export function AchievementsSection({
                               <Link2 className="w-3 h-3 shrink-0" />
                               <span className="truncate">+ Đính kèm link</span>
                             </button>
+                          ) : (
+                            <span className="text-[11px] italic text-slate-400">Chưa cập nhật</span>
                           )}
                         </div>
-                        <button
-                          onClick={() => {
-                            setQuickEditEvidenceItem(item);
-                            setQuickEvidenceValue(item.evidence_link || "");
-                          }}
-                          className="p-1 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-400 hover:text-sky-600 transition-all shrink-0 cursor-pointer"
-                          title="Cập nhật link quyết định / giấy khen"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
+                        {!isGuest && (
+                          <button
+                            onClick={() => {
+                              setQuickEditEvidenceItem(item);
+                              setQuickEvidenceValue(item.evidence_link || "");
+                            }}
+                            className="p-1 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-400 hover:text-sky-600 transition-all shrink-0 cursor-pointer"
+                            title="Cập nhật link quyết định / giấy khen"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
                     </td>
 
                     {/* CỘT 9: THAO TÁC (SỬA / XÓA) */}
                     <td className="py-3.5 px-2 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => handleOpenEditAchievement(item)}
-                          className="p-1.5 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-950/60 text-sky-600 dark:text-sky-400 transition-all cursor-pointer"
-                          title="Chỉnh sửa thông tin thành tích"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirmAchievement(item)}
-                          className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 transition-all cursor-pointer"
-                          title="Xóa thành tích này"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      {!isGuest ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleOpenEditAchievement(item)}
+                            className="p-1.5 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-950/60 text-sky-600 dark:text-sky-400 transition-all cursor-pointer"
+                            title="Chỉnh sửa thông tin thành tích"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmAchievement(item)}
+                            className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 transition-all cursor-pointer"
+                            title="Xóa thành tích này"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-semibold">
+                          Chỉ xem
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -1137,7 +1156,7 @@ export function AchievementsSection({
                           : "Thầy/Cô hãy bấm '+ Thêm Thành Tích Mới' để ghi nhận giải thưởng của Giáo viên & Học sinh."}
                       </p>
                     </div>
-                    {!searchTerm && competitionFilter === "all" && levelFilter === "all" && targetFilter === "all" && (
+                    {!isGuest && !searchTerm && competitionFilter === "all" && levelFilter === "all" && targetFilter === "all" && (
                       <Button
                         size="sm"
                         onClick={handleOpenAddAchievement}

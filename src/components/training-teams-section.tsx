@@ -55,7 +55,7 @@ interface TrainingTeamsSectionProps {
     id: string;
     email: string;
     name: string;
-    role: "leader" | "teacher";
+    role: "leader" | "teacher" | "guest";
     campus: string;
   };
   classesList: ClassItem[];
@@ -99,6 +99,7 @@ export function TrainingTeamsSection({
 }: TrainingTeamsSectionProps) {
   const router = useRouter();
   const isLeader = currentUserProfile?.role === "leader";
+  const isGuest = currentUserProfile?.role === "guest";
 
   // =========================================================================
   // 1. STATE DỮ LIỆU ĐỘI TUYỂN & DANH SÁCH LỚP TỪ SUPABASE
@@ -334,7 +335,7 @@ export function TrainingTeamsSection({
   // Kiểm tra học sinh này có phải do chính tài khoản giáo viên đang đăng nhập bồi dưỡng hay không
   const isMyTrainedStudent = useCallback(
     (item: TrainingTeamItem): boolean => {
-      if (!currentUserProfile) return false;
+      if (!currentUserProfile || isGuest) return false;
       if (item.teacher_id && currentUserProfile.id && item.teacher_id === currentUserProfile.id) {
         return true;
       }
@@ -357,6 +358,10 @@ export function TrainingTeamsSection({
   // 7. CÁC HÀM THÊM / SỬA / XÓA HỌC SINH ĐỘI TUYỂN
   // =========================================================================
   const handleOpenAddModal = () => {
+    if (isGuest) {
+      showToast("Tài khoản Khách chỉ có quyền xem dữ liệu, không được phép thêm học sinh!", "warning");
+      return;
+    }
     const defaultClass = localClasses.length > 0 ? localClasses[0].name : "";
     const myTeacherProfile = teachersList.find(
       (t) =>
@@ -617,14 +622,16 @@ export function TrainingTeamsSection({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <Button
-              type="button"
-              onClick={handleOpenAddModal}
-              className="bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md shadow-sky-600/20 cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4 mr-1.5" />
-              + Thêm Học Sinh Đội Tuyển
-            </Button>
+            {!isGuest && (
+              <Button
+                type="button"
+                onClick={handleOpenAddModal}
+                className="bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md shadow-sky-600/20 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4 mr-1.5" />
+                + Thêm Học Sinh Đội Tuyển
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -799,18 +806,20 @@ export function TrainingTeamsSection({
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setOnlyMyStudents(!onlyMyStudents)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer border ${
-                  onlyMyStudents
-                    ? "bg-sky-600 text-white border-sky-600 shadow-xs"
-                    : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>Học sinh tôi bồi dưỡng</span>
-              </button>
+              {!isGuest && (
+                <button
+                  type="button"
+                  onClick={() => setOnlyMyStudents(!onlyMyStudents)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer border ${
+                    onlyMyStudents
+                      ? "bg-sky-600 text-white border-sky-600 shadow-xs"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Học sinh tôi bồi dưỡng</span>
+                </button>
+              )}
 
               {hasActiveFilters && (
                 <button
@@ -872,7 +881,7 @@ export function TrainingTeamsSection({
                 >
                   Đặt Lại Bộ Lọc
                 </Button>
-              ) : (
+              ) : !isGuest ? (
                 <Button
                   type="button"
                   size="sm"
@@ -882,7 +891,7 @@ export function TrainingTeamsSection({
                   <PlusCircle className="w-4 h-4 mr-1.5" />
                   + Thêm Học Sinh Đầu Tiên
                 </Button>
-              )}
+              ) : null}
             </div>
           </div>
         ) : (

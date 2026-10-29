@@ -147,7 +147,7 @@ interface LabDevicesSectionProps {
     id: string;
     email: string;
     name: string;
-    role: "leader" | "teacher";
+    role: "leader" | "teacher" | "guest";
     campus?: string;
   };
   selectedSchoolYear?: string;

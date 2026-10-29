@@ -39,7 +39,7 @@ interface OverviewSectionProps {
     id: string;
     email: string;
     name: string;
-    role: "leader" | "teacher";
+    role: "leader" | "teacher" | "guest";
     campus: string;
   };
   teachersList: any[];

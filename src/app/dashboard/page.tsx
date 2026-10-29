@@ -184,7 +184,7 @@ export default function DashboardPage() {
     id: string;
     email: string;
     name: string;
-    role: "leader" | "teacher";
+    role: "leader" | "teacher" | "guest";
     campus: string;
   }>({
     id: "a0000001-0000-0000-0000-000000000001",
@@ -428,10 +428,12 @@ export default function DashboardPage() {
             id: profile.id,
             email: profile.email || authUser.email || "",
             name: profile.full_name || authUser.email || "Giáo Viên",
-            role: (profile.role as "leader" | "teacher") || "teacher",
+            role: (profile.role as "leader" | "teacher" | "guest") || "teacher",
             campus:
               profile.role === "leader"
                 ? "Sky-Line Riverside (Bao quát 5 cơ sở)"
+                : profile.role === "guest"
+                ? "Toàn hệ thống Sky-Line (Chế độ Chỉ Xem)"
                 : `Cơ sở Sky-Line (${campuses.find((c) => c.id === profile.campus_id)?.name || "Riverside"})`,
           });
         }
@@ -531,14 +533,16 @@ export default function DashboardPage() {
 
 
 
-      // 5. Tải hồ sơ giáo viên (profiles)
+      // 5. Tải hồ sơ giáo viên (profiles) - Không hiển thị tài khoản Khách (guest) trong danh bạ Nhân sự ICT
       const { data: profilesData } = await supabase.from("profiles").select("*");
       if (profilesData && profilesData.length > 0) {
-        const sortedProfiles = [...profilesData].sort((a: any, b: any) => {
-          if (a.role === "leader" && b.role !== "leader") return -1;
-          if (a.role !== "leader" && b.role === "leader") return 1;
-          return String(a.id).localeCompare(String(b.id));
-        });
+        const sortedProfiles = [...profilesData]
+          .filter((p: any) => p.role !== "guest")
+          .sort((a: any, b: any) => {
+            if (a.role === "leader" && b.role !== "leader") return -1;
+            if (a.role !== "leader" && b.role === "leader") return 1;
+            return String(a.id).localeCompare(String(b.id));
+          });
         setTeachersList(
           sortedProfiles.map((p: any) => ({
             id: p.id,

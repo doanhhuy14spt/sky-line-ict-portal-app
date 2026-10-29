@@ -114,6 +114,7 @@ export function AssignedTasksSection({
 
   // Phân quyền
   const isLeader = currentUserProfile?.role === "leader";
+  const isGuest = currentUserProfile?.role === "guest";
 
   // Modal Thêm công việc mới (Chỉ dành riêng cho Tổ trưởng)
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -158,7 +159,7 @@ export function AssignedTasksSection({
   // =========================================================================
   const isMyAssignedTask = useCallback(
     (task: DepartmentTaskItem): boolean => {
-      if (!currentUserProfile) return false;
+      if (!currentUserProfile || isGuest) return false;
       if (isLeader) return true; // Tổ trưởng có toàn quyền kiểm soát
 
       if (task.assignee_id && task.assignee_id === currentUserProfile.id) return true;
@@ -189,7 +190,7 @@ export function AssignedTasksSection({
       }
       return false;
     },
-    [currentUserProfile, isLeader]
+    [currentUserProfile, isLeader, isGuest]
   );
 
   // =========================================================================
@@ -719,10 +720,16 @@ export function AssignedTasksSection({
                     className={`text-[11px] font-bold ${
                       isLeader
                         ? "border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60"
+                        : isGuest
+                        ? "border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800"
                         : "border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/60"
                     }`}
                   >
-                    {isLeader ? "Tổ Trưởng (Toàn Quyền)" : "Giáo Viên (Cập Nhật Việc Được Giao)"}
+                    {isLeader
+                      ? "Tổ Trưởng (Toàn Quyền)"
+                      : isGuest
+                      ? "Khách (Chế Độ Chỉ Xem)"
+                      : "Giáo Viên (Cập Nhật Việc Được Giao)"}
                   </Badge>
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -877,20 +884,22 @@ export function AssignedTasksSection({
               ))}
             </select>
 
-            {/* Nút lọc nhanh: Việc của tôi */}
-            <Button
-              size="sm"
-              variant={onlyMyTasks ? "default" : "outline"}
-              onClick={() => setOnlyMyTasks(!onlyMyTasks)}
-              className={`font-bold text-xs h-9 rounded-xl cursor-pointer ${
-                onlyMyTasks
-                  ? "bg-sky-600 text-white"
-                  : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300"
-              }`}
-            >
-              <UserCheck className="w-3.5 h-3.5 mr-1" />
-              Việc của tôi
-            </Button>
+            {/* Nút lọc nhanh: Việc của tôi (Ẩn với Khách) */}
+            {!isGuest && (
+              <Button
+                size="sm"
+                variant={onlyMyTasks ? "default" : "outline"}
+                onClick={() => setOnlyMyTasks(!onlyMyTasks)}
+                className={`font-bold text-xs h-9 rounded-xl cursor-pointer ${
+                  onlyMyTasks
+                    ? "bg-sky-600 text-white"
+                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300"
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5 mr-1" />
+                Việc của tôi
+              </Button>
+            )}
           </div>
         </div>
       </div>
