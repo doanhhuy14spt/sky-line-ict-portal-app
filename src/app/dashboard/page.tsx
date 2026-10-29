@@ -62,6 +62,7 @@ import { OverviewSection } from "@/components/overview-section";
 import { SiteFooter } from "@/components/site-footer";
 import { NotificationBell } from "@/components/notification-bell";
 import { maskStudentName } from "@/lib/student-privacy";
+import { TeacherCompetencyEvaluationSection } from "@/components/teacher-competency-evaluation-section";
 
 interface TimetableSlot {
   id: string;
@@ -1978,21 +1979,16 @@ export default function DashboardPage() {
               )}
 
               {/* ========================================================================= */}
-              {/* PHẦN 2. ĐÁNH GIÁ NĂNG LỰC GIÁO VIÊN (ĐỂ TRỐNG CHỜ HƯỚNG DẪN TIẾP THEO)    */}
+              {/* PHẦN 2. ĐÁNH GIÁ NĂNG LỰC GIÁO VIÊN (KPIs 360 ĐỘ)                         */}
               {/* ========================================================================= */}
               {teachersSubTab === "part2_evaluation" && (
-                <div className="space-y-6 animate-in fade-in duration-200">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-                    <div>
-                      <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <GraduationCap className="w-5 h-5 text-amber-500" />
-                        Phần 2. Đánh giá năng lực giáo viên
-                      </h2>
-                    </div>
-                  </div>
-
-                  <div className="min-h-[260px] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50" />
-                </div>
+                <TeacherCompetencyEvaluationSection
+                  supabase={supabase}
+                  showToast={showToast}
+                  selectedSchoolYear={selectedSchoolYear}
+                  teachersList={teachersList}
+                  currentUserProfile={currentUserProfile}
+                />
               )}
 
               {/* MODAL THÊM MỚI / CHỈNH SỬA HỒ SƠ GIÁO VIÊN */}
