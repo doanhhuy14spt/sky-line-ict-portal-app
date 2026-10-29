@@ -494,6 +494,7 @@ export function TeacherCompetencyEvaluationSection({
   >({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   // Dành cho Tổ trưởng: Giáo viên đang được chọn để xem/chấm chi tiết
   const [selectedTeacherIdForLeader, setSelectedTeacherIdForLeader] =
@@ -1152,9 +1153,16 @@ export function TeacherCompetencyEvaluationSection({
     );
   }, [activeSheetRecord, activeSheetTeacher, activeSheetMetrics]);
 
-  // Hàm xuất Phiếu Đánh Giá Năng Lực Giáo Viên ICT ra file định dạng .pdf chuẩn khổ A4
-  const handleExportEvaluationFormPdf = useCallback(() => {
-    if (!activeSheetTeacher || !activeSheetRecord || !activeSheetMetrics) return;
+  // Hàm tải trực tiếp Phiếu Đánh Giá Năng Lực Giáo Viên ICT thành file .pdf về máy tính người dùng
+  const handleExportEvaluationFormPdf = useCallback(async () => {
+    if (!activeSheetTeacher || !activeSheetRecord || !activeSheetMetrics || isExportingPdf)
+      return;
+
+    setIsExportingPdf(true);
+    showToast(
+      `Đang tạo và tải file .pdf Phiếu đánh giá của ${activeSheetTeacher.name} về máy tính...`,
+      "info"
+    );
 
     const escapeHtml = (str?: string) =>
       String(str || "")
@@ -1223,21 +1231,21 @@ export function TeacherCompetencyEvaluationSection({
   <meta charset="UTF-8" />
   <title>${escapeHtml(fileTitle)}</title>
   <style>
-    @page { size: A4 portrait; margin: 12mm 14mm; }
     * { box-sizing: border-box; }
     body {
       font-family: "Times New Roman", Times, serif;
       font-size: 12.5px;
-      line-height: 1.45;
+      line-height: 1.42;
       color: #0f172a;
       margin: 0;
-      padding: 0;
+      padding: 28px 36px;
+      width: 794px;
       background: #ffffff;
     }
     .header-grid {
       display: table;
       width: 100%;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .header-col {
       display: table-cell;
@@ -1247,7 +1255,7 @@ export function TeacherCompetencyEvaluationSection({
     }
     .title-block {
       text-align: center;
-      margin: 12px 0 16px 0;
+      margin: 10px 0 14px 0;
     }
     .title-block h1 {
       font-size: 17px;
@@ -1259,20 +1267,20 @@ export function TeacherCompetencyEvaluationSection({
       font-size: 13px;
       font-weight: bold;
       text-transform: uppercase;
-      margin: 14px 0 6px 0;
+      margin: 12px 0 5px 0;
     }
     .info-box p {
-      margin: 4px 0;
+      margin: 3.5px 0;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 6px;
-      font-size: 11.5px;
+      margin-top: 5px;
+      font-size: 11.2px;
     }
     th, td {
       border: 1px solid #334155;
-      padding: 5px 6px;
+      padding: 4.5px 6px;
       vertical-align: middle;
     }
     th {
@@ -1281,31 +1289,31 @@ export function TeacherCompetencyEvaluationSection({
       text-align: center;
     }
     .ranking-list {
-      margin: 6px 0;
+      margin: 5px 0;
       padding-left: 16px;
     }
     .ranking-list li {
-      margin-bottom: 4px;
+      margin-bottom: 3.5px;
     }
     .idp-block {
-      margin-top: 6px;
+      margin-top: 5px;
     }
     .idp-item {
-      margin-bottom: 8px;
+      margin-bottom: 7px;
     }
     .idp-box {
-      min-height: 38px;
+      min-height: 34px;
       border: 1px dashed #64748b;
-      padding: 6px 8px;
+      padding: 5px 8px;
       border-radius: 4px;
-      margin-top: 3px;
+      margin-top: 2px;
       white-space: pre-wrap;
     }
     .sig-table td {
       width: 33.33%;
       text-align: center;
       vertical-align: top;
-      padding: 10px 6px 28px 6px;
+      padding: 8px 6px 22px 6px;
     }
   </style>
 </head>
@@ -1392,56 +1400,116 @@ export function TeacherCompetencyEvaluationSection({
     </div>
   </div>
 
-  <table class="sig-table" style="margin-top:14px;">
+  <table class="sig-table" style="margin-top:12px;">
     <tr>
       <td>
         <div style="font-weight:bold;">NGƯỜI TỰ ĐÁNH GIÁ</div>
         <div style="font-style:italic; font-size:11px;">(Ký và ghi rõ họ tên)</div>
-        <div style="margin-top:26px; font-weight:bold;">${escapeHtml(activeSheetRecord.teacher_name)}</div>
-        <div style="margin-top:8px; font-size:11px;">Ngày: ${escapeHtml(activeSheetRecord.self_eval_date || "..../..../202...")}</div>
+        <div style="margin-top:24px; font-weight:bold;">${escapeHtml(activeSheetRecord.teacher_name)}</div>
+        <div style="margin-top:6px; font-size:11px;">Ngày: ${escapeHtml(activeSheetRecord.self_eval_date || "..../..../202...")}</div>
       </td>
       <td>
         <div style="font-weight:bold;">TỔ TRƯỞNG CHUYÊN MÔN ICT</div>
         <div style="font-style:italic; font-size:11px;">(Ký và ghi rõ họ tên)</div>
-        <div style="margin-top:26px; font-weight:bold;">Thầy Đỗ Anh Huy</div>
-        <div style="margin-top:8px; font-size:11px;">Ngày: ${escapeHtml(activeSheetRecord.leader_eval_date || "..../..../202...")}</div>
+        <div style="margin-top:24px; font-weight:bold;">Thầy Đỗ Anh Huy</div>
+        <div style="margin-top:6px; font-size:11px;">Ngày: ${escapeHtml(activeSheetRecord.leader_eval_date || "..../..../202...")}</div>
       </td>
       <td>
         <div style="font-weight:bold;">BAN ĐIỀU HÀNH CHUYÊN MÔN</div>
         <div style="font-style:italic; font-size:11px;">(Ký và ghi rõ họ tên)</div>
-        <div style="margin-top:26px; font-weight:bold;">........................................</div>
-        <div style="margin-top:8px; font-size:11px;">Ngày: ${escapeHtml(activeSheetRecord.board_eval_date || "..../..../202...")}</div>
+        <div style="margin-top:24px; font-weight:bold;">........................................</div>
+        <div style="margin-top:6px; font-size:11px;">Ngày: ${escapeHtml(activeSheetRecord.board_eval_date || "..../..../202...")}</div>
       </td>
     </tr>
   </table>
 </body>
 </html>`;
 
-    const printWindow = window.open("", "_blank", "width=960,height=800");
-    if (!printWindow) {
+    let iframe: HTMLIFrameElement | null = null;
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
+      iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.left = "-9999px";
+      iframe.style.top = "0";
+      iframe.style.width = "794px";
+      iframe.style.height = "1400px";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        throw new Error("Không thể khởi tạo khung xuất PDF");
+      }
+
+      iframeDoc.open();
+      iframeDoc.write(htmlContent);
+      iframeDoc.close();
+
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      const targetBody = iframeDoc.body;
+      const canvas = await html2canvas(targetBody, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        width: 794,
+        windowWidth: 794,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageWidthMm = pdf.internal.pageSize.getWidth(); // 210mm
+      const pageHeightMm = pdf.internal.pageSize.getHeight(); // 297mm
+      const imgWidthMm = pageWidthMm;
+      const imgHeightMm = (canvas.height * imgWidthMm) / canvas.width;
+
+      let heightLeft = imgHeightMm;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidthMm, imgHeightMm);
+      heightLeft -= pageHeightMm;
+
+      while (heightLeft > 4) {
+        position = heightLeft - imgHeightMm;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidthMm, imgHeightMm);
+        heightLeft -= pageHeightMm;
+      }
+
+      pdf.save(`${fileTitle}.pdf`);
       showToast(
-        "Vui lòng cho phép trình duyệt mở cửa sổ bật lên để xuất file .PDF!",
+        `Đã tải thành công file ${fileTitle}.pdf về máy tính của bạn!`,
+        "success"
+      );
+    } catch (err: any) {
+      showToast(
+        "Không thể xuất file PDF: " +
+          (err?.message || "Vui lòng kiểm tra lại trình duyệt"),
         "warning"
       );
-      return;
+    } finally {
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+      setIsExportingPdf(false);
     }
-    printWindow.document.open();
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 350);
-    showToast(
-      `Đang xuất Phiếu đánh giá năng lực của ${activeSheetTeacher.name} ra định dạng .PDF!`,
-      "info"
-    );
   }, [
     activeSheetTeacher,
     activeSheetRecord,
     activeSheetMetrics,
     selectedSchoolYear,
     showToast,
+    isExportingPdf,
   ]);
 
   // Thống kê tổng hợp toàn tổ dành cho Tổ trưởng
@@ -1627,8 +1695,9 @@ export function TeacherCompetencyEvaluationSection({
               <Button
                 size="sm"
                 variant="outline"
+                isLoading={isExportingPdf}
                 onClick={handleExportEvaluationFormPdf}
-                className="font-bold text-xs cursor-pointer border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+                className="font-bold text-xs cursor-pointer border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-amber-950/50"
               >
                 <Printer className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
                 Xuất Phiếu Đánh Giá (.pdf)
@@ -2519,6 +2588,7 @@ export function TeacherCompetencyEvaluationSection({
                   {isReadyForPdfExport && (
                     <Button
                       size="sm"
+                      isLoading={isExportingPdf}
                       onClick={handleExportEvaluationFormPdf}
                       className="font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm cursor-pointer"
                     >
@@ -3244,6 +3314,7 @@ export function TeacherCompetencyEvaluationSection({
                 <div className="mt-5 flex justify-end">
                   <Button
                     size="sm"
+                    isLoading={isExportingPdf}
                     onClick={handleExportEvaluationFormPdf}
                     className="font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm cursor-pointer"
                   >
