@@ -382,21 +382,49 @@ export function TeacherAssignedScheduleSection({
   // =========================================================================
 
   // Tải dữ liệu TKB nhà trường (Phần 2.1) theo Năm học đang chọn
+  // Lưu ý: Toàn bộ TKB nhà trường có ~1.764 tiết (mỗi ngày Thứ 2 -> Thứ 6 có ~350 tiết).
+  // Mặc định 1 truy vấn đơn lẻ của Supabase chỉ trả về tối đa 1.000 dòng đầu tiên (khiến Thứ 5 và Thứ 6 bị cắt mất).
+  // Do đó, ta tải song song theo từng thứ trong tuần (2, 3, 4, 5, 6) kèm phân trang để luôn lấy đủ 100% tiết học.
   const loadSchoolAssignedData = async () => {
     setIsLoadingSchool(true);
     try {
-      const { data, error } = await supabase
-        .from("school_assigned_timetables")
-        .select("*")
-        .eq("school_year", selectedSchoolYear)
-        .order("day_of_week", { ascending: true })
-        .order("period", { ascending: true });
+      const days = [2, 3, 4, 5, 6];
+      const dayResults = await Promise.all(
+        days.map(async (dayNum) => {
+          const allForDay: SchoolAssignedSlot[] = [];
+          const pageSize = 1000;
+          let from = 0;
 
-      if (error) {
-        console.error("Lỗi tải TKB phân công nhà trường:", error);
-      } else {
-        setAssignedSlots((data as SchoolAssignedSlot[]) || []);
-      }
+          while (true) {
+            const { data, error } = await supabase
+              .from("school_assigned_timetables")
+              .select("*")
+              .eq("school_year", selectedSchoolYear)
+              .eq("day_of_week", dayNum)
+              .order("period", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, from + pageSize - 1);
+
+            if (error) {
+              console.error(`Lỗi tải TKB nhà trường Thứ ${dayNum}:`, error);
+              break;
+            }
+
+            const batch = (data as SchoolAssignedSlot[]) || [];
+            allForDay.push(...batch);
+
+            if (batch.length < pageSize) {
+              break;
+            }
+            from += pageSize;
+          }
+
+          return allForDay;
+        })
+      );
+
+      const mergedSlots = dayResults.flat();
+      setAssignedSlots(mergedSlots);
     } catch (err) {
       console.error("Lỗi nạp dữ liệu TKB:", err);
     } finally {
