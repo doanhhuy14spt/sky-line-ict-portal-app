@@ -51,7 +51,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const [toastMessage, setToastMessage] = useState<{
     text: string;
     type: "success" | "info";
@@ -72,19 +72,20 @@ export default function LoginPage() {
   const [isForgotSubmitting, setIsForgotSubmitting] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);
 
-  // Khởi tạo và đồng bộ chế độ Sáng / Tối từ bộ nhớ trình duyệt
+  // Khởi tạo và đồng bộ chế độ Sáng / Tối từ bộ nhớ trình duyệt (Mặc định: Chế độ Tối)
   useEffect(() => {
     try {
-      const savedTheme = localStorage.getItem("skyline_theme");
-      if (savedTheme === "dark") {
-        setIsDark(true);
-        document.documentElement.classList.add("dark");
-      } else if (savedTheme === "light") {
+      const savedTheme = localStorage.getItem("skyline_portal_theme");
+      if (savedTheme === "light") {
         setIsDark(false);
         document.documentElement.classList.remove("dark");
+      } else {
+        setIsDark(true);
+        document.documentElement.classList.add("dark");
       }
     } catch {
-      // Bỏ qua lỗi lưu trữ
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
     }
   }, []);
 
@@ -100,7 +101,7 @@ export default function LoginPage() {
     const nextDark = !isDark;
     setIsDark(nextDark);
     try {
-      localStorage.setItem("skyline_theme", nextDark ? "dark" : "light");
+      localStorage.setItem("skyline_portal_theme", nextDark ? "dark" : "light");
     } catch {
       // Bỏ qua lỗi lưu trữ
     }
@@ -271,6 +272,15 @@ export default function LoginPage() {
         "success"
       );
 
+      // Mặc định khi đăng nhập vào trang web là Chế độ Tối
+      try {
+        localStorage.setItem("skyline_portal_theme", "dark");
+        document.documentElement.classList.add("dark");
+        setIsDark(true);
+      } catch {
+        // Bỏ qua lỗi lưu trữ
+      }
+
       // Chuyển hướng vào Bảng điều khiển /dashboard và làm mới phiên làm việc
       setTimeout(() => {
         router.push("/dashboard");
@@ -327,8 +337,12 @@ export default function LoginPage() {
         <Card className="border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-2xl shadow-sky-950/10 dark:shadow-black/50 backdrop-blur-md rounded-3xl overflow-hidden">
           {/* Header thẻ với nhận diện Sky-Line */}
           <div className="bg-gradient-to-r from-sky-600 to-sky-700 dark:from-sky-700 dark:to-slate-900 p-6 text-white text-center relative">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-black/10">
-              <span className="font-black text-2xl tracking-wider text-amber-300">SL</span>
+            <div className="px-4 py-2 rounded-2xl bg-white/95 border border-white/30 inline-flex items-center justify-center mx-auto mb-3 shadow-lg shadow-black/15">
+              <img
+                src="/LogoSKL.png"
+                alt="Logo Trường Sky-Line"
+                className="h-9 w-auto object-contain"
+              />
             </div>
             <h2 className="text-xl font-extrabold tracking-tight">SKY-LINE ICT PORTAL</h2>
             <p className="text-xs text-sky-100 font-medium mt-1">

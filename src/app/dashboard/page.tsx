@@ -89,7 +89,7 @@ interface TaskItem {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const [selectedCampus, setSelectedCampus] = useState("all");
   const [selectedSchoolYear, setSelectedSchoolYear] = useState("2026-2027");
   const [selectedLab, setSelectedLab] = useState<string>("riverside_primary"); // Mặc định: Sky-Line Riverside Tiểu Học
@@ -270,19 +270,20 @@ export default function DashboardPage() {
     },
   ]);
 
-  // Khởi tạo và đồng bộ chế độ Sáng / Tối từ bộ nhớ trình duyệt
+  // Khởi tạo và đồng bộ chế độ Sáng / Tối từ bộ nhớ trình duyệt (Mặc định: Chế độ Tối)
   useEffect(() => {
     try {
-      const savedTheme = localStorage.getItem("skyline_theme");
-      if (savedTheme === "dark") {
-        setIsDark(true);
-        document.documentElement.classList.add("dark");
-      } else if (savedTheme === "light") {
+      const savedTheme = localStorage.getItem("skyline_portal_theme");
+      if (savedTheme === "light") {
         setIsDark(false);
         document.documentElement.classList.remove("dark");
+      } else {
+        setIsDark(true);
+        document.documentElement.classList.add("dark");
       }
     } catch {
-      // Bỏ qua nếu trình duyệt chặn localStorage
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
     }
   }, []);
 
@@ -298,7 +299,7 @@ export default function DashboardPage() {
     const nextDark = !isDark;
     setIsDark(nextDark);
     try {
-      localStorage.setItem("skyline_theme", nextDark ? "dark" : "light");
+      localStorage.setItem("skyline_portal_theme", nextDark ? "dark" : "light");
     } catch {
       // Bỏ qua lỗi lưu trữ
     }
@@ -804,16 +805,17 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           {/* Logo & Nhận diện Sky-Line */}
           <Link href="/" className="flex items-center gap-3 group shrink-0">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 via-sky-500 to-amber-500 flex items-center justify-center shadow-md shadow-sky-600/20 text-white font-black text-lg tracking-wider select-none group-hover:scale-105 transition-transform">
-              SL
+            <div className="h-10 px-2.5 py-1.5 rounded-xl bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/20 flex items-center justify-center shadow-md shadow-sky-600/15 select-none group-hover:scale-105 transition-transform">
+              <img
+                src="/LogoSKL.png"
+                alt="Logo Trường Sky-Line"
+                className="h-7 w-auto object-contain"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-sky-700 via-sky-600 to-amber-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-amber-400">
                   SKY-LINE ICT PORTAL
-                </span>
-                <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
-                  Bảng Điều Khiển
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block font-medium">

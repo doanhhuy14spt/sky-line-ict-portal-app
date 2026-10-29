@@ -36,7 +36,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function HomePage() {
   const router = useRouter();
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
 
   // Khi truy cập trang web thì tự động chuyển sang /login (hoặc /dashboard nếu đã đăng nhập)
   useEffect(() => {
@@ -176,8 +176,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           {/* Logo nhận diện Hệ thống Giáo dục Sky-Line */}
           <Link href="/" className="flex items-center gap-3.5 group cursor-pointer">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-600 via-sky-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform duration-200">
-              <School className="w-6 h-6" />
+            <div className="h-11 px-3 py-1.5 rounded-2xl bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/20 flex items-center justify-center shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform duration-200">
+              <img
+                src="/LogoSKL.png"
+                alt="Logo Trường Sky-Line"
+                className="h-7 w-auto object-contain"
+              />
             </div>
             <div>
               <div className="text-[10px] sm:text-xs font-black tracking-wider text-amber-600 dark:text-amber-400 uppercase">
@@ -473,8 +477,12 @@ export default function HomePage() {
       <footer className="bg-slate-900 text-slate-400 py-10 border-t border-slate-800 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-amber-500 flex items-center justify-center text-white font-bold text-xs">
-              SL
+            <div className="h-8 px-2 py-1 rounded-xl bg-white/95 flex items-center justify-center shadow-xs">
+              <img
+                src="/LogoSKL.png"
+                alt="Logo Trường Sky-Line"
+                className="h-5 w-auto object-contain"
+              />
             </div>
             <div>
               <div className="font-bold text-slate-200">
