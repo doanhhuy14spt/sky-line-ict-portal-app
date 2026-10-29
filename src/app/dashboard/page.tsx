@@ -1036,10 +1036,10 @@ export default function DashboardPage() {
       {/* THANH ĐIỀU HƯỚNG DASHBOARD (THANH TABS CHUYÊN MÔN & TÁC VỤ NHANH) */}
       <div className="sticky top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 py-2">
-            {/* Dãy nút chuyển đổi chuyên mục (Segmented Tabs) */}
+          <div className="py-2">
+            {/* Dãy nút chuyển đổi chuyên mục trên cùng 1 dòng (Single-line Segmented Tabs) */}
             <div
-              className="bg-slate-100/95 dark:bg-slate-800/90 p-1 rounded-2xl inline-flex flex-wrap items-center gap-1 border border-slate-200/80 dark:border-slate-700/80 max-w-full"
+              className="w-full bg-slate-100/95 dark:bg-slate-800/90 p-1 rounded-2xl flex items-center justify-between gap-1 border border-slate-200/80 dark:border-slate-700/80"
             >
               {[
                 { id: "dashboard", label: "Tổng Quan", icon: Layers },
@@ -1059,40 +1059,40 @@ export default function DashboardPage() {
                       setIsDeptDataMenuOpen(false);
                       handleTabChange(tab.id as any);
                     }}
-                    className={`inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    className={`flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap px-2 lg:px-3 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer ${
                       isActive
-                        ? "bg-white text-sky-700 dark:bg-slate-900 dark:text-sky-300 shadow-sm border border-slate-200/80 dark:border-slate-700/80 scale-[1.01]"
+                        ? "bg-white text-sky-700 dark:bg-slate-900 dark:text-sky-300 shadow-sm border border-slate-200/80 dark:border-slate-700/80"
                         : "text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`} />
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`} />
                     <span>{tab.label}</span>
                   </button>
                 );
               })}
 
               {/* MỤC "DỮ LIỆU CỦA TỔ" XỔ DANH SÁCH THEO NĂM HỌC */}
-              <div ref={deptDataMenuRef} className="relative shrink-0">
+              <div ref={deptDataMenuRef} className="relative flex-1 flex">
                 <button
                   type="button"
                   onClick={() => setIsDeptDataMenuOpen((prev) => !prev)}
-                  className={`inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  className={`w-full inline-flex items-center justify-center gap-1.5 whitespace-nowrap px-2 lg:px-3 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer ${
                     isDeptDataMenuOpen
-                      ? "bg-white text-sky-700 dark:bg-slate-900 dark:text-sky-300 shadow-sm border border-slate-200/80 dark:border-slate-700/80 scale-[1.01]"
+                      ? "bg-white text-sky-700 dark:bg-slate-900 dark:text-sky-300 shadow-sm border border-slate-200/80 dark:border-slate-700/80"
                       : "text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
                   }`}
                 >
-                  <FolderOpen className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isDeptDataMenuOpen ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`} />
+                  <FolderOpen className={`w-3.5 h-3.5 shrink-0 ${isDeptDataMenuOpen ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`} />
                   <span>Dữ liệu của tổ</span>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
                       isDeptDataMenuOpen ? "rotate-180 text-sky-600 dark:text-sky-400" : "text-slate-400"
                     }`}
                   />
                 </button>
 
                 {isDeptDataMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
                       Kho lưu trữ OneDrive theo năm học
                     </div>
