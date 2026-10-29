@@ -338,6 +338,7 @@ export default function DashboardPage() {
   ]);
 
   // --- STATE QUẢN LÝ & CHỈNH SỬA HỒ SƠ GIÁO VIÊN TRONG TAB NHÂN SỰ ICT ---
+  const [teachersSubTab, setTeachersSubTab] = useState<"part1_directory" | "part2_evaluation">("part1_directory");
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [profileModalMode, setProfileModalMode] = useState<"add" | "edit">("edit");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -1637,22 +1638,71 @@ export default function DashboardPage() {
 
           {/* TAB 6: NHÂN SỰ TỔ CHUYÊN MÔN ICT */}
           {activeTab === "teachers" && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Users className="w-5 h-5 text-sky-600" />
-                      Danh Bạ Đội Ngũ Nhân Sự Tổ ICT ({teachersList.length} Thầy Cô)
-                    </h2>
-                    {isLeader && (
-                      <Badge variant="amber" className="text-[10px] font-bold">
-                        👑 Quyền Tổ Trưởng (Toàn quyền Thêm • Sửa • Xóa)
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {isLeader
+            <div className="space-y-4 animate-in fade-in duration-200">
+              {/* THANH ĐIỀU KHIỂN CHUYỂN ĐỔI 2 PHẦN TRONG NHÂN SỰ ICT */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 p-2 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 shadow-xs">
+                <div className="inline-flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                  <button
+                    onClick={() => {
+                      setTeachersSubTab("part1_directory");
+                      showToast("Đang xem Phần 1. Danh Bạ Đội Ngũ Nhân Sự Tổ ICT", "info");
+                    }}
+                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      teachersSubTab === "part1_directory"
+                        ? "bg-sky-600 text-white shadow-sm scale-[1.01]"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Phần 1. Danh Bạ Đội Ngũ Nhân Sự Tổ ICT</span>
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 ml-0.5">
+                      {teachersList.length} Thầy Cô
+                    </Badge>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setTeachersSubTab("part2_evaluation");
+                      showToast("Đang xem Phần 2. Đánh giá năng lực giáo viên", "info");
+                    }}
+                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      teachersSubTab === "part2_evaluation"
+                        ? "bg-amber-600 text-white shadow-sm scale-[1.01]"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <GraduationCap className="w-4 h-4" />
+                    <span>Phần 2. Đánh giá năng lực giáo viên</span>
+                  </button>
+                </div>
+
+                <div className="text-xs text-slate-500 dark:text-slate-400 px-2 font-medium hidden md:block">
+                  {teachersSubTab === "part1_directory"
+                    ? "Hồ sơ nhân sự, nhiệm vụ kiêm nhiệm & thành tích bồi dưỡng của Giáo viên Tổ ICT"
+                    : "Đánh giá năng lực chuyên môn đội ngũ giáo viên Tổ ICT"}
+                </div>
+              </div>
+
+              {/* ========================================================================= */}
+              {/* PHẦN 1. DANH BẠ ĐỘI NGŨ NHÂN SỰ TỔ ICT                                   */}
+              {/* ========================================================================= */}
+              {teachersSubTab === "part1_directory" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                          <Users className="w-5 h-5 text-sky-600" />
+                          Phần 1. Danh Bạ Đội Ngũ Nhân Sự Tổ ICT ({teachersList.length} Thầy Cô)
+                        </h2>
+                        {isLeader && (
+                          <Badge variant="amber" className="text-[10px] font-bold">
+                            👑 Quyền Tổ Trưởng (Toàn quyền Thêm • Sửa • Xóa)
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {isLeader
                       ? "Tổ trưởng chuyên môn có toàn quyền thêm mới, chỉnh sửa và xóa thông tin giáo viên trong danh sách Nhân sự ICT."
                       : "Mỗi tài khoản có quyền chỉnh sửa thông tin cá nhân của chính mình; thông tin của các thầy cô khác ở chế độ chỉ xem."}
                   </p>
@@ -1924,6 +1974,26 @@ export default function DashboardPage() {
                   );
                 })}
               </div>
+                </div>
+              )}
+
+              {/* ========================================================================= */}
+              {/* PHẦN 2. ĐÁNH GIÁ NĂNG LỰC GIÁO VIÊN (ĐỂ TRỐNG CHỜ HƯỚNG DẪN TIẾP THEO)    */}
+              {/* ========================================================================= */}
+              {teachersSubTab === "part2_evaluation" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <GraduationCap className="w-5 h-5 text-amber-500" />
+                        Phần 2. Đánh giá năng lực giáo viên
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="min-h-[260px] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50" />
+                </div>
+              )}
 
               {/* MODAL THÊM MỚI / CHỈNH SỬA HỒ SƠ GIÁO VIÊN */}
               {isEditProfileModalOpen && (
