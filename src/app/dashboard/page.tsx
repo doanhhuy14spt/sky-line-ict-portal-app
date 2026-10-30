@@ -1163,7 +1163,7 @@ export default function DashboardPage() {
             >
               {[
                 { id: "dashboard", label: "Tổng Quan", icon: Layers },
-                { id: "timetable", label: "TKB & Lịch phòng Lab", icon: Calendar },
+                { id: "timetable", label: "Lịch giảng dạy", icon: Calendar },
                 { id: "devices", label: "Thiết Bị & Robot", icon: Bot },
                 { id: "tasks", label: "Công Việc Được Giao", icon: CheckCircle2 },
                 { id: "teams", label: "Đội Tuyển", icon: GraduationCap },
