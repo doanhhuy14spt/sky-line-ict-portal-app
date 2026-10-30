@@ -224,6 +224,7 @@ export function IncidentHandlingSection({
   const [incidentsList, setIncidentsList] = useState<IncidentReportItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmittingNew, setIsSubmittingNew] = useState<boolean>(false);
+  const [isCreateFormOpen, setIsCreateFormOpen] = useState<boolean>(false);
 
   // State biểu mẫu 10 mục dành cho Giáo viên báo cáo sự vụ mới
   const [formCategory, setFormCategory] = useState<string>(INCIDENT_CATEGORIES[0]);
@@ -527,6 +528,7 @@ export function IncidentHandlingSection({
       setFormStatus("Chưa xử lý");
       setFormImpactScopes(["Phòng Lab"]);
       setFormIncidentDate(getTodayDdMmYyyy());
+      setIsCreateFormOpen(false);
 
       await loadIncidents();
       if (inserted?.id) {
@@ -776,6 +778,37 @@ export function IncidentHandlingSection({
       );
     });
   }, [incidentsList, currentUserProfile, currentTeacherStaffCode, currentTeacherObj]);
+
+  // Danh sách sự vụ đã lọc của riêng Giáo viên
+  const filteredMyIncidentsList = useMemo(() => {
+    return myIncidentsList.filter((item) => {
+      if (filterCategory !== "all" && item.category !== filterCategory) {
+        return false;
+      }
+      if (filterUrgency !== "all" && item.urgency_level !== filterUrgency) {
+        return false;
+      }
+      if (filterStatus !== "all" && item.status !== filterStatus) {
+        return false;
+      }
+      if (filterDirectionStatus !== "all" && item.direction_status !== filterDirectionStatus) {
+        return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const combined = `${item.incident_date} ${item.category} ${item.description} ${item.proposed_solution} ${item.latest_leader_direction} ${item.impact_scopes.join(" ")}`.toLowerCase();
+        if (!combined.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [
+    myIncidentsList,
+    filterCategory,
+    filterUrgency,
+    filterStatus,
+    filterDirectionStatus,
+    searchQuery,
+  ]);
 
   // Danh sách sự vụ đã lọc cho Bảng theo dõi của Tổ trưởng
   const filteredLeaderIncidents = useMemo(() => {
@@ -1498,12 +1531,135 @@ export function IncidentHandlingSection({
   }
 
   // =========================================================================
-  // GIAO DIỆN 2: TÀI KHOẢN GIÁO VIÊN (FORM 10 MỤC BÁO CÁO & LUỒNG NHẬN CHỈ ĐẠO)
+  // GIAO DIỆN 2: TÀI KHOẢN GIÁO VIÊN (NÚT "TẠO XỬ LÝ SỰ VỤ", FORM 10 MỤC & BỘ LỌC DANH SÁCH)
   // =========================================================================
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* KHU VỰC A: BIỂU MẪU NHẬP THÔNG TIN XỬ LÝ SỰ VỤ (10 MỤC CHUẨN HÓA) */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-5">
+    <div className="space-y-5 animate-in fade-in duration-200">
+      {/* THANH TIÊU ĐỀ, NÚT "TẠO XỬ LÝ SỰ VỤ" & BỘ LỌC SỰ VỤ DÀNH CHO GIÁO VIÊN */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <span className="p-2.5 rounded-2xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 shrink-0">
+              <MessageSquare className="w-5 h-5" />
+            </span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
+                  Danh Sách Sự Vụ Đã Báo Cáo & Ý Kiến Chỉ Đạo Của Tổ Trưởng ({myIncidentsList.length})
+                </h2>
+                <Badge variant="secondary" className="text-[11px] font-bold">
+                  Mã nhân sự: {currentTeacherStaffCode}
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Theo dõi ý kiến chỉ đạo từ Tổ trưởng, phản hồi hoặc xác nhận thực hiện và cập nhật tình trạng giải quyết sự vụ.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setIsCreateFormOpen((prev) => !prev)}
+              className={`h-9 px-4 rounded-xl font-extrabold text-xs cursor-pointer flex items-center gap-1.5 shadow-sm transition-all ${
+                isCreateFormOpen
+                  ? "bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                  : "bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20"
+              }`}
+            >
+              {isCreateFormOpen ? (
+                <>
+                  <X className="w-4 h-4" />
+                  <span>Đóng phiếu tạo sự vụ</span>
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Tạo xử lý sự vụ</span>
+                </>
+              )}
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={loadIncidents}
+              className="h-9 text-xs font-bold rounded-xl cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
+              Làm mới
+            </Button>
+          </div>
+        </div>
+
+        {/* BỘ LỌC SỰ VỤ DÀNH CHO GIÁO VIÊN */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm theo nội dung, ngày xảy ra, chỉ đạo..."
+              className="pl-9 h-9 text-xs rounded-xl"
+            />
+          </div>
+
+          <select
+            aria-label="Lọc theo phân loại sự vụ"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+          >
+            <option value="all">Tất cả phân loại sự vụ</option>
+            {INCIDENT_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Lọc theo mức độ khẩn cấp"
+            value={filterUrgency}
+            onChange={(e) => setFilterUrgency(e.target.value)}
+            className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+          >
+            <option value="all">Mọi mức độ khẩn cấp</option>
+            <option value="Khẩn cấp">🔴 Khẩn cấp</option>
+            <option value="Ưu tiên cao">🟠 Ưu tiên cao</option>
+            <option value="Bình thường">🔵 Bình thường</option>
+          </select>
+
+          <select
+            aria-label="Lọc theo trạng thái chỉ đạo"
+            value={filterDirectionStatus}
+            onChange={(e) => setFilterDirectionStatus(e.target.value)}
+            className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+          >
+            <option value="all">Mọi trạng thái chỉ đạo</option>
+            <option value="waiting_leader">⏳ Chờ Tổ trưởng chỉ đạo</option>
+            <option value="waiting_teacher">💬 Đã có chỉ đạo • Chờ xác nhận</option>
+            <option value="confirmed">✅ Đã xác nhận thực hiện</option>
+          </select>
+
+          <select
+            aria-label="Lọc theo tình trạng sự vụ"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+          >
+            <option value="all">Mọi tình trạng xử lý</option>
+            <option value="Chưa xử lý">Chưa xử lý</option>
+            <option value="Đang xử lý">Đang xử lý</option>
+            <option value="Hoàn thành">Hoàn thành</option>
+          </select>
+        </div>
+      </div>
+
+      {/* KHU VỰC A: BIỂU MẪU NHẬP THÔNG TIN XỬ LÝ SỰ VỤ (CHỈ HIỂN THỊ KHI BẤM NÚT "TẠO XỬ LÝ SỰ VỤ") */}
+      {isCreateFormOpen && (
+      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-amber-400/70 dark:border-amber-600/70 shadow-lg shadow-amber-500/5 space-y-5 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div className="flex items-start gap-3">
             <span className="p-2.5 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 shrink-0">
@@ -1523,6 +1679,15 @@ export function IncidentHandlingSection({
               </p>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsCreateFormOpen(false)}
+            className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer self-end sm:self-center"
+            title="Đóng phiếu báo cáo"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <form onSubmit={handleCreateIncidentReport} className="space-y-4 text-xs">
@@ -1777,54 +1942,51 @@ export function IncidentHandlingSection({
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               🔔 Ngay sau khi bấm <strong>Xác nhận</strong>, hệ thống sẽ tự động gửi thông báo đến Tổ trưởng để xin ý kiến chỉ đạo.
             </p>
-            <Button
-              type="submit"
-              disabled={isSubmittingNew}
-              className="h-10 px-5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 cursor-pointer flex items-center gap-2 shrink-0"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>
-                {isSubmittingNew
-                  ? "Đang gửi báo cáo sự vụ..."
-                  : "Xác Nhận Hoàn Thành & Gửi Báo Cáo Sự Vụ"}
-              </span>
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreateFormOpen(false)}
+                className="h-10 px-4 rounded-xl font-bold text-xs cursor-pointer"
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmittingNew}
+                className="h-10 px-5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 cursor-pointer flex items-center gap-2 shrink-0"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>
+                  {isSubmittingNew
+                    ? "Đang gửi báo cáo sự vụ..."
+                    : "Xác Nhận Hoàn Thành & Gửi Báo Cáo Sự Vụ"}
+                </span>
+              </Button>
+            </div>
           </div>
         </form>
       </div>
+      )}
 
       {/* KHU VỰC B: DANH SÁCH SỰ VỤ CỦA GIÁO VIÊN & TIẾP NHẬN Ý KIẾN CHỈ ĐẠO TỪ TỔ TRƯỞNG */}
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-sky-600" />
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-              Danh Sách Sự Vụ Đã Báo Cáo & Ý Kiến Chỉ Đạo Của Tổ Trưởng ({myIncidentsList.length})
-            </h3>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={loadIncidents}
-            className="h-8 text-xs font-bold rounded-xl cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
-            Làm mới
-          </Button>
-        </div>
-
-        {myIncidentsList.length === 0 ? (
-          <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-1.5">
+        {filteredMyIncidentsList.length === 0 ? (
+          <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
             <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-              Thầy/Cô chưa có báo cáo sự vụ nào trong năm học {selectedSchoolYear}
+              {myIncidentsList.length === 0
+                ? `Thầy/Cô chưa có báo cáo sự vụ nào trong năm học ${selectedSchoolYear}`
+                : "Không tìm thấy sự vụ nào khớp với bộ lọc hiện tại"}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Khi phát sinh sự việc cần xử lý hoặc xin ý kiến chỉ đạo, thầy/cô hãy điền biểu mẫu phía trên và bấm Xác nhận.
+              {myIncidentsList.length === 0
+                ? "Khi phát sinh sự việc cần xử lý hoặc xin ý kiến chỉ đạo, thầy/cô hãy bấm nút “Tạo xử lý sự vụ” ở góc trên bên phải."
+                : "Thầy/Cô vui lòng thử đổi bộ lọc hoặc từ khóa tìm kiếm."}
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {myIncidentsList.map((incident, index) => {
+            {filteredMyIncidentsList.map((incident, index) => {
               const isWaitingTeacherAction = incident.direction_status === "waiting_teacher";
               const isConfirmed = incident.direction_status === "confirmed";
               const isFeedbackOpen = Boolean(feedbackOpenMap[incident.id]);
@@ -1844,7 +2006,7 @@ export function IncidentHandlingSection({
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-xs">
-                          Sự vụ #{myIncidentsList.length - index}
+                          Sự vụ #{filteredMyIncidentsList.length - index}
                         </span>
                         <span className="inline-flex items-center gap-1 text-xs font-extrabold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/70 px-2.5 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800">
                           <Calendar className="w-3.5 h-3.5" />
