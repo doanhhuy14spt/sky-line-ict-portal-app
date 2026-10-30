@@ -408,10 +408,10 @@ export function IncidentHandlingSection({
           evidence_link: row.evidence_link || "",
           completion_evidence_link: row.completion_evidence_link || "",
           status:
-            row.status === "Hoàn thành" ||
-            row.status === "Đang xử lý" ||
-            row.status === "Chưa xử lý"
-              ? row.status
+            row.status === "Hoàn thành" && row.direction_status === "confirmed"
+              ? "Hoàn thành"
+              : row.status === "Đang xử lý"
+              ? "Đang xử lý"
               : "Chưa xử lý",
           direction_status:
             row.direction_status === "waiting_teacher" ||
@@ -541,9 +541,9 @@ export function IncidentHandlingSection({
       return;
     }
 
-    if (formStatus === "Hoàn thành" && !formEvidenceLink.trim()) {
+    if (formStatus === "Hoàn thành") {
       showToast(
-        "Khi chọn Tình trạng là “Hoàn thành”, thầy/cô bắt buộc phải đính kèm đường link Minh chứng xử lý (Mục 9)!",
+        "Chưa đúng quy trình: Giáo viên chỉ được phép chọn tình trạng “Hoàn thành” sau khi đã xác nhận thực hiện chỉ đạo của Tổ trưởng chuyên môn!",
         "warning"
       );
       return;
@@ -554,6 +554,8 @@ export function IncidentHandlingSection({
 
     setIsSubmittingNew(true);
     try {
+      const safeInitialStatus =
+        formStatus === "Đang xử lý" ? "Đang xử lý" : "Chưa xử lý";
       const newPayload = {
         school_year: selectedSchoolYear,
         teacher_id: currentTeacherStaffCode, // Lưu trực tiếp Mã nhân sự (ICT-01, ICT-02...)
@@ -567,9 +569,9 @@ export function IncidentHandlingSection({
         description: formDescription.trim(),
         proposed_solution: formProposedSolution.trim(),
         evidence_link: formEvidenceLink.trim(),
-        completion_evidence_link: formStatus === "Hoàn thành" ? formEvidenceLink.trim() : "",
-        completed_at: formStatus === "Hoàn thành" ? new Date().toISOString() : null,
-        status: formStatus,
+        completion_evidence_link: "",
+        completed_at: null,
+        status: safeInitialStatus,
         direction_status: "waiting_leader",
         latest_leader_direction: "",
         discussion_logs: [],
@@ -807,8 +809,16 @@ export function IncidentHandlingSection({
 
     if (incident.status === newStatus) return;
 
-    // Khi giáo viên kích chọn "Hoàn thành" -> Mở khung yêu cầu cung cấp link minh chứng xử lý & bấm xác nhận
+    // Khi giáo viên kích chọn "Hoàn thành" -> Bắt buộc phải đã xác nhận thực hiện chỉ đạo của Tổ trưởng chuyên môn
     if (newStatus === "Hoàn thành") {
+      if (incident.direction_status !== "confirmed") {
+        showToast(
+          "Chưa đúng quy trình: Giáo viên chỉ được phép chọn tình trạng “Hoàn thành” khi đã xác nhận thực hiện chỉ đạo của Tổ trưởng chuyên môn!",
+          "warning"
+        );
+        return;
+      }
+
       setCompletionPromptOpenMap((prev) => ({ ...prev, [incident.id]: true }));
       setCompletionEvidenceTextMap((prev) => ({
         ...prev,
@@ -856,6 +866,14 @@ export function IncidentHandlingSection({
   const handleConfirmCompletionWithEvidence = async (incident: IncidentReportItem) => {
     if (incident.status === "Hoàn thành") {
       showToast("Sự vụ này đã được xác nhận Hoàn thành!", "info");
+      return;
+    }
+
+    if (incident.direction_status !== "confirmed") {
+      showToast(
+        "Chưa đúng quy trình: Giáo viên chỉ được phép xác nhận “Hoàn thành” khi đã xác nhận thực hiện chỉ đạo của Tổ trưởng chuyên môn!",
+        "warning"
+      );
       return;
     }
 
@@ -2165,18 +2183,23 @@ export function IncidentHandlingSection({
               </label>
               <select
                 aria-label="Chọn tình trạng sự vụ"
-                value={formStatus}
+                value={formStatus === "Hoàn thành" ? "Chưa xử lý" : formStatus}
                 onChange={(e) =>
                   setFormStatus(e.target.value as "Chưa xử lý" | "Đang xử lý" | "Hoàn thành")
                 }
                 className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-extrabold focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 {INCIDENT_STATUS_OPTIONS.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
+                  <option key={st} value={st} disabled={st === "Hoàn thành"}>
+                    {st === "Hoàn thành"
+                      ? "Hoàn thành (Chỉ mở sau khi đã xác nhận chỉ đạo của Tổ trưởng)"
+                      : st}
                   </option>
                 ))}
               </select>
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-1">
+                * Quy trình: Chỉ được chọn “Hoàn thành” sau khi đã xác nhận thực hiện chỉ đạo của Tổ trưởng.
+              </p>
             </div>
           </div>
 
@@ -2349,7 +2372,12 @@ export function IncidentHandlingSection({
                       ) : (
                         <select
                           aria-label="Cập nhật tình trạng giải quyết sự vụ"
-                          value={isCompletionPromptOpen ? "Hoàn thành" : incident.status}
+                          value={isCompletionPromptOpen && isConfirmed ? "Hoàn thành" : incident.status}
+                          title={
+                            !isConfirmed
+                              ? "Giáo viên chỉ được phép chọn “Hoàn thành” sau khi đã xác nhận thực hiện chỉ đạo của Tổ trưởng chuyên môn"
+                              : "Cập nhật tình trạng giải quyết sự vụ"
+                          }
                           onChange={(e) =>
                             handleUpdateIncidentStatus(
                               incident,
@@ -2362,11 +2390,16 @@ export function IncidentHandlingSection({
                               : "bg-white text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700"
                           }`}
                         >
-                          {INCIDENT_STATUS_OPTIONS.map((st) => (
-                            <option key={st} value={st}>
-                              {st}
-                            </option>
-                          ))}
+                          {INCIDENT_STATUS_OPTIONS.map((st) => {
+                            const isCompletionBlocked = st === "Hoàn thành" && !isConfirmed;
+                            return (
+                              <option key={st} value={st} disabled={isCompletionBlocked}>
+                                {isCompletionBlocked
+                                  ? "Hoàn thành (Cần xác nhận chỉ đạo TTCM trước)"
+                                  : st}
+                              </option>
+                            );
+                          })}
                         </select>
                       )}
                     </div>
