@@ -16,6 +16,7 @@ import {
   RefreshCw,
   XCircle,
   Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 
 export interface NotificationItem {
@@ -44,7 +45,8 @@ interface NotificationBellProps {
     campus: string;
   };
   onNavigateTab?: (
-    tab: "dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers"
+    tab: "dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers",
+    notif?: NotificationItem
   ) => void;
   showToast?: (text: string, type?: "success" | "warning" | "info") => void;
 }
@@ -143,7 +145,7 @@ export function NotificationBell({
         "teachers",
       ];
       if (validTabs.includes(notif.target_tab)) {
-        onNavigateTab(notif.target_tab as any);
+        onNavigateTab(notif.target_tab as any, notif);
       }
     }
     setIsOpen(false);
@@ -209,6 +211,8 @@ export function NotificationBell({
         return <Bot className="w-4 h-4 text-amber-500" />;
       case "task":
         return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
+      case "incident":
+        return <AlertTriangle className="w-4 h-4 text-amber-500" />;
       case "team":
         return <GraduationCap className="w-4 h-4 text-indigo-500" />;
       case "achievement":

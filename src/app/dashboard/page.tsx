@@ -63,6 +63,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { NotificationBell } from "@/components/notification-bell";
 import { maskStudentName } from "@/lib/student-privacy";
 import { TeacherCompetencyEvaluationSection } from "@/components/teacher-competency-evaluation-section";
+import { IncidentHandlingSection } from "@/components/incident-handling-section";
 
 interface TimetableSlot {
   id: string;
@@ -1083,7 +1084,17 @@ export default function DashboardPage() {
               <NotificationBell
                 supabase={supabase}
                 currentUserProfile={currentUserProfile}
-                onNavigateTab={handleTabChange}
+                onNavigateTab={(tab, notif) => {
+                  handleTabChange(tab);
+                  if (
+                    notif &&
+                    (notif.category === "incident" ||
+                      notif.title?.toLowerCase().includes("sự vụ") ||
+                      notif.message?.toLowerCase().includes("sự vụ"))
+                  ) {
+                    setTasksSubTab("part2_incidents");
+                  }
+                }}
                 showToast={showToast}
               />
 
@@ -1743,20 +1754,16 @@ export default function DashboardPage() {
               )}
 
               {/* ========================================================================= */}
-              {/* PHẦN 2: XỬ LÝ SỰ VỤ (ĐỂ TRỐNG CHỜ XÂY DỰNG TIẾP)                          */}
+              {/* PHẦN 2: XỬ LÝ SỰ VỤ                                                       */}
               {/* ========================================================================= */}
               {tasksSubTab === "part2_incidents" && (
-                <div className="min-h-[320px] rounded-3xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 p-8 flex flex-col items-center justify-center text-center animate-in fade-in duration-200">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3">
-                    <AlertTriangle className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                    Phần 2: Xử lý sự vụ
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
-                    Khu vực này hiện đang để trống để sẵn sàng thiết kế theo hướng dẫn của Tổ trưởng.
-                  </p>
-                </div>
+                <IncidentHandlingSection
+                  supabase={supabase}
+                  showToast={showToast}
+                  currentUserProfile={currentUserProfile}
+                  teachersList={teachersList}
+                  selectedSchoolYear={selectedSchoolYear}
+                />
               )}
             </div>
           )}
