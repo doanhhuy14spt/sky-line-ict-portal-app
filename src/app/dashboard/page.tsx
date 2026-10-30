@@ -110,11 +110,12 @@ export default function DashboardPage() {
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("huy"); // Mặc định: Thầy Quốc Huy (Tổ trưởng)
   const [activeTab, setActiveTab] = useState<"dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers">("dashboard");
   const [isDeptDataMenuOpen, setIsDeptDataMenuOpen] = useState(false);
+  const [isDataRepoSubOpen, setIsDataRepoSubOpen] = useState(true);
   const deptDataMenuRef = useRef<HTMLDivElement>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "warning" | "info" } | null>(null);
   const [isLoadingTab, setIsLoadingTab] = useState(false);
 
-  // Đóng menu xổ xuống "Dữ liệu của tổ" khi bấm ra ngoài
+  // Đóng menu xổ xuống "Vận hành Hệ thống" khi bấm ra ngoài
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (deptDataMenuRef.current && !deptDataMenuRef.current.contains(event.target as Node)) {
@@ -124,6 +125,37 @@ export default function DashboardPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const systemOperationLinks = [
+    {
+      id: "hr",
+      label: "1. Chấm công HR",
+      url: "https://hr.skylineschool.edu.vn:85/login",
+      icon: Clock,
+      iconColor: "text-sky-500",
+    },
+    {
+      id: "econnect",
+      label: "2. Đánh giá năng lực HS",
+      url: "https://econnectstaff.skylineschool.edu.vn/",
+      icon: GraduationCap,
+      iconColor: "text-emerald-500",
+    },
+    {
+      id: "ssm",
+      label: "3. Dự giờ đánh giá",
+      url: "https://ssm.skylineschool.edu.vn/login",
+      icon: Eye,
+      iconColor: "text-indigo-500",
+    },
+    {
+      id: "confirm",
+      label: "4. Đề xuất",
+      url: "https://confirm.skylineschool.edu.vn:7979/LoginPage?ReturnUrl=%2F",
+      icon: CheckCircle2,
+      iconColor: "text-rose-500",
+    },
+  ];
 
   const departmentDataLinks = [
     {
@@ -1159,7 +1191,7 @@ export default function DashboardPage() {
                 );
               })}
 
-              {/* MỤC "DỮ LIỆU CỦA TỔ" XỔ DANH SÁCH THEO NĂM HỌC */}
+              {/* MỤC "VẬN HÀNH HỆ THỐNG" XỔ DANH MỤC HỆ THỐNG & KHO DỮ LIỆU TỔ */}
               <button
                 type="button"
                 onClick={() => setIsDeptDataMenuOpen((prev) => !prev)}
@@ -1170,7 +1202,7 @@ export default function DashboardPage() {
                 }`}
               >
                 <FolderOpen className={`w-3.5 h-3.5 shrink-0 ${isDeptDataMenuOpen ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`} />
-                <span>Dữ liệu của tổ</span>
+                <span>Vận hành Hệ thống</span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
                     isDeptDataMenuOpen ? "rotate-180 text-sky-600 dark:text-sky-400" : "text-slate-400"
@@ -1180,30 +1212,82 @@ export default function DashboardPage() {
             </div>
 
             {isDeptDataMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-60 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
-                  Kho lưu trữ OneDrive theo năm học
+              <div className="absolute right-0 top-full mt-1 w-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
+                  Hệ thống vận hành Sky-Line
                 </div>
-                <div className="p-1 space-y-0.5">
-                  {departmentDataLinks.map((item) => (
-                    <a
-                      key={item.schoolYear}
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        setIsDeptDataMenuOpen(false);
-                        showToast(`Đang mở kho Dữ liệu của tổ (${item.label})...`, "info");
-                      }}
-                      className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 transition-colors cursor-pointer group"
+
+                <div className="p-1.5 space-y-0.5">
+                  {systemOperationLinks.map((op) => {
+                    const OpIcon = op.icon;
+                    return (
+                      <a
+                        key={op.id}
+                        href={op.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          setIsDeptDataMenuOpen(false);
+                          showToast(`Đang mở hệ thống: ${op.label}...`, "info");
+                        }}
+                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 transition-colors cursor-pointer group"
+                      >
+                        <span className="inline-flex items-center gap-2.5">
+                          <OpIcon className={`w-4 h-4 ${op.iconColor} group-hover:scale-110 transition-transform`} />
+                          <span>{op.label}</span>
+                        </span>
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400" />
+                      </a>
+                    );
+                  })}
+
+                  {/* 5. Kho dữ liệu tổ (Tái sử dụng phần Kho lưu trữ OneDrive theo năm học) */}
+                  <div className="pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsDataRepoSubOpen((prev) => !prev)}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 transition-colors cursor-pointer group"
                     >
-                      <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex items-center gap-2.5">
                         <FolderOpen className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
-                        <span>{item.label}</span>
+                        <span>5. Kho dữ liệu tổ</span>
                       </span>
-                      <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400" />
-                    </a>
-                  ))}
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                          isDataRepoSubOpen ? "rotate-180 text-sky-500" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {isDataRepoSubOpen && (
+                      <div className="mt-1 mx-1.5 rounded-xl bg-slate-50 dark:bg-slate-950/90 border border-slate-200/80 dark:border-slate-800 overflow-hidden">
+                        <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-200/70 dark:border-slate-800">
+                          Kho lưu trữ OneDrive theo năm học
+                        </div>
+                        <div className="p-1 space-y-0.5">
+                          {departmentDataLinks.map((item) => (
+                            <a
+                              key={item.schoolYear}
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => {
+                                setIsDeptDataMenuOpen(false);
+                                showToast(`Đang mở Kho dữ liệu tổ (${item.label})...`, "info");
+                              }}
+                              className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 transition-colors cursor-pointer group"
+                            >
+                              <span className="inline-flex items-center gap-2">
+                                <FolderOpen className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
+                                <span>{item.label}</span>
+                              </span>
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
