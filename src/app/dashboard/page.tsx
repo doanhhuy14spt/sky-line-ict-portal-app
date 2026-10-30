@@ -372,6 +372,7 @@ export default function DashboardPage() {
 
   // --- STATE QUẢN LÝ & CHỈNH SỬA HỒ SƠ GIÁO VIÊN TRONG TAB NHÂN SỰ ICT ---
   const [teachersSubTab, setTeachersSubTab] = useState<"part1_directory" | "part2_evaluation">("part1_directory");
+  const [tasksSubTab, setTasksSubTab] = useState<"part1_assigned_tasks" | "part2_incidents">("part1_assigned_tasks");
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [profileModalMode, setProfileModalMode] = useState<"add" | "edit">("edit");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -1684,15 +1685,80 @@ export default function DashboardPage() {
             />
           )}
 
-          {/* TAB 4: VIỆC CẦN LÀM - PHÂN CÔNG CÔNG VIỆC CHUYÊN MÔN */}
+          {/* TAB 4: VIỆC CẦN LÀM - PHÂN CÔNG CÔNG VIỆC CHUYÊN MÔN & XỬ LÝ SỰ VỤ */}
           {activeTab === "tasks" && (
-            <AssignedTasksSection
-              supabase={supabase}
-              showToast={showToast}
-              currentUserProfile={currentUserProfile}
-              teachersList={teachersList}
-              selectedSchoolYear={selectedSchoolYear}
-            />
+            <div className="space-y-4 animate-in fade-in duration-200">
+              {/* THANH ĐIỀU KHIỂN CHUYỂN ĐỔI 2 PHẦN TRONG CÔNG VIỆC ĐƯỢC GIAO */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 p-2 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 shadow-xs">
+                <div className="inline-flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                  <button
+                    onClick={() => {
+                      setTasksSubTab("part1_assigned_tasks");
+                      showToast("Đang xem Phần 1: Phân Công Công Việc & Nhiệm Vụ Chuyên Môn", "info");
+                    }}
+                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      tasksSubTab === "part1_assigned_tasks"
+                        ? "bg-sky-600 text-white shadow-sm scale-[1.01]"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Phần 1: Phân Công Công Việc & Nhiệm Vụ Chuyên Môn</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setTasksSubTab("part2_incidents");
+                      showToast("Đang xem Phần 2: Xử lý sự vụ", "info");
+                    }}
+                    className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      tasksSubTab === "part2_incidents"
+                        ? "bg-amber-600 text-white shadow-sm scale-[1.01]"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Phần 2: Xử lý sự vụ</span>
+                  </button>
+                </div>
+
+                <div className="text-xs text-slate-500 dark:text-slate-400 px-2 font-medium hidden md:block">
+                  {tasksSubTab === "part1_assigned_tasks"
+                    ? "Phân công, theo dõi tiến độ & cập nhật minh chứng nhiệm vụ chuyên môn Tổ ICT"
+                    : "Tiếp nhận & xử lý sự vụ phát sinh của Tổ Chuyên môn ICT"}
+                </div>
+              </div>
+
+              {/* ========================================================================= */}
+              {/* PHẦN 1: PHÂN CÔNG CÔNG VIỆC & NHIỆM VỤ CHUYÊN MÔN                         */}
+              {/* ========================================================================= */}
+              {tasksSubTab === "part1_assigned_tasks" && (
+                <AssignedTasksSection
+                  supabase={supabase}
+                  showToast={showToast}
+                  currentUserProfile={currentUserProfile}
+                  teachersList={teachersList}
+                  selectedSchoolYear={selectedSchoolYear}
+                />
+              )}
+
+              {/* ========================================================================= */}
+              {/* PHẦN 2: XỬ LÝ SỰ VỤ (ĐỂ TRỐNG CHỜ XÂY DỰNG TIẾP)                          */}
+              {/* ========================================================================= */}
+              {tasksSubTab === "part2_incidents" && (
+                <div className="min-h-[320px] rounded-3xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 p-8 flex flex-col items-center justify-center text-center animate-in fade-in duration-200">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                    Phần 2: Xử lý sự vụ
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
+                    Khu vực này hiện đang để trống để sẵn sàng thiết kế theo hướng dẫn của Tổ trưởng.
+                  </p>
+                </div>
+              )}
+            </div>
           )}
 
           {/* TAB 4.5: ĐỘI TUYỂN BỒI DƯỠNG HỌC SINH GIỎI ICT */}

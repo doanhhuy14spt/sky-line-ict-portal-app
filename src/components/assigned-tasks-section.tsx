@@ -880,7 +880,7 @@ export function AssignedTasksSection({
               </span>
               <div>
                 <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                  Phân Công Công Việc & Nhiệm Vụ Chuyên Môn
+                  Phần 1: Phân Công Công Việc & Nhiệm Vụ Chuyên Môn
                   <Badge
                     variant="outline"
                     className={`text-[11px] font-bold ${
