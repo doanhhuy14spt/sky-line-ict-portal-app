@@ -48,7 +48,7 @@ export interface DiscussionLogItem {
   id: string;
   role: "leader" | "teacher";
   sender_name: string;
-  action_type: "leader_direction" | "teacher_feedback" | "teacher_confirm";
+  action_type: "leader_direction" | "teacher_feedback" | "teacher_confirm" | "teacher_complete";
   content: string;
   created_at: string;
 }
@@ -67,11 +67,13 @@ export interface IncidentReportItem {
   description: string;
   proposed_solution: string;
   evidence_link: string;
+  completion_evidence_link: string;
   status: "Chưa xử lý" | "Đang xử lý" | "Hoàn thành";
   direction_status: "waiting_leader" | "waiting_teacher" | "confirmed";
   latest_leader_direction: string;
   discussion_logs: DiscussionLogItem[];
   confirmed_at?: string | null;
+  completed_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -186,6 +188,58 @@ function ddMmYyyyToIso(ddMmYyyy: string): string {
   return "";
 }
 
+// Tính toán mốc nhắc hẹn xác nhận tình trạng sự vụ sau khi giáo viên xác nhận thực hiện chỉ đạo của Tổ trưởng:
+// - Khẩn cấp: sau 1 ngày
+// - Ưu tiên cao: sau 3 ngày
+// - Bình thường: sau 7 ngày
+function getIncidentReminderInfo(incident: IncidentReportItem): {
+  thresholdDays: number;
+  elapsedDays: number;
+  isTrackingReminder: boolean;
+  isDueForReminder: boolean;
+} {
+  const thresholdDays =
+    incident.urgency_level === "Khẩn cấp"
+      ? 1
+      : incident.urgency_level === "Ưu tiên cao"
+      ? 3
+      : 7;
+
+  if (
+    incident.direction_status !== "confirmed" ||
+    incident.status === "Hoàn thành" ||
+    !incident.confirmed_at
+  ) {
+    return {
+      thresholdDays,
+      elapsedDays: 0,
+      isTrackingReminder: false,
+      isDueForReminder: false,
+    };
+  }
+
+  const confirmedTime = new Date(incident.confirmed_at).getTime();
+  if (Number.isNaN(confirmedTime)) {
+    return {
+      thresholdDays,
+      elapsedDays: 0,
+      isTrackingReminder: false,
+      isDueForReminder: false,
+    };
+  }
+
+  const diffMs = Math.max(0, Date.now() - confirmedTime);
+  const elapsedDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  const isDueForReminder = diffMs >= thresholdDays * 24 * 60 * 60 * 1000;
+
+  return {
+    thresholdDays,
+    elapsedDays,
+    isTrackingReminder: true,
+    isDueForReminder,
+  };
+}
+
 export function IncidentHandlingSection({
   supabase,
   showToast,
@@ -253,6 +307,11 @@ export function IncidentHandlingSection({
   const [feedbackOpenMap, setFeedbackOpenMap] = useState<Record<string, boolean>>({});
   const [feedbackTextMap, setFeedbackTextMap] = useState<Record<string, string>>({});
   const [isSubmittingTeacherActionId, setIsSubmittingTeacherActionId] = useState<string | null>(null);
+
+  // State dành cho Giáo viên khi chọn tình trạng "Hoàn thành" -> bắt buộc nhập link minh chứng xử lý & xác nhận khóa
+  const [completionPromptOpenMap, setCompletionPromptOpenMap] = useState<Record<string, boolean>>({});
+  const [completionEvidenceTextMap, setCompletionEvidenceTextMap] = useState<Record<string, string>>({});
+  const [isConfirmingCompletionId, setIsConfirmingCompletionId] = useState<string | null>(null);
 
   // Hàm lấy Mã nhân sự chuẩn (staff_code) cho 1 giáo viên
   const getStaffCodeForTeacher = useCallback(
@@ -347,6 +406,7 @@ export function IncidentHandlingSection({
           description: row.description || "",
           proposed_solution: row.proposed_solution || "",
           evidence_link: row.evidence_link || "",
+          completion_evidence_link: row.completion_evidence_link || "",
           status:
             row.status === "Hoàn thành" ||
             row.status === "Đang xử lý" ||
@@ -361,6 +421,7 @@ export function IncidentHandlingSection({
           latest_leader_direction: row.latest_leader_direction || "",
           discussion_logs: Array.isArray(row.discussion_logs) ? row.discussion_logs : [],
           confirmed_at: row.confirmed_at || null,
+          completed_at: row.completed_at || null,
           created_at: row.created_at || new Date().toISOString(),
           updated_at: row.updated_at || new Date().toISOString(),
         }));
@@ -480,6 +541,14 @@ export function IncidentHandlingSection({
       return;
     }
 
+    if (formStatus === "Hoàn thành" && !formEvidenceLink.trim()) {
+      showToast(
+        "Khi chọn Tình trạng là “Hoàn thành”, thầy/cô bắt buộc phải đính kèm đường link Minh chứng xử lý (Mục 9)!",
+        "warning"
+      );
+      return;
+    }
+
     // Đảm bảo ngày xảy ra sự việc lưu chuẩn định dạng Ngày/Tháng/Năm (dd/mm/yyyy)
     const formattedDate = isoToDdMmYyyy(formIncidentDate.trim() || getTodayDdMmYyyy());
 
@@ -498,6 +567,8 @@ export function IncidentHandlingSection({
         description: formDescription.trim(),
         proposed_solution: formProposedSolution.trim(),
         evidence_link: formEvidenceLink.trim(),
+        completion_evidence_link: formStatus === "Hoàn thành" ? formEvidenceLink.trim() : "",
+        completed_at: formStatus === "Hoàn thành" ? new Date().toISOString() : null,
         status: formStatus,
         direction_status: "waiting_leader",
         latest_leader_direction: "",
@@ -726,7 +797,29 @@ export function IncidentHandlingSection({
     incident: IncidentReportItem,
     newStatus: "Chưa xử lý" | "Đang xử lý" | "Hoàn thành"
   ) => {
+    if (incident.status === "Hoàn thành") {
+      showToast(
+        "Sự vụ này đã được xác nhận Hoàn thành nên không thể thay đổi sang tình trạng khác nữa!",
+        "warning"
+      );
+      return;
+    }
+
     if (incident.status === newStatus) return;
+
+    // Khi giáo viên kích chọn "Hoàn thành" -> Mở khung yêu cầu cung cấp link minh chứng xử lý & bấm xác nhận
+    if (newStatus === "Hoàn thành") {
+      setCompletionPromptOpenMap((prev) => ({ ...prev, [incident.id]: true }));
+      setCompletionEvidenceTextMap((prev) => ({
+        ...prev,
+        [incident.id]: prev[incident.id] ?? incident.completion_evidence_link ?? "",
+      }));
+      showToast(
+        "Vui lòng chèn đường link minh chứng xử lý sự vụ và bấm Xác nhận Hoàn thành!",
+        "info"
+      );
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -759,6 +852,73 @@ export function IncidentHandlingSection({
     }
   };
 
+  // Xác nhận Hoàn thành sự vụ kèm Link minh chứng xử lý (Sau khi xác nhận sẽ khóa vĩnh viễn tình trạng)
+  const handleConfirmCompletionWithEvidence = async (incident: IncidentReportItem) => {
+    if (incident.status === "Hoàn thành") {
+      showToast("Sự vụ này đã được xác nhận Hoàn thành!", "info");
+      return;
+    }
+
+    const trimmedEvidence = (completionEvidenceTextMap[incident.id] || "").trim();
+    if (!trimmedEvidence) {
+      showToast(
+        "Vui lòng cung cấp đường link minh chứng xử lý sự vụ trước khi bấm Xác nhận Hoàn thành!",
+        "warning"
+      );
+      return;
+    }
+
+    setIsConfirmingCompletionId(incident.id);
+    try {
+      const completeLog: DiscussionLogItem = {
+        id: `comp_${Date.now()}`,
+        role: "teacher",
+        sender_name: currentTeacherObj?.name || currentUserProfile.name,
+        action_type: "teacher_complete",
+        content: `Đã hoàn thành giải quyết sự vụ và cung cấp đường link minh chứng xử lý: ${trimmedEvidence}`,
+        created_at: new Date().toISOString(),
+      };
+
+      const nextLogs = [...(incident.discussion_logs || []), completeLog];
+      const nowIso = new Date().toISOString();
+
+      const { error } = await supabase
+        .from("incident_reports")
+        .update({
+          status: "Hoàn thành",
+          completion_evidence_link: trimmedEvidence,
+          completed_at: nowIso,
+          discussion_logs: nextLogs,
+          updated_at: nowIso,
+        })
+        .eq("id", incident.id);
+
+      if (error) throw error;
+
+      // Thông báo cho Tổ trưởng biết giáo viên đã xác nhận Hoàn thành sự vụ kèm minh chứng
+      await sendNotificationToTargets({
+        recipientIds: leaderProfileIds,
+        actionType: "UPDATE",
+        title: `[Đã hoàn thành xử lý sự vụ] ${incident.teacher_name} (${incident.teacher_id})`,
+        message: `${incident.teacher_name} đã xác nhận Hoàn thành xử lý sự vụ "${incident.category}" (Ngày ${incident.incident_date}) kèm link minh chứng xử lý.`,
+      });
+
+      setCompletionPromptOpenMap((prev) => ({ ...prev, [incident.id]: false }));
+      await loadIncidents();
+      showToast(
+        "Đã xác nhận Hoàn thành sự vụ và lưu minh chứng xử lý! Tình trạng sự vụ đã được khóa cố định.",
+        "success"
+      );
+    } catch (err: any) {
+      showToast(
+        "Không thể xác nhận hoàn thành: " + (err?.message || "Vui lòng thử lại"),
+        "warning"
+      );
+    } finally {
+      setIsConfirmingCompletionId(null);
+    }
+  };
+
   // Danh sách sự vụ thuộc về riêng Giáo viên đang đăng nhập
   const myIncidentsList = useMemo(() => {
     return incidentsList.filter((item) => {
@@ -778,6 +938,52 @@ export function IncidentHandlingSection({
       );
     });
   }, [incidentsList, currentUserProfile, currentTeacherStaffCode, currentTeacherObj]);
+
+  // Danh sách các sự vụ của Giáo viên đã đến hạn nhắc xác nhận tình trạng giải quyết
+  // (Khẩn cấp: sau 1 ngày | Ưu tiên cao: sau 3 ngày | Bình thường: sau 7 ngày kể từ lúc xác nhận thực hiện chỉ đạo)
+  const dueReminderMyIncidents = useMemo(() => {
+    return myIncidentsList.filter((inc) => getIncidentReminderInfo(inc).isDueForReminder);
+  }, [myIncidentsList]);
+
+  // Tự động gửi thông báo nhắc hẹn lên quả chuông cho Giáo viên khi sự vụ đến hạn xác nhận tình trạng
+  useEffect(() => {
+    const checkAndSendIncidentReminders = async () => {
+      if (isLoading || isLeader || isGuest || !currentUserProfile?.id) return;
+      if (dueReminderMyIncidents.length === 0) return;
+
+      for (const inc of dueReminderMyIncidents) {
+        const info = getIncidentReminderInfo(inc);
+        const reminderTitle = `[Nhắc hẹn xác nhận sự vụ #${inc.id.slice(0, 6)}] Mức ${inc.urgency_level} (Sau ${info.thresholdDays} ngày)`;
+        try {
+          const { data: existing } = await supabase
+            .from("notifications")
+            .select("id")
+            .eq("recipient_id", currentUserProfile.id)
+            .eq("title", reminderTitle)
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            await supabase.from("notifications").insert({
+              recipient_id: currentUserProfile.id,
+              actor_id: currentUserProfile.id,
+              actor_name: "Hệ thống Nhắc hẹn Sự vụ",
+              actor_role: "Tự động",
+              action_type: "UPDATE",
+              category: "incident",
+              title: reminderTitle,
+              message: `Sự vụ "${inc.category}" (Mức độ: ${inc.urgency_level}, ngày xảy ra ${inc.incident_date}) đã qua ${info.thresholdDays} ngày kể từ lúc thầy/cô xác nhận thực hiện theo chỉ đạo của Tổ trưởng. Thầy/Cô vui lòng kiểm tra, đính kèm link minh chứng xử lý và xác nhận tình trạng sự vụ!`,
+              target_tab: "tasks",
+              is_read: false,
+            });
+          }
+        } catch {
+          // Bỏ qua lỗi kết nối tạm thời
+        }
+      }
+    };
+
+    checkAndSendIncidentReminders();
+  }, [isLoading, isLeader, isGuest, currentUserProfile?.id, dueReminderMyIncidents, supabase]);
 
   // Danh sách sự vụ đã lọc của riêng Giáo viên
   const filteredMyIncidentsList = useMemo(() => {
@@ -898,8 +1104,8 @@ export function IncidentHandlingSection({
     if (status === "Hoàn thành") {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-          <CheckCircle2 className="w-3 h-3" />
-          Hoàn thành
+          <Lock className="w-3 h-3" />
+          Hoàn thành (Đã khóa)
         </span>
       );
     }
@@ -1237,10 +1443,25 @@ export function IncidentHandlingSection({
                               }
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400 underline"
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400 underline mr-3"
                             >
                               <ExternalLink className="w-3 h-3" />
-                              Xem minh chứng đính kèm
+                              Minh chứng ban đầu
+                            </a>
+                          )}
+                          {incident.completion_evidence_link && (
+                            <a
+                              href={
+                                incident.completion_evidence_link.startsWith("http")
+                                  ? incident.completion_evidence_link
+                                  : `https://${incident.completion_evidence_link}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline"
+                            >
+                              <CheckCircle2 className="w-3 h-3" />
+                              Minh chứng xử lý hoàn thành
                             </a>
                           )}
                         </td>
@@ -1385,24 +1606,46 @@ export function IncidentHandlingSection({
                   </div>
                 </div>
                 <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 pt-1">
-                  <div>
-                    <span className="text-slate-400 font-bold mr-2">9. Minh chứng từ giáo viên:</span>
-                    {selectedIncident.evidence_link ? (
-                      <a
-                        href={
-                          selectedIncident.evidence_link.startsWith("http")
-                            ? selectedIncident.evidence_link
-                            : `https://${selectedIncident.evidence_link}`
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 font-extrabold text-sky-600 hover:text-sky-700 dark:text-sky-400 underline"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        Mở xem tài liệu / hình ảnh minh chứng
-                      </a>
-                    ) : (
-                      <span className="italic text-slate-400">Không đính kèm link</span>
+                  <div className="space-y-1">
+                    <div>
+                      <span className="text-slate-400 font-bold mr-2">9. Minh chứng ban đầu từ giáo viên:</span>
+                      {selectedIncident.evidence_link ? (
+                        <a
+                          href={
+                            selectedIncident.evidence_link.startsWith("http")
+                              ? selectedIncident.evidence_link
+                              : `https://${selectedIncident.evidence_link}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 font-extrabold text-sky-600 hover:text-sky-700 dark:text-sky-400 underline"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Mở xem tài liệu / hình ảnh minh chứng
+                        </a>
+                      ) : (
+                        <span className="italic text-slate-400">Không đính kèm link</span>
+                      )}
+                    </div>
+                    {selectedIncident.completion_evidence_link && (
+                      <div>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold mr-2">
+                          ✓ Minh chứng xử lý hoàn thành:
+                        </span>
+                        <a
+                          href={
+                            selectedIncident.completion_evidence_link.startsWith("http")
+                              ? selectedIncident.completion_evidence_link
+                              : `https://${selectedIncident.completion_evidence_link}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Mở xem minh chứng kết quả xử lý sự vụ
+                        </a>
+                      </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -1971,6 +2214,38 @@ export function IncidentHandlingSection({
 
       {/* KHU VỰC B: DANH SÁCH SỰ VỤ CỦA GIÁO VIÊN & TIẾP NHẬN Ý KIẾN CHỈ ĐẠO TỪ TỔ TRƯỞNG */}
       <div className="space-y-4">
+        {/* THÔNG BÁO QUY ĐỊNH & NHẮC HẸN XÁC NHẬN TÌNH TRẠNG SỰ VỤ */}
+        <div
+          className={`p-4 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            dueReminderMyIncidents.length > 0
+              ? "bg-rose-50/90 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 shadow-sm"
+              : "bg-sky-50/70 dark:bg-sky-950/25 border-sky-200/80 dark:border-sky-900/60 text-slate-700 dark:text-slate-300"
+          }`}
+        >
+          <div className="space-y-1">
+            <div className="font-extrabold flex items-center gap-1.5">
+              <Clock
+                className={`w-4 h-4 shrink-0 ${
+                  dueReminderMyIncidents.length > 0
+                    ? "text-rose-600 animate-bounce"
+                    : "text-sky-600 dark:text-sky-400"
+                }`}
+              />
+              <span>
+                {dueReminderMyIncidents.length > 0
+                  ? `🔔 Nhắc hẹn quan trọng: Thầy/Cô hiện có ${dueReminderMyIncidents.length} sự vụ đã đến hạn cần xác nhận tình trạng giải quyết!`
+                  : "Quy định nhắc hẹn xác nhận tình trạng giải quyết sự vụ (Kể từ lúc xác nhận thực hiện chỉ đạo của Tổ trưởng):"}
+              </span>
+            </div>
+            <p className="text-[11px] opacity-90 pl-5.5">
+              • Mức độ <strong>Khẩn cấp</strong>: Nhắc hẹn sau <strong>01 ngày</strong> • Mức độ{" "}
+              <strong>Ưu tiên cao</strong>: Nhắc hẹn sau <strong>03 ngày</strong> • Mức độ{" "}
+              <strong>Bình thường</strong>: Nhắc hẹn sau <strong>07 ngày</strong>. Khi chọn{" "}
+              <strong>“Hoàn thành”</strong>, thầy/cô cung cấp link minh chứng xử lý và bấm xác nhận (sau khi xác nhận sẽ khóa cố định).
+            </p>
+          </div>
+        </div>
+
         {filteredMyIncidentsList.length === 0 ? (
           <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
             <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
@@ -1989,18 +2264,56 @@ export function IncidentHandlingSection({
             {filteredMyIncidentsList.map((incident, index) => {
               const isWaitingTeacherAction = incident.direction_status === "waiting_teacher";
               const isConfirmed = incident.direction_status === "confirmed";
+              const isCompletedLocked = incident.status === "Hoàn thành";
               const isFeedbackOpen = Boolean(feedbackOpenMap[incident.id]);
               const isProcessingThis = isSubmittingTeacherActionId === incident.id;
+              const isCompletionPromptOpen = Boolean(completionPromptOpenMap[incident.id]);
+              const isConfirmingThisCompletion = isConfirmingCompletionId === incident.id;
+              const reminderInfo = getIncidentReminderInfo(incident);
 
               return (
                 <div
                   key={incident.id}
                   className={`p-5 rounded-3xl bg-white dark:bg-slate-900 border transition-all space-y-4 ${
-                    isWaitingTeacherAction
+                    reminderInfo.isDueForReminder
+                      ? "border-rose-400 dark:border-rose-600 shadow-lg shadow-rose-500/10 ring-1 ring-rose-400/40"
+                      : isWaitingTeacherAction
                       ? "border-amber-400 dark:border-amber-600 shadow-lg shadow-amber-500/10 ring-1 ring-amber-400/40"
                       : "border-slate-200/90 dark:border-slate-800 shadow-xs"
                   }`}
                 >
+                  {/* CẢNH BÁO NHẮC HẸN TRỰC TIẾP TRÊN THẺ SỰ VỤ KHI ĐẾN HẠN XÁC NHẬN TÌNH TRẠNG */}
+                  {reminderInfo.isDueForReminder && (
+                    <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-rose-900 dark:text-rose-200">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5 animate-pulse" />
+                        <div>
+                          <span className="font-extrabold">
+                            Nhắc hẹn xác nhận tình trạng sự vụ (Mức {incident.urgency_level} - Sau{" "}
+                            {reminderInfo.thresholdDays} ngày):{" "}
+                          </span>
+                          <span>
+                            Đã qua {reminderInfo.elapsedDays} ngày kể từ lúc thầy/cô xác nhận thực hiện theo chỉ đạo của Tổ trưởng. Thầy/Cô vui lòng cập nhật tình trạng hoặc chọn{" "}
+                            <strong>“Hoàn thành”</strong> kèm link minh chứng xử lý!
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() =>
+                          setCompletionPromptOpenMap((prev) => ({
+                            ...prev,
+                            [incident.id]: true,
+                          }))
+                        }
+                        className="h-8 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[11px] shrink-0 cursor-pointer"
+                      >
+                        Xác nhận Hoàn thành ngay
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Dòng tiêu đề thẻ sự vụ */}
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
                     <div className="space-y-1">
@@ -2020,36 +2333,122 @@ export function IncidentHandlingSection({
                       </h4>
                     </div>
 
-                    {/* Ô cập nhật Tình trạng (Hoàn thành / Đang xử lý / Chưa xử lý) sau khi giải quyết */}
+                    {/* Ô cập nhật Tình trạng (Hoàn thành / Đang xử lý / Chưa xử lý) - KHÓA VĨNH VIỄN KHI ĐÃ XÁC NHẬN HOÀN THÀNH */}
                     <div className="flex items-center gap-2 shrink-0 bg-slate-50 dark:bg-slate-800/70 p-2 rounded-2xl border border-slate-200/80 dark:border-slate-700">
                       <span className="text-[11px] font-extrabold text-slate-600 dark:text-slate-300 pl-1">
                         Tình trạng sự vụ:
                       </span>
-                      <select
-                        aria-label="Cập nhật tình trạng giải quyết sự vụ"
-                        value={incident.status}
-                        onChange={(e) =>
-                          handleUpdateIncidentStatus(
-                            incident,
-                            e.target.value as "Chưa xử lý" | "Đang xử lý" | "Hoàn thành"
-                          )
-                        }
-                        className={`h-8 px-2.5 rounded-xl text-xs font-extrabold border cursor-pointer focus:outline-none ${
-                          incident.status === "Hoàn thành"
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800"
-                            : incident.status === "Đang xử lý"
-                            ? "bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800"
-                            : "bg-white text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700"
-                        }`}
-                      >
-                        {INCIDENT_STATUS_OPTIONS.map((st) => (
-                          <option key={st} value={st}>
-                            {st}
-                          </option>
-                        ))}
-                      </select>
+                      {isCompletedLocked ? (
+                        <span
+                          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 select-none"
+                          title="Đã xác nhận Hoàn thành kèm minh chứng xử lý nên không thể thay đổi tình trạng nữa"
+                        >
+                          <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                          Hoàn thành (Đã xác nhận & Khóa)
+                        </span>
+                      ) : (
+                        <select
+                          aria-label="Cập nhật tình trạng giải quyết sự vụ"
+                          value={isCompletionPromptOpen ? "Hoàn thành" : incident.status}
+                          onChange={(e) =>
+                            handleUpdateIncidentStatus(
+                              incident,
+                              e.target.value as "Chưa xử lý" | "Đang xử lý" | "Hoàn thành"
+                            )
+                          }
+                          className={`h-8 px-2.5 rounded-xl text-xs font-extrabold border cursor-pointer focus:outline-none ${
+                            incident.status === "Đang xử lý"
+                              ? "bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800"
+                              : "bg-white text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700"
+                          }`}
+                        >
+                          {INCIDENT_STATUS_OPTIONS.map((st) => (
+                            <option key={st} value={st}>
+                              {st}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
+
+                  {/* KHUNG YÊU CẦU CUNG CẤP MINH CHỨNG XỬ LÝ & BẤM XÁC NHẬN KHI GIÁO VIÊN CHỌN "HOÀN THÀNH" */}
+                  {!isCompletedLocked && isCompletionPromptOpen && (
+                    <div className="p-4 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/35 border-2 border-emerald-400 dark:border-emerald-700 space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-0.5">
+                          <h5 className="text-xs font-extrabold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            Xác Nhận Hoàn Thành Sự Vụ & Cung Cấp Minh Chứng Xử Lý
+                          </h5>
+                          <p className="text-[11px] text-emerald-800/85 dark:text-emerald-300/85">
+                            Thầy/Cô vui lòng dán đường link minh chứng kết quả xử lý sự vụ và bấm{" "}
+                            <strong>Xác nhận Hoàn thành</strong>. Lưu ý: Sau khi xác nhận, tình trạng sự vụ sẽ được khóa cố định và không thể thay đổi sang tình trạng khác nữa.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCompletionPromptOpenMap((prev) => ({ ...prev, [incident.id]: false }))
+                          }
+                          className="p-1 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-xs font-extrabold text-emerald-900 dark:text-emerald-200">
+                          Đường link minh chứng xử lý sự vụ (Google Drive / OneDrive / Hình ảnh kết quả):{" "}
+                          <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Input
+                            type="text"
+                            value={completionEvidenceTextMap[incident.id] || ""}
+                            onChange={(e) =>
+                              setCompletionEvidenceTextMap((prev) => ({
+                                ...prev,
+                                [incident.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="Dán đường link minh chứng đã giải quyết xong sự vụ tại đây..."
+                            className="bg-white dark:bg-slate-900 border-emerald-300 dark:border-emerald-700 text-xs"
+                          />
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setCompletionPromptOpenMap((prev) => ({
+                                  ...prev,
+                                  [incident.id]: false,
+                                }))
+                              }
+                              className="h-9 px-3 rounded-xl text-xs font-bold cursor-pointer"
+                            >
+                              Hủy
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={isConfirmingThisCompletion}
+                              onClick={() => handleConfirmCompletionWithEvidence(incident)}
+                              className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-sm shadow-emerald-600/20 cursor-pointer flex items-center gap-1.5"
+                            >
+                              <Lock className="w-3.5 h-3.5" />
+                              <span>
+                                {isConfirmingThisCompletion
+                                  ? "Đang xác nhận..."
+                                  : "Xác nhận Hoàn thành"}
+                              </span>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Nội dung tóm tắt sự việc & đề xuất */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -2062,15 +2461,15 @@ export function IncidentHandlingSection({
                       </p>
                     </div>
 
-                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800 space-y-1">
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800 space-y-1.5">
                       <div className="font-extrabold text-slate-500 dark:text-slate-400">
                         Đề xuất hướng xử lý của Giáo viên:
                       </div>
                       <p className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
                         {incident.proposed_solution || "Chưa ghi đề xuất riêng."}
                       </p>
-                      {incident.evidence_link && (
-                        <div className="pt-1">
+                      <div className="flex flex-wrap items-center gap-3 pt-1">
+                        {incident.evidence_link && (
                           <a
                             href={
                               incident.evidence_link.startsWith("http")
@@ -2082,10 +2481,25 @@ export function IncidentHandlingSection({
                             className="inline-flex items-center gap-1 font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400 underline"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
-                            Xem link minh chứng đã đính kèm
+                            Minh chứng ban đầu
                           </a>
-                        </div>
-                      )}
+                        )}
+                        {incident.completion_evidence_link && (
+                          <a
+                            href={
+                              incident.completion_evidence_link.startsWith("http")
+                                ? incident.completion_evidence_link
+                                : `https://${incident.completion_evidence_link}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Xem minh chứng xử lý hoàn thành
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -2098,7 +2512,9 @@ export function IncidentHandlingSection({
                         </div>
                         {incident.discussion_logs.map((log) => {
                           const isLeaderMsg = log.role === "leader";
-                          const isConfirmMsg = log.action_type === "teacher_confirm";
+                          const isConfirmMsg =
+                            log.action_type === "teacher_confirm" ||
+                            log.action_type === "teacher_complete";
                           return (
                             <div
                               key={log.id}
@@ -2121,6 +2537,8 @@ export function IncidentHandlingSection({
                                   )}
                                   {isLeaderMsg
                                     ? `Ý kiến chỉ đạo từ Tổ trưởng (${log.sender_name})`
+                                    : log.action_type === "teacher_complete"
+                                    ? `Xác nhận hoàn thành xử lý sự vụ (${log.sender_name})`
                                     : isConfirmMsg
                                     ? `Xác nhận thực hiện (${log.sender_name})`
                                     : `Phản hồi của Giáo viên (${log.sender_name})`}
@@ -2233,11 +2651,12 @@ export function IncidentHandlingSection({
                     )}
 
                     {/* Khi đã xác nhận thực hiện chỉ đạo */}
-                    {isConfirmed && (
+                    {isConfirmed && !isCompletedLocked && (
                       <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/70 flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-300 font-bold">
                         <span className="flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          Thầy/Cô đã xác nhận thực hiện theo chỉ đạo của Tổ trưởng. Sau khi giải quyết xong sự vụ, thầy/cô nhớ chọn Tình trạng là “Hoàn thành” ở góc phải trên nhé!
+                          Thầy/Cô đã xác nhận thực hiện theo chỉ đạo của Tổ trưởng (Hệ thống sẽ nhắc xác nhận tình trạng sau{" "}
+                          {reminderInfo.thresholdDays} ngày đối với mức {incident.urgency_level}). Khi giải quyết xong, thầy/cô chọn Tình trạng là “Hoàn thành” để đính kèm link minh chứng xử lý nhé!
                         </span>
                       </div>
                     )}
