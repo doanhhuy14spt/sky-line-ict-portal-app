@@ -50,7 +50,12 @@ interface OverviewSectionProps {
   rawTeacherTimetables: any[];
   isStudentPrivacyActive?: boolean;
   onNavigateTab: (
-    tab: "dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers"
+    tab: "dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers",
+    subOverrides?: {
+      timetableSub?: "lab_view" | "teacher_view" | "assignment_view";
+      tasksSub?: "part1_assigned_tasks" | "part2_incidents";
+      teachersSub?: "part1_directory" | "part2_evaluation";
+    }
   ) => void;
   showToast?: (text: string, type?: "success" | "warning" | "info") => void;
 }

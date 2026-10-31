@@ -60,7 +60,12 @@ interface LeaderAISparkHubProps {
   teamsData: any[];
   achievementsData: any[];
   onNavigateTab: (
-    tab: "dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers"
+    tab: "dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers",
+    subOverrides?: {
+      timetableSub?: "lab_view" | "teacher_view" | "assignment_view";
+      tasksSub?: "part1_assigned_tasks" | "part2_incidents";
+      teachersSub?: "part1_directory" | "part2_evaluation";
+    }
   ) => void;
   showToast?: (text: string, type?: "success" | "warning" | "info") => void;
 }
@@ -495,33 +500,28 @@ export function LeaderAISparkHub({
 
   return (
     <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-sky-950 to-slate-900 text-white border-2 border-sky-500/40 shadow-xl overflow-hidden">
-      {/* THANH TIÊU ĐỀ TRUNG TÂM TRỢ LÝ AI SKY-LINE AI SPARK 2026 - 2027 */}
+      {/* THANH TIÊU ĐỀ TRUNG TÂM 5 TRỢ LÝ AI TỔ CHUYÊN MÔN ICT SKY-LINE */}
       <div className="p-5 sm:p-6 border-b border-white/10 bg-white/[0.03] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-sky-500 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/40">
-                🏆 DỰ THI SKY-LINE AI SPARK 2026 - 2027
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" />
-                AI Có Trách Nhiệm • Bảo Mật Dữ Liệu 100%
-              </span>
-            </div>
             <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
-              Hệ Sinh Thái 4 Trợ Lý AI Chuyên Môn & Điều Hành Tổ ICT Sky-Line
+              Hệ Sinh Thái 5 Trợ Lý AI Chuyên Môn & Điều Hành Tổ ICT Sky-Line
             </h2>
             <p className="text-xs text-sky-200/85 max-w-3xl leading-relaxed">
-              Giải phóng thời gian cho Tổ trưởng và Giáo viên: Tự động tổng hợp thời sự công nghệ & tham mưu cập nhật Chương trình ICT lúc{" "}
-              <strong className="text-amber-300">08h00 sáng Thứ Bảy hằng tuần</strong>, soạn thảo Kế hoạch & Email điều hành từ số liệu thật, gợi ý lộ trình năng lực (IDP) và cố vấn xử lý sự vụ phòng Lab.
+              Giải phóng thời gian cho Tổ trưởng và Giáo viên với 5 trợ lý AI chuyên biệt: Hỗ trợ{" "}
+              <strong className="text-sky-300">xếp lịch Thời khóa biểu & chống trùng phòng Lab</strong>, gợi ý{" "}
+              <strong className="text-sky-300">lộ trình phát triển năng lực (IDP)</strong>, cố vấn{" "}
+              <strong className="text-sky-300">xử lý sự vụ phòng Lab</strong>, tự động tổng hợp thời sự công nghệ & tham mưu cập nhật Chương trình ICT lúc{" "}
+              <strong className="text-amber-300">08h00 sáng Thứ Bảy hằng tuần</strong>, và{" "}
+              <strong className="text-amber-300">soạn thảo Kế hoạch & Email điều hành</strong> từ số liệu thật.
             </p>
           </div>
         </div>
 
-        {/* 4 Nút truy cập nhanh tới cả 4 Trợ lý AI trong toàn ứng dụng */}
+        {/* Nút chuyển nhanh giữa 2 Trợ lý AI trực tiếp tại Trung tâm */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
@@ -551,7 +551,7 @@ export function LeaderAISparkHub({
         </div>
       </div>
 
-      {/* THANH CHUYỂN ĐỔI 2 TAB LỚN TRỰC QUAN NGAY ĐẦU TRUNG TÂM AI (AI SỐ 3 & AI SỐ 4) */}
+      {/* THANH CHUYỂN ĐỔI 2 TAB LỚN TRỰC QUAN NGAY ĐẦU TRUNG TÂM AI (AI SỐ 4 & AI SỐ 5) */}
       <div className="p-3 sm:p-4 bg-slate-950/70 border-b border-white/15">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <button
@@ -595,7 +595,7 @@ export function LeaderAISparkHub({
                   : "bg-white/10 text-amber-300"
               }`}
             >
-              AI Số 3
+              AI Số 4
             </span>
           </button>
 
@@ -640,33 +640,41 @@ export function LeaderAISparkHub({
                   : "bg-white/10 text-sky-300"
               }`}
             >
-              AI Số 4
+              AI Số 5
             </span>
           </button>
         </div>
       </div>
 
-      {/* THANH LIÊN KẾT NHANH ĐẾN AI SỐ 1 & AI SỐ 2 (KHÉP KÍN BỘ TỨ AI) */}
+      {/* THANH LIÊN KẾT NHANH ĐẾN TOÀN BỘ 5 TRỢ LÝ AI TRONG HỆ THỐNG */}
       <div className="px-5 py-2.5 bg-slate-950/60 border-b border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px]">
         <div className="flex flex-wrap items-center gap-2 text-sky-200">
           <span className="font-extrabold text-amber-300 flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5" />
-            Bộ Tứ AI Đang Hoạt Động:
+            5 Trợ Lý AI Đang Hoạt Động:
           </span>
           <button
             type="button"
-            onClick={() => onNavigateTab("teachers")}
+            onClick={() => onNavigateTab("timetable", { timetableSub: "teacher_view" })}
             className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
           >
-            <span>1. AI Lộ trình Năng lực GV (IDP)</span>
+            <span>1. AI Hỗ trợ xếp lịch Thời khóa biểu</span>
             <ChevronRight className="w-3 h-3 text-sky-400" />
           </button>
           <button
             type="button"
-            onClick={() => onNavigateTab("tasks")}
+            onClick={() => onNavigateTab("teachers", { teachersSub: "part2_evaluation" })}
             className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
           >
-            <span>2. AI Xử lý Sự vụ Phòng Lab</span>
+            <span>2. AI Lộ trình Năng lực GV (IDP)</span>
+            <ChevronRight className="w-3 h-3 text-sky-400" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigateTab("tasks", { tasksSub: "part2_incidents" })}
+            className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <span>3. AI Xử lý Sự vụ Phòng Lab</span>
             <ChevronRight className="w-3 h-3 text-sky-400" />
           </button>
           <button
@@ -678,7 +686,7 @@ export function LeaderAISparkHub({
                 : "bg-white/5 hover:bg-white/15 border-white/10 text-white"
             }`}
           >
-            <span>3. AI Thời sự & Chương trình (08h00 Thứ Bảy)</span>
+            <span>4. AI Thời sự & Chương trình (08h00 Thứ Bảy)</span>
           </button>
           <button
             type="button"
@@ -689,7 +697,7 @@ export function LeaderAISparkHub({
                 : "bg-white/5 hover:bg-white/15 border-white/10 text-white"
             }`}
           >
-            <span>4. AI Soạn Kế hoạch & Email Tổ trưởng</span>
+            <span>5. AI Soạn Kế hoạch & Email Tổ trưởng</span>
           </button>
         </div>
       </div>
