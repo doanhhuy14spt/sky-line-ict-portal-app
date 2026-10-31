@@ -22,11 +22,21 @@ import {
   X,
   FileCheck2,
   EyeOff,
+  Bot,
+  Wand2,
+  Target,
+  TrendingUp,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  generateTeacherCompetencyAIAdvice,
+  TeacherCompetencyAIResult,
+  CompetencyCriterionInput,
+} from "@/lib/ai-spark-engine";
 
 export interface CompetencyCriterion {
   code: string;
@@ -516,6 +526,12 @@ export function TeacherCompetencyEvaluationSection({
     targetTeacherId: string;
     targetTeacherName: string;
   } | null>(null);
+
+  // State lưu kết quả phân tích & gợi ý lộ trình phát triển năng lực từ AI cho từng giáo viên
+  const [aiRoadmapMap, setAiRoadmapMap] = useState<
+    Record<string, TeacherCompetencyAIResult>
+  >({});
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
 
   // Tính toán phân công ngẫu nhiên 2 Giáo viên đồng cấp cho từng Giáo viên trong năm học
   const peerAssignmentByTeacherId = useMemo(() => {
@@ -1136,6 +1152,131 @@ export function TeacherCompetencyEvaluationSection({
       activeSheetRecord &&
       !activeSheetRecord.is_leader_confirmed
   );
+
+  // ============================================================================
+  // TÍNH NĂNG AI SỐ 1: PHÂN TÍCH DỮ LIỆU ĐÁNH GIÁ & GỢI Ý LỘ TRÌNH PHÁT TRIỂN NĂNG LỰC
+  // ============================================================================
+  const handleGenerateAICompetencyRoadmap = useCallback(() => {
+    if (!activeSheetTeacher || !activeSheetRecord || !activeSheetMetrics) return;
+    setIsAnalyzingAI(true);
+
+    setTimeout(() => {
+      const criteriaList: CompetencyCriterionInput[] = [];
+      COMPETENCY_GROUPS.forEach((group) => {
+        group.criteria.forEach((crit) => {
+          const sVal = Number(activeSheetRecord.self_scores?.[crit.code] || 0);
+          const pVal = Number(
+            activeSheetMetrics.peerAvgCriterionScores?.[crit.code] || 0
+          );
+          const lVal = Number(activeSheetRecord.leader_scores?.[crit.code] || 0);
+
+          const selfScore = sVal >= 1 && sVal <= 4 ? sVal : null;
+          const peerScore = pVal >= 1 && pVal <= 4 ? pVal : null;
+          const leaderScore = lVal >= 1 && lVal <= 4 ? lVal : null;
+
+          let finalCriterionScore: number | null = null;
+          if (selfScore !== null && peerScore !== null && leaderScore !== null) {
+            finalCriterionScore = round1(
+              selfScore * 0.2 + peerScore * 0.2 + leaderScore * 0.6
+            );
+          } else if (selfScore !== null && leaderScore !== null) {
+            finalCriterionScore = round1(
+              (selfScore * 0.2 + leaderScore * 0.6) / 0.8
+            );
+          } else {
+            finalCriterionScore = leaderScore ?? selfScore ?? peerScore;
+          }
+
+          criteriaList.push({
+            code: crit.code,
+            title: crit.title,
+            groupId: group.id,
+            groupName: group.name,
+            selfScore,
+            peerScore,
+            leaderScore,
+            finalCriterionScore,
+            evidence: activeSheetRecord.evidences?.[crit.code] || "",
+          });
+        });
+      });
+
+      const result = generateTeacherCompetencyAIAdvice({
+        teacherName: activeSheetRecord.teacher_name || activeSheetTeacher.name,
+        staffCode: activeSheetRecord.staff_code || "ICT-01",
+        campus: activeSheetTeacher.campus || activeSheetRecord.campus,
+        schoolYear: selectedSchoolYear,
+        teachingLevels: activeSheetRecord.teaching_levels || ["Liên cấp"],
+        gradeDetails: activeSheetRecord.grade_details || "",
+        labManagement:
+          activeSheetTeacher.lab || activeSheetRecord.lab_management || "",
+        concurrentDuties:
+          activeSheetRecord.concurrent_duties || activeSheetTeacher.lab || "",
+        criteriaList,
+        groupAverages: activeSheetMetrics.groupCombined,
+        totalSelf: activeSheetMetrics.totalSelf,
+        totalPeer: activeSheetMetrics.totalPeer,
+        totalLeader: activeSheetMetrics.totalLeader,
+        finalScore360: activeSheetMetrics.finalScore360,
+        rankingLabel: activeSheetMetrics.ranking?.label || "Đạt chuẩn",
+      });
+
+      setAiRoadmapMap((prev) => ({
+        ...prev,
+        [activeSheetTeacher.id]: result,
+      }));
+      setIsAnalyzingAI(false);
+      showToast(
+        `✨ AI đã phân tích toàn bộ 15 tiêu chí năng lực và thiết lập Lộ trình phát triển cho ${activeSheetTeacher.name}!`,
+        "success"
+      );
+    }, 350);
+  }, [
+    activeSheetTeacher,
+    activeSheetRecord,
+    activeSheetMetrics,
+    selectedSchoolYear,
+    showToast,
+  ]);
+
+  const handleApplyAIAdviceToIDP = useCallback(() => {
+    if (!activeSheetTeacher || !activeSheetRecord) return;
+    const aiAdvice = aiRoadmapMap[activeSheetTeacher.id];
+    if (!aiAdvice) return;
+
+    if (!canEditLeaderOnActiveSheet && !canEditSelfOnActiveSheet) {
+      showToast(
+        "Phiếu đánh giá này đã khóa xác nhận nên không thể ghi đè nội dung IDP!",
+        "warning"
+      );
+      return;
+    }
+
+    updateTeacherRecordState(activeSheetTeacher.id, (prev) => ({
+      ...prev,
+      idp_strengths: canEditLeaderOnActiveSheet
+        ? aiAdvice.draftIdpStrengths
+        : prev.idp_strengths || aiAdvice.draftIdpStrengths,
+      idp_improvements: canEditLeaderOnActiveSheet
+        ? aiAdvice.draftIdpImprovements
+        : prev.idp_improvements || aiAdvice.draftIdpImprovements,
+      idp_goals: aiAdvice.draftIdpGoals,
+    }));
+
+    showToast(
+      canEditLeaderOnActiveSheet
+        ? "✅ Đã điền tự động gợi ý của AI vào cả 3 mục Nhận xét & Kế hoạch IDP (Mục IV)! Tổ trưởng có thể rà soát, chỉnh sửa thêm và bấm Lưu."
+        : "✅ Đã điền gợi ý Mục tiêu cam kết năm học tiếp theo của AI vào Mục IV.3! Thầy/Cô có thể chỉnh sửa thêm và bấm Lưu.",
+      "success"
+    );
+  }, [
+    activeSheetTeacher,
+    activeSheetRecord,
+    aiRoadmapMap,
+    canEditLeaderOnActiveSheet,
+    canEditSelfOnActiveSheet,
+    showToast,
+  ]);
 
   // Kiểm tra điều kiện hiển thị tính năng Xuất Phiếu Đánh Giá ra file .pdf
   // (Sau khi Tổ trưởng bấm xác nhận hoàn thành chấm điểm và có đầy đủ thông tin trong form)
@@ -2585,6 +2726,22 @@ export function TeacherCompetencyEvaluationSection({
                     </>
                   )}
 
+                  <Button
+                    size="sm"
+                    isLoading={isAnalyzingAI}
+                    onClick={() => {
+                      handleGenerateAICompetencyRoadmap();
+                      const el = document.getElementById("ai-competency-coach-panel");
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }
+                    }}
+                    className="font-extrabold text-xs bg-gradient-to-r from-violet-600 via-sky-600 to-amber-500 hover:from-violet-700 hover:via-sky-700 hover:to-amber-600 text-white shadow-sm cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                    AI Gợi Ý Lộ Trình Năng Lực
+                  </Button>
+
                   {isReadyForPdfExport && (
                     <Button
                       size="sm"
@@ -3159,6 +3316,225 @@ export function TeacherCompetencyEvaluationSection({
                   );
                 })}
               </div>
+            </div>
+
+            {/* ================================================================= */}
+            {/* TÍNH NĂNG AI SỐ 1: TRỢ LÝ AI GỢI Ý LỘ TRÌNH PHÁT TRIỂN NĂNG LỰC   */}
+            {/* ================================================================= */}
+            <div
+              id="ai-competency-coach-panel"
+              className="p-5 rounded-2xl bg-gradient-to-br from-violet-50/90 via-sky-50/80 to-amber-50/70 dark:from-violet-950/35 dark:via-slate-900 dark:to-amber-950/25 border-2 border-sky-300/80 dark:border-sky-700/70 shadow-md space-y-4"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-sky-200/70 dark:border-slate-800 pb-3.5">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-2xl bg-gradient-to-br from-violet-600 to-sky-600 text-white shadow-md shadow-sky-600/20 shrink-0">
+                    <Bot className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                        TRỢ LÝ AI PHÂN TÍCH DỮ LIỆU & GỢI Ý LỘ TRÌNH PHÁT TRIỂN NĂNG LỰC
+                      </h3>
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] font-extrabold bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300 border border-violet-300 dark:border-violet-800"
+                      >
+                        SKY-LINE AI SPARK
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      AI phân tích toàn bộ điểm số 15 tiêu chí (4 nhóm năng lực), cấp học giảng dạy và nhiệm vụ phòng Lab của{" "}
+                      <strong>{activeSheetRecord.teacher_name}</strong> ({activeSheetRecord.staff_code}) để đề xuất các hành động cần làm và dự thảo Kế hoạch phát triển cá nhân (IDP).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    size="sm"
+                    isLoading={isAnalyzingAI}
+                    onClick={handleGenerateAICompetencyRoadmap}
+                    className="h-9 px-4 rounded-xl bg-gradient-to-r from-violet-600 via-sky-600 to-amber-500 hover:from-violet-700 hover:via-sky-700 hover:to-amber-600 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    <span>
+                      {aiRoadmapMap[activeSheetTeacher.id]
+                        ? "Phân tích lại theo dữ liệu mới nhất"
+                        : "AI Phân Tích & Gợi Ý Lộ Trình Ngay"}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+
+              {!aiRoadmapMap[activeSheetTeacher.id] ? (
+                <div className="p-4 rounded-xl bg-white/80 dark:bg-slate-900/70 border border-dashed border-sky-300 dark:border-sky-800 text-xs text-slate-600 dark:text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <Target className="w-4 h-4 text-sky-600 shrink-0" />
+                    <span>
+                      Bấm nút <strong>“AI Phân Tích & Gợi Ý Lộ Trình Ngay”</strong> để hệ thống tổng hợp điểm mạnh, điểm cần cải thiện và xây dựng lộ trình hành động 3 giai đoạn cho giáo viên.
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 shrink-0 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    AI tham mưu • Con người kiểm duyệt
+                  </span>
+                </div>
+              ) : (
+                (() => {
+                  const aiResult = aiRoadmapMap[activeSheetTeacher.id];
+                  return (
+                    <div className="space-y-4 text-xs animate-in fade-in duration-200">
+                      {/* 1. Chẩn đoán tổng thể & Độ lệch nhận thức */}
+                      <div className="p-3.5 rounded-xl bg-white/95 dark:bg-slate-900/90 border border-sky-200 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-extrabold text-sky-800 dark:text-sky-300 flex items-center gap-1.5">
+                            <BarChart3 className="w-4 h-4 text-sky-600" />
+                            1. Chẩn Đoán Tổng Thể Bức Tranh Năng Lực 360°:
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-semibold">
+                            Cập nhật lúc {aiResult.generatedAt}
+                          </span>
+                        </div>
+                        <p className="text-slate-700 dark:text-slate-200 leading-relaxed">
+                          {aiResult.overallSummary}
+                        </p>
+                        <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                          <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                          <span>
+                            <strong>Đối chiếu đa chiều (Tự ĐG - Đồng cấp - TTCM):</strong>{" "}
+                            {aiResult.perceptionGapNote}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 2. Hai cột: Top 3 Điểm mạnh cốt lõi & Top 3 Năng lực ưu tiên bồi dưỡng */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+                        {/* Cột Điểm mạnh */}
+                        <div className="p-3.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/70 space-y-2.5">
+                          <div className="font-extrabold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                            <Award className="w-4 h-4 text-emerald-600" />
+                            Top 3 Điểm Sáng Năng Lực Cần Phát Huy:
+                          </div>
+                          <div className="space-y-2">
+                            {aiResult.topStrengths.map((st) => (
+                              <div
+                                key={st.code}
+                                className="p-2.5 rounded-lg bg-white/90 dark:bg-slate-900/85 border border-emerald-200/70 dark:border-emerald-900/60 space-y-1"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-extrabold text-slate-900 dark:text-white">
+                                    Tiêu chí {st.code}: {st.title}
+                                  </span>
+                                  <Badge
+                                    variant="emerald"
+                                    className="text-[10px] font-black"
+                                  >
+                                    {st.scoreText}
+                                  </Badge>
+                                </div>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                                  {st.insight}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Cột Cần bồi dưỡng */}
+                        <div className="p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-800/70 space-y-2.5">
+                          <div className="font-extrabold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                            <TrendingUp className="w-4 h-4 text-amber-600" />
+                            Top 3 Tiêu Chí Cần Ưu Tiên Bồi Dưỡng & Hành Động:
+                          </div>
+                          <div className="space-y-2">
+                            {aiResult.priorityImprovements.map((imp) => (
+                              <div
+                                key={imp.code}
+                                className="p-2.5 rounded-lg bg-white/90 dark:bg-slate-900/85 border border-amber-200/70 dark:border-amber-900/60 space-y-1"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-extrabold text-slate-900 dark:text-white">
+                                    Tiêu chí {imp.code}: {imp.title}
+                                  </span>
+                                  <Badge
+                                    variant="amber"
+                                    className="text-[10px] font-black"
+                                  >
+                                    {imp.scoreText}
+                                  </Badge>
+                                </div>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                                  <strong>Hành động gợi ý:</strong> {imp.actionHint}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 3. Lộ trình hành động cần làm 3 giai đoạn (30 ngày - 1 học kỳ - Cả năm học) */}
+                      <div className="p-3.5 rounded-xl bg-white/95 dark:bg-slate-900/90 border border-sky-200 dark:border-slate-800 space-y-3">
+                        <div className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <Target className="w-4 h-4 text-violet-600" />
+                          2. Lộ Trình Các Hành Động Cụ Thể Cần Làm Dành Cho {activeSheetRecord.teacher_name}:
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {aiResult.actionRoadmap.map((step, idx) => (
+                            <div
+                              key={step.phase}
+                              className="p-3 rounded-xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="px-2 py-0.5 rounded-md bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 font-black text-[10px]">
+                                  {step.phase}
+                                </span>
+                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                                  {step.timeframe}
+                                </span>
+                              </div>
+                              <div className="font-extrabold text-slate-900 dark:text-white text-xs">
+                                {step.title}
+                              </div>
+                              <ul className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300 list-disc pl-4 leading-relaxed">
+                                {step.actions.map((act, i) => (
+                                  <li key={i}>{act}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 4. Thanh công cụ áp dụng gợi ý của AI vào Mục IV (Con người kiểm soát) */}
+                      <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-sky-200/70 dark:border-slate-800">
+                        <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-300">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>
+                            <strong>Nguyên tắc AI có trách nhiệm:</strong> AI gợi ý lộ trình dựa trên dữ liệu thực tế; Tổ trưởng và Giáo viên kiểm duyệt, chỉnh sửa tại <strong>Mục IV</strong> trước khi lưu chính thức.
+                          </span>
+                        </div>
+                        {(canEditLeaderOnActiveSheet || canEditSelfOnActiveSheet) && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleApplyAIAdviceToIDP}
+                            className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-sm cursor-pointer shrink-0 flex items-center gap-1.5"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>
+                              {canEditLeaderOnActiveSheet
+                                ? "Áp dụng gợi ý AI vào cả 3 mục IDP (Mục IV)"
+                                : "Áp dụng gợi ý AI vào Mục tiêu cam kết (Mục IV.3)"}
+                            </span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
             </div>
 
             {/* ================================================================= */}

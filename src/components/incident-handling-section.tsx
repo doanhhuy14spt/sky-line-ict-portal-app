@@ -26,10 +26,17 @@ import {
   CornerDownRight,
   MessageCircleWarning,
   ClipboardCheck,
+  Bot,
+  Wand2,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  generateIncidentHandlingAIAdvice,
+  IncidentAIResult,
+} from "@/lib/ai-spark-engine";
 
 export interface TeacherProfileItem {
   id: string;
@@ -313,6 +320,11 @@ export function IncidentHandlingSection({
   const [completionEvidenceTextMap, setCompletionEvidenceTextMap] = useState<Record<string, string>>({});
   const [isConfirmingCompletionId, setIsConfirmingCompletionId] = useState<string | null>(null);
 
+  // State dành cho Tính năng AI số 2: AI gợi ý xử lý sự vụ (trên Phiếu tạo mới, Thẻ sự vụ & Modal chỉ đạo Tổ trưởng)
+  const [formAIAdvice, setFormAIAdvice] = useState<IncidentAIResult | null>(null);
+  const [isGeneratingFormAI, setIsGeneratingFormAI] = useState<boolean>(false);
+  const [cardAIAdviceMap, setCardAIAdviceMap] = useState<Record<string, IncidentAIResult>>({});
+
   // Hàm lấy Mã nhân sự chuẩn (staff_code) cho 1 giáo viên
   const getStaffCodeForTeacher = useCallback(
     (teacher: TeacherProfileItem | null): string => {
@@ -519,6 +531,78 @@ export function IncidentHandlingSection({
     setFormImpactScopes((prev) =>
       prev.includes(scope) ? prev.filter((item) => item !== scope) : [...prev, scope]
     );
+  };
+
+  // =========================================================================
+  // TÍNH NĂNG AI SỐ 2: AI PHÂN TÍCH SỰ VỤ & GỢI Ý HƯỚNG XỬ LÝ (CHO GV & TTCM)
+  // =========================================================================
+  const handleGenerateTeacherFormAIAdvice = () => {
+    setIsGeneratingFormAI(true);
+    setTimeout(() => {
+      const result = generateIncidentHandlingAIAdvice({
+        teacherName: currentTeacherObj?.name || currentUserProfile.name,
+        teacherId: currentTeacherStaffCode,
+        campus: currentTeacherCampus,
+        category: formCategory,
+        urgencyLevel: formUrgency,
+        incidentDate: formIncidentDate,
+        impactScopes: formImpactScopes.length > 0 ? formImpactScopes : ["Phòng Lab"],
+        description: formDescription,
+        proposedSolution: formProposedSolution,
+      });
+      setFormAIAdvice(result);
+      if (!formProposedSolution.trim()) {
+        setFormProposedSolution(result.formattedTeacherProposal);
+      }
+      setIsGeneratingFormAI(false);
+      showToast(
+        "✨ Trợ lý AI đã phân tích thông tin sự vụ và đề xuất quy trình xử lý 3 bước tại Mục 8!",
+        "success"
+      );
+    }, 300);
+  };
+
+  const handleGenerateLeaderDirectionAIAdvice = (incident: IncidentReportItem) => {
+    const result = generateIncidentHandlingAIAdvice({
+      teacherName: incident.teacher_name,
+      teacherId: incident.teacher_id,
+      campus: incident.campus,
+      category: incident.category,
+      urgencyLevel: incident.urgency_level,
+      incidentDate: incident.incident_date,
+      impactScopes: incident.impact_scopes,
+      description: incident.description,
+      proposedSolution: incident.proposed_solution,
+    });
+    setCardAIAdviceMap((prev) => ({ ...prev, [incident.id]: result }));
+    setLeaderDirectionText(result.formattedLeaderDirection);
+    showToast(
+      `✨ AI đã soạn sẵn dự thảo Ý kiến chỉ đạo của Tổ trưởng cho sự vụ của ${incident.teacher_name}!`,
+      "success"
+    );
+  };
+
+  const handleToggleCardAIAdvice = (incident: IncidentReportItem) => {
+    if (cardAIAdviceMap[incident.id]) {
+      setCardAIAdviceMap((prev) => {
+        const next = { ...prev };
+        delete next[incident.id];
+        return next;
+      });
+      return;
+    }
+    const result = generateIncidentHandlingAIAdvice({
+      teacherName: incident.teacher_name,
+      teacherId: incident.teacher_id,
+      campus: incident.campus,
+      category: incident.category,
+      urgencyLevel: incident.urgency_level,
+      incidentDate: incident.incident_date,
+      impactScopes: incident.impact_scopes,
+      description: incident.description,
+      proposedSolution: incident.proposed_solution,
+    });
+    setCardAIAdviceMap((prev) => ({ ...prev, [incident.id]: result }));
   };
 
   // =========================================================================
@@ -1733,14 +1817,42 @@ export function IncidentHandlingSection({
               {/* KHUNG TỔ TRƯỞNG NHẬP Ý KIẾN CHỈ ĐẠO VÀ BẤM XÁC NHẬN */}
               {selectedIncident.direction_status !== "confirmed" ? (
                 <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-800/80 space-y-3">
-                  <label className="block text-xs font-extrabold text-amber-900 dark:text-amber-300">
-                    Nhập Ý Kiến Chỉ Đạo Của Tổ Trưởng Dành Cho {selectedIncident.teacher_name}:
-                  </label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label className="block text-xs font-extrabold text-amber-900 dark:text-amber-300">
+                      Nhập Ý Kiến Chỉ Đạo Của Tổ Trưởng Dành Cho {selectedIncident.teacher_name}:
+                    </label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleGenerateLeaderDirectionAIAdvice(selectedIncident)}
+                      className="h-8 px-3 rounded-xl bg-gradient-to-r from-violet-600 via-sky-600 to-amber-500 hover:from-violet-700 hover:via-sky-700 hover:to-amber-600 text-white font-extrabold text-[11px] shadow-sm cursor-pointer flex items-center gap-1.5 shrink-0"
+                    >
+                      <Wand2 className="w-3.5 h-3.5" />
+                      <span>AI Gợi ý phương án chỉ đạo cho Tổ trưởng</span>
+                    </Button>
+                  </div>
+
+                  {cardAIAdviceMap[selectedIncident.id] && (
+                    <div className="p-3 rounded-xl bg-white/95 dark:bg-slate-900/90 border border-sky-200 dark:border-sky-800 text-[11px] space-y-1.5">
+                      <div className="font-extrabold text-sky-700 dark:text-sky-300 flex items-center gap-1.5">
+                        <Bot className="w-3.5 h-3.5" />
+                        Tham mưu nhanh từ AI Chuyên gia ICT ({cardAIAdviceMap[selectedIncident.id].generatedAt}):
+                      </div>
+                      <p className="text-slate-600 dark:text-slate-300">
+                        {cardAIAdviceMap[selectedIncident.id].riskAssessment}
+                      </p>
+                      <div className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                        ✓ Minh chứng giáo viên cần nộp khi hoàn thành:{" "}
+                        {cardAIAdviceMap[selectedIncident.id].evidenceChecklist.join(" + ")}
+                      </div>
+                    </div>
+                  )}
+
                   <textarea
-                    rows={3}
+                    rows={4}
                     value={leaderDirectionText}
                     onChange={(e) => setLeaderDirectionText(e.target.value)}
-                    placeholder="Nhập phương án chỉ đạo, hướng dẫn xử lý sự vụ cho giáo viên..."
+                    placeholder="Nhập phương án chỉ đạo, hướng dẫn xử lý sự vụ cho giáo viên (hoặc bấm nút AI Gợi ý ở trên)..."
                     className="w-full rounded-xl border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 p-3 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                   <div className="flex items-center justify-end gap-2">
@@ -2145,20 +2257,121 @@ export function IncidentHandlingSection({
               />
             </div>
 
-            {/* 8. Đề xuất hướng xử lý từ giáo viên */}
+            {/* 8. Đề xuất hướng xử lý từ giáo viên (TÍCH HỢP AI GỢI Ý XỬ LÝ SỰ VỤ) */}
             <div>
-              <label className="font-extrabold text-slate-700 dark:text-slate-200 block mb-1.5">
-                8. Đề xuất hướng xử lý từ giáo viên (Khuyến khích chủ động đưa giải pháp):
-              </label>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <label className="font-extrabold text-slate-700 dark:text-slate-200">
+                  8. Đề xuất hướng xử lý từ giáo viên (Khuyến khích chủ động đưa giải pháp):
+                </label>
+                <button
+                  type="button"
+                  disabled={isGeneratingFormAI}
+                  onClick={handleGenerateTeacherFormAIAdvice}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-violet-600 via-sky-600 to-amber-500 hover:from-violet-700 hover:via-sky-700 hover:to-amber-600 text-white font-extrabold text-[11px] shadow-xs cursor-pointer transition-all"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>
+                    {isGeneratingFormAI
+                      ? "AI đang phân tích..."
+                      : "✨ AI Gợi ý hướng xử lý"}
+                  </span>
+                </button>
+              </div>
               <textarea
                 rows={4}
                 value={formProposedSolution}
                 onChange={(e) => setFormProposedSolution(e.target.value)}
-                placeholder="Đề xuất phương án xử lý tại chỗ hoặc hướng giải quyết tiếp theo của thầy/cô..."
+                placeholder="Đề xuất phương án xử lý tại chỗ hoặc bấm nút “✨ AI Gợi ý hướng xử lý” để AI phân tích và đề xuất giải pháp 3 bước..."
                 className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
           </div>
+
+          {/* KHUNG HIỂN THỊ CHI TIẾT PHÂN TÍCH & GỢI Ý XỬ LÝ SỰ VỤ 3 BƯỚC TỪ AI */}
+          {formAIAdvice && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-50/90 via-sky-50/85 to-amber-50/70 dark:from-violet-950/35 dark:via-slate-900 dark:to-amber-950/25 border-2 border-sky-300 dark:border-sky-800 space-y-3 animate-in fade-in duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-sky-200/70 dark:border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-xl bg-violet-600 text-white">
+                    <Bot className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>TRỢ LÝ AI PHÂN TÍCH SỰ VỤ & ĐỀ XUẤT QUY TRÌNH XỬ LÝ 3 BƯỚC</span>
+                      <Badge variant="secondary" className="text-[10px] font-bold">
+                        SKY-LINE AI SPARK
+                      </Badge>
+                    </h4>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                      {formAIAdvice.riskAssessment}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setFormProposedSolution(formAIAdvice.formattedTeacherProposal);
+                      showToast("Đã cập nhật gợi ý của AI vào ô Mục 8!", "success");
+                    }}
+                    className="h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5 mr-1" />
+                    Chèn vào Mục 8
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setFormAIAdvice(null)}
+                    className="p-1 rounded-lg hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-500 cursor-pointer"
+                    title="Thu gọn gợi ý AI"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+                <div className="p-3 rounded-xl bg-white/95 dark:bg-slate-900/90 border border-rose-200 dark:border-rose-900/60 space-y-1.5">
+                  <div className="font-extrabold text-rose-700 dark:text-rose-300">
+                    ⚡ Bước 1: Xử lý tức thời tại chỗ (5-15 phút đầu)
+                  </div>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-700 dark:text-slate-300">
+                    {formAIAdvice.step1Immediate.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/95 dark:bg-slate-900/90 border border-sky-200 dark:border-sky-900/60 space-y-1.5">
+                  <div className="font-extrabold text-sky-700 dark:text-sky-300">
+                    🤝 Bước 2: Phối hợp chuyên môn & Xử lý gốc rễ
+                  </div>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-700 dark:text-slate-300">
+                    {formAIAdvice.step2Coordination.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/95 dark:bg-slate-900/90 border border-emerald-200 dark:border-emerald-900/60 space-y-1.5">
+                  <div className="font-extrabold text-emerald-700 dark:text-emerald-300">
+                    🛡️ Bước 3: Phòng ngừa tái diễn & Minh chứng cần lưu
+                  </div>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-700 dark:text-slate-300">
+                    {formAIAdvice.step3Prevention.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                    {formAIAdvice.evidenceChecklist.map((ev, idx) => (
+                      <li key={`ev_${idx}`} className="font-semibold text-emerald-700 dark:text-emerald-400">
+                        Minh chứng: {ev}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* MỤC 9 & MỤC 10: MINH CHỨNG ĐÍNH KÈM & TÌNH TRẠNG (DROPDOWN) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2495,12 +2708,46 @@ export function IncidentHandlingSection({
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800 space-y-1.5">
-                      <div className="font-extrabold text-slate-500 dark:text-slate-400">
-                        Đề xuất hướng xử lý của Giáo viên:
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-extrabold text-slate-500 dark:text-slate-400">
+                          Đề xuất hướng xử lý của Giáo viên:
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCardAIAdvice(incident)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-800 dark:bg-violet-950/80 dark:hover:bg-violet-900 dark:text-violet-300 border border-violet-300 dark:border-violet-800 text-[10px] font-extrabold cursor-pointer transition-colors"
+                        >
+                          <Bot className="w-3 h-3" />
+                          <span>
+                            {cardAIAdviceMap[incident.id]
+                              ? "Ẩn quy trình AI gợi ý"
+                              : "✨ Xem AI gợi ý quy trình xử lý"}
+                          </span>
+                        </button>
                       </div>
                       <p className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
                         {incident.proposed_solution || "Chưa ghi đề xuất riêng."}
                       </p>
+                      {cardAIAdviceMap[incident.id] && (
+                        <div className="mt-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-violet-200 dark:border-violet-800/80 space-y-1.5 text-[11px]">
+                          <div className="font-extrabold text-violet-700 dark:text-violet-300 flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                            Quy trình 3 bước do AI khuyến nghị cho sự vụ này:
+                          </div>
+                          <div>
+                            <strong>1. Tức thời:</strong>{" "}
+                            {cardAIAdviceMap[incident.id].step1Immediate.join(" ")}
+                          </div>
+                          <div>
+                            <strong>2. Phối hợp:</strong>{" "}
+                            {cardAIAdviceMap[incident.id].step2Coordination.join(" ")}
+                          </div>
+                          <div className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                            <strong>3. Minh chứng cần chuẩn bị khi Hoàn thành:</strong>{" "}
+                            {cardAIAdviceMap[incident.id].evidenceChecklist.join(" + ")}
+                          </div>
+                        </div>
+                      )}
                       <div className="flex flex-wrap items-center gap-3 pt-1">
                         {incident.evidence_link && (
                           <a
