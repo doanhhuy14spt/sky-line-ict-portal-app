@@ -30,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { SIX_LAB_MANAGERS } from "@/components/lab-devices-section";
 import { ClassItem } from "@/components/teaching-assignment-section";
 import { maskStudentName } from "@/lib/student-privacy";
+import { LeaderAISparkHub } from "@/components/leader-ai-spark-hub";
 
 interface OverviewSectionProps {
   supabase: SupabaseClient;
@@ -51,6 +52,7 @@ interface OverviewSectionProps {
   onNavigateTab: (
     tab: "dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers"
   ) => void;
+  showToast?: (text: string, type?: "success" | "warning" | "info") => void;
 }
 
 export function OverviewSection({
@@ -64,6 +66,7 @@ export function OverviewSection({
   rawTeacherTimetables,
   isStudentPrivacyActive,
   onNavigateTab,
+  showToast,
 }: OverviewSectionProps) {
   const shouldMaskStudent = Boolean(isStudentPrivacyActive || currentUserProfile?.role === "guest");
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -465,6 +468,23 @@ export function OverviewSection({
           </div>
         </button>
       </div>
+
+      {/* =================================================================== */}
+      {/* 2B. HỆ SINH THÁI TRỢ LÝ AI (BẢN TIN 08H00 THỨ BẢY & TRỢ LÝ TỔ TRƯỞNG) */}
+      {/* =================================================================== */}
+      <LeaderAISparkHub
+        supabase={supabase}
+        selectedSchoolYear={selectedSchoolYear}
+        currentUserProfile={currentUserProfile}
+        teachersList={teachersList}
+        classesCount={classMetrics.totalClasses}
+        devicesData={devicesData}
+        tasksData={tasksData}
+        teamsData={teamsData}
+        achievementsData={achievementsData}
+        onNavigateTab={onNavigateTab}
+        showToast={showToast}
+      />
 
       {/* =================================================================== */}
       {/* 3. TẦNG BENTO 1: TRẠNG THÁI 6 PHÒNG LAB & TIẾN ĐỘ CÔNG VIỆC         */}

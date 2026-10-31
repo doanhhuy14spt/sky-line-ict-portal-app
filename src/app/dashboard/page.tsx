@@ -1337,6 +1337,7 @@ export default function DashboardPage() {
               rawTeacherTimetables={rawTeacherTimetables}
               isStudentPrivacyActive={isStudentPrivacyActive}
               onNavigateTab={handleTabChange}
+              showToast={showToast}
             />
           )}
 

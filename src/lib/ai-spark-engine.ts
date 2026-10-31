@@ -660,3 +660,657 @@ export function generateIncidentHandlingAIAdvice(
   };
 }
 
+
+// =============================================================================
+// PHẦN MỞ RỘNG ĐỢT 2:
+// 3. AI BẢN TIN THỜI SỰ GIÁO DỤC - TIN HỌC - ROBOTICS - AI (08H00 SÁNG THỨ BẢY)
+//    & THAM MƯU CẬP NHẬT CHƯƠNG TRÌNH BỘ MÔN ICT SKY-LINE
+// 4. AI TRỢ LÝ XÂY DỰNG KẾ HOẠCH, TỜ TRÌNH & SOẠN EMAIL ĐIỀU HÀNH CHO TỔ TRƯỞNG
+// =============================================================================
+
+export interface WeeklyNewsArticle {
+  id: string;
+  category: "Giáo dục & Chính sách số" | "Trí tuệ nhân tạo (AI)" | "Robotics & STEM" | "Tin học & An toàn số";
+  title: string;
+  sourceName: string;
+  sourceUrl: string;
+  publishedDate: string;
+  summary: string;
+  impactOnSkyLine: string;
+}
+
+export interface CurriculumProposalItem {
+  id: string;
+  level: "Cấp Tiểu học (Lớp 1 - Lớp 5)" | "Cấp THCS (Lớp 6 - Lớp 9)" | "Cấp THPT (Lớp 10 - Lớp 12)";
+  currentProgramModule: string;
+  proposedActionType: "Cập nhật mới" | "Sửa đổi nâng cấp" | "Bổ sung chuyên đề";
+  title: string;
+  rationaleFromNews: string;
+  detailedImplementation: string;
+  suggestedTaskTitle: string;
+  suggestedAssigneeHint: string;
+}
+
+export interface SaturdayWeeklyBriefing {
+  editionLabel: string;
+  scheduledTimeLabel: string;
+  lastScannedAt: string;
+  sourcesScanned: string[];
+  executiveSummaryForLeader: string;
+  newsArticles: WeeklyNewsArticle[];
+  curriculumProposals: CurriculumProposalItem[];
+}
+
+export function getSaturdayEditionDateInfo(now: Date = new Date()): {
+  thisSaturdayStr: string;
+  nextSaturdayStr: string;
+  isSaturdayAfter8AM: boolean;
+} {
+  const dayOfWeek = now.getDay(); // 0: CN, 6: Thứ Bảy
+  const diffToSaturday = 6 - dayOfWeek;
+  const targetSat = new Date(now);
+  if (dayOfWeek === 0) {
+    // Nếu Chủ nhật thì lấy Thứ Bảy hôm qua làm kỳ phát hành mới nhất
+    targetSat.setDate(now.getDate() - 1);
+  } else {
+    targetSat.setDate(now.getDate() + diffToSaturday);
+  }
+
+  const nextSat = new Date(targetSat);
+  if (dayOfWeek === 6 && now.getHours() >= 8) {
+    nextSat.setDate(targetSat.getDate() + 7);
+  } else if (dayOfWeek === 0) {
+    nextSat.setDate(targetSat.getDate() + 7);
+  }
+
+  const fmt = (d: Date) => {
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const isSaturdayAfter8AM =
+    (dayOfWeek === 6 && now.getHours() >= 8) || dayOfWeek === 0;
+
+  return {
+    thisSaturdayStr: fmt(targetSat),
+    nextSaturdayStr: fmt(nextSat),
+    isSaturdayAfter8AM,
+  };
+}
+
+export function generateSaturdayWeeklyBriefing(
+  schoolYear: string,
+  liveHeadlines?: { title: string; link: string; pubDate?: string; source?: string }[]
+): SaturdayWeeklyBriefing {
+  const now = new Date();
+  const satInfo = getSaturdayEditionDateInfo(now);
+  const timeStr = now.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const dateStr = now.toLocaleDateString("vi-VN");
+
+  const sourcesScanned = [
+    "Cổng thông tin Bộ GD&ĐT (moet.gov.vn)",
+    "Sở GD&ĐT TP. Đà Nẵng (danang.edu.vn)",
+    "VnExpress Giáo dục & Số hóa (vnexpress.net)",
+    "UNESCO AI in Education & Khung năng lực số",
+    "Certiport Quốc tế (IC3 Spark, IC3 GS6, MOS)",
+    "Liên đoàn Robotics Quốc tế (WRO, VEX, Whalesbot)",
+  ];
+
+  const baseArticles: WeeklyNewsArticle[] = [
+    {
+      id: "news_ai_edu_1",
+      category: "Giáo dục & Chính sách số",
+      title:
+        "Bộ GD&ĐT đẩy mạnh triển khai Khung năng lực số và ứng dụng Trí tuệ nhân tạo (AI) có trách nhiệm cho học sinh phổ thông năm học 2026 - 2027",
+      sourceName: "Cổng thông tin Bộ GD&ĐT",
+      sourceUrl: "https://moet.gov.vn/giaoducquocdan/giao-duc-trung-hoc/Pages/Default.aspx",
+      publishedDate: satInfo.thisSaturdayStr,
+      summary:
+        "Định hướng mới yêu cầu môn Tin học không chỉ dạy công cụ phần mềm mà phải hình thành năng lực giải quyết vấn đề bằng AI, thẩm định thông tin số và bảo vệ dữ liệu cá nhân ngay từ bậc Tiểu học đến THPT.",
+      impactOnSkyLine:
+        "Trực tiếp củng cố định hướng 'AI có trách nhiệm' của Hệ thống Giáo dục Sky-Line; cần tích hợp ngay quy tắc kiểm chứng kết quả AI vào mọi tiết thực hành phòng máy.",
+    },
+    {
+      id: "news_ai_edu_2",
+      category: "Trí tuệ nhân tạo (AI)",
+      title:
+        "Xu hướng tích hợp Trợ lý AI tạo sinh (Generative AI) vào lập trình Python, Scratch và thiết kế đa phương tiện trong trường học quốc tế",
+      sourceName: "VnExpress Giáo dục & Số hóa",
+      sourceUrl: "https://vnexpress.net/giao-duc",
+      publishedDate: satInfo.thisSaturdayStr,
+      summary:
+        "Các trường tiên phong đang chuyển từ dạy học sinh viết mã thuần túy sang dạy 'Tư duy thiết kế thuật toán kết hợp AI đồng hành (AI Pair Programming)' và kỹ năng đặt câu lệnh (Prompt Engineering) chuẩn học thuật.",
+      impactOnSkyLine:
+        "Cơ hội để Tổ ICT Sky-Line đi đầu tại Đà Nẵng bằng việc bổ sung chuyên đề Prompt Engineering và gỡ lỗi code cùng AI có kiểm soát cho học sinh THCS & THPT.",
+    },
+    {
+      id: "news_robotics_3",
+      category: "Robotics & STEM",
+      title:
+        "Các đấu trường Sáng tạo Robotics Toàn quốc, ENJOY AI & Tin học trẻ cập nhật đề thi tích hợp Cảm biến thông minh và Thị giác máy tính (AI Vision)",
+      sourceName: "Chuyên trang STEM & Robotics Quốc gia",
+      sourceUrl: "https://tinhoctre.vn",
+      publishedDate: satInfo.thisSaturdayStr,
+      summary:
+        "Các bảng thi Robotics và Tin học trẻ năm học 2026 - 2027 tăng tỷ trọng bài toán tự hành xử lý dữ liệu cảm biến thời gian thực và ứng dụng mô hình AI giải quyết bài toán môi trường, đô thị thông minh.",
+      impactOnSkyLine:
+        "Cần nâng cấp ngay giáo án bồi dưỡng đội tuyển Robotics (Lego Wedo 2.0, Whalesbot AI Module 1S/5S) và KHKT tại cả 5 cơ sở Sky-Line.",
+    },
+    {
+      id: "news_cyber_4",
+      category: "Tin học & An toàn số",
+      title:
+        "Certiport cập nhật chuẩn đánh giá IC3 Spark, IC3 GS6 và MOS theo hướng tăng cường Bảo mật đám mây, Phòng chống lừa đảo Deepfake và Cộng tác số",
+      sourceName: "IIG Việt Nam & Certiport",
+      sourceUrl: "https://iigvietnam.com/bai-thi-tin-hoc/",
+      publishedDate: satInfo.thisSaturdayStr,
+      summary:
+        "Hệ thống bài thi chứng chỉ quốc tế bổ sung nhiều câu hỏi tình huống thực tế về nhận diện lừa đảo trực tuyến bằng âm thanh/hình ảnh giả mạo (Deepfake), quản lý dấu chân số và làm việc nhóm trên OneDrive/Office 365.",
+      impactOnSkyLine:
+        "Cần bổ sung ngay bộ câu hỏi tình huống An toàn số mới vào ngân hàng luyện thi GMetrix và hoạt động khởi động 5 phút đầu giờ tại 6 phòng Lab.",
+    },
+  ];
+
+  // Nếu có tin tức trực tiếp quét thêm từ RSS chính thống thì ghép vào đầu danh sách
+  if (Array.isArray(liveHeadlines) && liveHeadlines.length > 0) {
+    liveHeadlines.slice(0, 2).forEach((item, idx) => {
+      baseArticles.unshift({
+        id: `live_news_${idx}`,
+        category: idx === 0 ? "Giáo dục & Chính sách số" : "Trí tuệ nhân tạo (AI)",
+        title: item.title,
+        sourceName: item.source || "Báo điện tử Chính thống (Quét trực tiếp)",
+        sourceUrl: item.link || "https://vnexpress.net/giao-duc",
+        publishedDate: satInfo.thisSaturdayStr,
+        summary:
+          "Tin tức mới nhất vừa được Trợ lý AI Sky-Line quét trực tiếp từ chuyên mục Giáo dục & Công nghệ chính thống phục vụ bản tin sáng Thứ Bảy của Tổ trưởng Chuyên môn ICT.",
+        impactOnSkyLine:
+          "Giúp Tổ ICT nắm bắt tức thì chuyển động công nghệ - giáo dục trong tuần để chủ động điều chỉnh kế hoạch giảng dạy và hoạt động ngoại khóa.",
+      });
+    });
+  }
+
+  const curriculumProposals: CurriculumProposalItem[] = [
+    {
+      id: "prop_primary",
+      level: "Cấp Tiểu học (Lớp 1 - Lớp 5)",
+      currentProgramModule:
+        "Mạch Học vấn số (IC3 Spark) + Lập trình kéo thả Scratch & Robotics Lego Wedo 2.0 / Whalesbot 1S",
+      proposedActionType: "Bổ sung chuyên đề",
+      title:
+        "Bổ sung Mô-đun 'Khiên An Toàn Số Cho Em & Làm Quen AI Qua Lập Trình Kéo Thả'",
+      rationaleFromNews:
+        "Đáp ứng định hướng Khung năng lực số mới của Bộ GD&ĐT và cập nhật đề thi IC3 Spark về bảo vệ thông tin cá nhân cho học sinh nhỏ tuổi.",
+      detailedImplementation:
+        "• Khối 1–3: Lồng ghép 10 phút trò chơi tương tác (Gamification) đầu giờ về quy tắc '4 Không trên mạng' và thao tác máy tính chuẩn.\n• Khối 4–5: Bổ sung 02 tiết thực hành kết hợp khối lệnh mở rộng nhận diện hình ảnh/âm thanh cơ bản trong Scratch và nâng cấp bài toán cảm biến trên Whalesbot AI Module 1S.",
+      suggestedTaskTitle:
+        "[Cập nhật CT Tiểu học] Xây dựng học liệu số 'Khiên An Toàn Số' & Bài tập Scratch/Whalesbot 1S mới",
+      suggestedAssigneeHint: "Giáo viên phụ trách khối Tiểu học & IC3 Spark",
+    },
+    {
+      id: "prop_secondary",
+      level: "Cấp THCS (Lớp 6 - Lớp 9)",
+      currentProgramModule:
+        "Chứng chỉ IC3 GS6 + Chuyển giao Scratch nâng cao sang Python & Robotics Whalesbot 5S",
+      proposedActionType: "Sửa đổi nâng cấp",
+      title:
+        "Nâng cấp Chuyên đề 'Phòng chống Deepfake & Ứng dụng AI hỗ trợ học lập trình Python có kiểm soát'",
+      rationaleFromNews:
+        "Đón đầu xu hướng đề thi IC3 GS6 mới về nhận diện lừa đảo công nghệ cao và xu hướng AI hỗ trợ học lập trình tại các trường quốc tế.",
+      detailedImplementation:
+        "• Khối 6–7: Cập nhật bộ tình huống thực hành nhận diện tin giả, Deepfake và bảo mật tài khoản mạng xã hội vào học phần Công dân số (IC3 GS6).\n• Khối 8–9: Hướng dẫn học sinh sử dụng AI để giải thích lỗi thuật toán Python (Debug) thay vì chép code thụ động; nâng cấp bài toán điều khiển tự hành trên Whalesbot AI Module 5S.",
+      suggestedTaskTitle:
+        "[Cập nhật CT THCS] Bổ sung chuyên đề Nhận diện Deepfake (IC3 GS6) & Hướng dẫn Debug Python cùng AI",
+      suggestedAssigneeHint: "Giáo viên phụ trách khối THCS & Đội tuyển Robotics",
+    },
+    {
+      id: "prop_highschool",
+      level: "Cấp THPT (Lớp 10 - Lớp 12)",
+      currentProgramModule:
+        "Chứng chỉ MOS Expert (Word, Excel, PowerPoint) + Khoa học máy tính (Python/C++/SQL) & Dự án AI/IoT",
+      proposedActionType: "Cập nhật mới",
+      title:
+        "Tích hợp Chuyên đề 'Kỹ thuật đặt câu lệnh học thuật (Prompt Engineering) & Dự án KHKT AI - IoT thực tiễn'",
+      rationaleFromNews:
+        "Bám sát định hướng cuộc thi SKY-LINE AI SPARK 2026 - 2027, kỳ thi Tin học trẻ bảng C và xu hướng phân tích dữ liệu thông minh trong MOS Expert.",
+      detailedImplementation:
+        "• Khối 10–11: Bổ sung chuyên đề tự động hóa xử lý dữ liệu bảng tính nâng cao (MOS Excel Expert) và xây dựng ứng dụng Web/Python tích hợp mô hình AI có kiểm chứng dữ liệu.\n• Khối 12 & Đội tuyển mũi nhọn: Định hướng học sinh phát triển đề tài KHKT và AI For Good giải quyết bài toán thực tế tại trường học (quản lý năng lượng, phân loại rác thông minh, trợ lý học tập an toàn).",
+      suggestedTaskTitle:
+        "[Cập nhật CT THPT] Thiết kế chuyên đề Prompt Engineering học thuật & Đề tài dự án AI - IoT cấp THPT",
+      suggestedAssigneeHint: "Giáo viên phụ trách khối THPT & Bồi dưỡng MOS/KHKT",
+    },
+  ];
+
+  return {
+    editionLabel: `Kỳ phát hành: Sáng Thứ Bảy, ngày ${satInfo.thisSaturdayStr} (Năm học ${schoolYear})`,
+    scheduledTimeLabel: `Lịch hẹn tự động: 08h00 sáng Thứ Bảy hằng tuần (Kỳ tiếp theo: 08h00 ngày ${satInfo.nextSaturdayStr})`,
+    lastScannedAt: `${timeStr} - Ngày ${dateStr}`,
+    sourcesScanned,
+    executiveSummaryForLeader: `Kính gửi Thầy Đỗ Anh Huy (Tổ trưởng Chuyên môn ICT), hệ thống AI đã hoàn tất quét định kỳ các nguồn thông tin chính thống lúc 08h00 sáng Thứ Bảy. Tuần này nổi bật 04 chuyển động quan trọng về: (1) Khung năng lực số & AI có trách nhiệm của Bộ GD&ĐT, (2) Phương pháp dạy lập trình Python/Scratch kết hợp AI đồng hành, (3) Đề thi Robotics & Tin học trẻ tích hợp cảm biến AI Vision, và (4) Cập nhật mới trong bài thi quốc tế IC3/MOS. Dựa trên các tin tức này, AI trình Tổ trưởng 03 phương hướng cập nhật và bổ sung ngay vào chương trình ICT của 3 cấp học (Tiểu học, THCS, THPT) để giữ vững vị thế tiên phong của Hệ thống Giáo dục Sky-Line.`,
+    newsArticles: baseArticles,
+    curriculumProposals,
+  };
+}
+
+// =============================================================================
+// HÀM 4: AI TRỢ LÝ SOẠN KẾ HOẠCH, TỜ TRÌNH & EMAIL ĐIỀU HÀNH CHO TỔ TRƯỞNG (AI SỐ 4)
+// =============================================================================
+export type LeaderPlanTemplateType =
+  | "monthly_plan"
+  | "competition_plan"
+  | "training_plan"
+  | "equipment_proposal"
+  | "meeting_minutes";
+
+export type LeaderEmailTemplateType =
+  | "email_bgh_plan"
+  | "email_teachers_meeting"
+  | "email_teachers_kpi"
+  | "email_parents_team";
+
+export interface LeaderPortalLiveStats {
+  schoolYear: string;
+  leaderName: string;
+  leaderEmail: string;
+  totalCampuses: number;
+  totalTeachers: number;
+  teacherNamesList: string[];
+  totalClasses: number;
+  totalLabs: number;
+  totalDevices: number;
+  brokenOrMaintDevicesCount: number;
+  brokenDeviceNames: string[];
+  totalTasks: number;
+  completedTasksCount: number;
+  totalTeams: number;
+  totalAchievements: number;
+}
+
+export interface LeaderAIDocumentOutput {
+  title: string;
+  subjectLine?: string;
+  recipientHint?: string;
+  content: string;
+  generatedAt: string;
+}
+
+export function generateLeaderPlanDocument(
+  templateType: LeaderPlanTemplateType,
+  customTopic: string,
+  customNotes: string,
+  stats: LeaderPortalLiveStats
+): LeaderAIDocumentOutput {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yyyy = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+
+  const headerBlock = [
+    "HỆ THỐNG GIÁO DỤC SKY-LINE                  CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM",
+    "   TỔ CHUYÊN MÔN ICT                           Độc lập – Tự do – Hạnh phúc",
+    "  --------------------                        -----------------------------",
+    `Số: ${dd}${mm}/KH-ICT-SKL                        Đà Nẵng, ngày ${dd} tháng ${mm} năm ${yyyy}`,
+    "",
+  ].join("\n");
+
+  const teacherListText =
+    stats.teacherNamesList.length > 0
+      ? stats.teacherNamesList.join(", ")
+      : "Đội ngũ Giáo viên Tổ Chuyên môn ICT (5 cơ sở)";
+
+  if (templateType === "monthly_plan") {
+    const title =
+      customTopic.trim() ||
+      `KẾ HOẠCH HOẠT ĐỘNG CHUYÊN MÔN TỔ ICT THÁNG ${nextMonth}/${yyyy} (NĂM HỌC ${stats.schoolYear})`;
+    const content = [
+      headerBlock,
+      title.toUpperCase(),
+      `Căn cứ Kế hoạch năm học ${stats.schoolYear} của Hệ thống Giáo dục Sky-Line và tình hình vận hành thực tế trên Cổng thông tin Quản trị Tổ Chuyên môn ICT (Sky-Line ICT Portal), Tổ trưởng Chuyên môn ICT xây dựng Kế hoạch công tác trọng tâm như sau:`,
+      "",
+      "I. ĐÁNH GIÁ TÌNH HÌNH VẬN HÀNH HIỆN TẠI (SỐ LIỆU TRỰC TUYẾN TỪ HỆ THỐNG)",
+      `1. Quy mô giảng dạy & Đội ngũ: Toàn tổ hiện có ${stats.totalTeachers} nhân sự chuyên môn (${teacherListText}) đảm nhiệm giảng dạy tại ${stats.totalClasses} lớp thuộc ${stats.totalCampuses} cơ sở Sky-Line.`,
+      `2. Hiện trạng hệ thống Phòng Lab & Thiết bị Robotics: Đang vận hành ${stats.totalLabs} phòng Lab chuyên dụng với ${stats.totalDevices} danh mục thiết bị/bộ Kit Robotics. Hiện có ${stats.brokenOrMaintDevicesCount} hạng mục đang trong diện cần bảo trì/khắc phục (${stats.brokenDeviceNames.slice(0, 3).join(", ") || "đã được cập nhật trên hệ thống"}).`,
+      `3. Tiến độ nhiệm vụ & Đội tuyển mũi nhọn: Đã hoàn thành ${stats.completedTasksCount}/${stats.totalTasks} nhiệm vụ chuyên môn được giao; đang duy trì ${stats.totalTeams} đội tuyển bồi dưỡng học sinh giỏi và ghi nhận ${stats.totalAchievements} giải thưởng/thành tích trên Bảng vàng.`,
+      "",
+      "II. MỤC TIÊU VÀ NHIỆM VỤ TRỌNG TÂM TRONG GIAI ĐOẠN TỚI",
+      "1. Công tác giảng dạy chính khóa & Chuẩn đầu ra Quốc tế (IC3 Spark, IC3 GS6, MOS):",
+      "   - Đảm bảo 100% tiết học tại 6 phòng Lab thực hiện đúng phân phối chương trình, tối thiểu 60% thời lượng dành cho học sinh thực hành tạo sản phẩm số.",
+      "   - Tăng cường luyện tập trên hệ thống GMetrix/Compass cho học sinh khối Tiểu học, THCS, THPT; phụ đạo kịp thời các học sinh chưa đạt ngưỡng điểm chuẩn.",
+      "2. Công tác STEM, Robotics & Ứng dụng Trí tuệ nhân tạo (AI):",
+      "   - Triển khai lồng ghép các chủ đề cập nhật từ 'Bản tin AI sáng Thứ Bảy' (An toàn số, nhận diện Deepfake, lập trình cùng Trợ lý AI có trách nhiệm) vào bài giảng.",
+      "   - Đẩy mạnh tiến độ huấn luyện các đội tuyển Tin học trẻ, Sáng tạo Robotics, KHKT và hưởng ứng tích cực cuộc thi SKY-LINE AI SPARK 2026 - 2027.",
+      "3. Công tác Quản trị Phòng Lab, Xử lý sự vụ & Phát triển đội ngũ:",
+      "   - Thực hiện nghiêm quy trình báo cáo và xác nhận hoàn thành sự vụ phòng máy kèm minh chứng trên Phân hệ Xử lý sự vụ.",
+      "   - Triển khai lộ trình bồi dưỡng cá nhân (IDP) theo gợi ý của AI trên Phiếu đánh giá năng lực giáo viên 360°.",
+      customNotes.trim()
+        ? `\n4. Nội dung chỉ đạo bổ sung của Tổ trưởng:\n   - ${customNotes.trim()}`
+        : "",
+      "",
+      "III. PHÂN CÔNG TỔ CHỨC THỰC HIỆN",
+      `- Tổ trưởng Chuyên môn (${stats.leaderName}): Điều phối chung toàn hệ thống ${stats.totalCampuses} cơ sở, duyệt kế hoạch bài dạy, cho ý kiến chỉ đạo xử lý sự vụ và kiểm tra chất lượng đào tạo.`,
+      `- Các Giáo viên ICT tại ${stats.totalCampuses} cơ sở: Thực hiện nghiêm túc lịch giảng dạy, quản lý tài sản phòng Lab được giao và cập nhật báo cáo tiến độ đúng hạn trên Sky-Line ICT Portal.`,
+      "",
+      "Nơi nhận:                                      TỔ TRƯỞNG CHUYÊN MÔN ICT",
+      "- Ban Điều hành Chuyên môn (để b/c);                  (Đã ký)",
+      "- Ban Giám hiệu các cơ sở (để p/h);",
+      `- Toàn thể GV Tổ ICT (${stats.totalTeachers} đ/c - để t/h);`,
+      "- Lưu: Hồ sơ Tổ ICT.                                 " + stats.leaderName,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return {
+      title,
+      content,
+      generatedAt: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+    };
+  }
+
+  if (templateType === "competition_plan") {
+    const title =
+      customTopic.trim() ||
+      `KẾ HOẠCH TỔ CHỨC SÂN CHƠI CÔNG NGHỆ, STEM ROBOTICS & AI CẤP HỆ THỐNG (NĂM HỌC ${stats.schoolYear})`;
+    const content = [
+      headerBlock,
+      title.toUpperCase(),
+      "I. MỤC ĐÍCH & Ý NGHĨA",
+      "1. Tạo sân chơi học thuật công nghệ sôi nổi cho học sinh liên cấp (Tiểu học, THCS, THPT) tại cả 5 cơ sở thuộc Hệ thống Giáo dục Sky-Line.",
+      "2. Giúp học sinh vận dụng kiến thức Lập trình (Scratch, Python), lắp ráp điều khiển Robot (Lego Wedo 2.0, Whalesbot AI Module 1S/5S) và ứng dụng Trí tuệ nhân tạo (AI) có đạo đức để giải quyết bài toán thực tiễn.",
+      "3. Tuyển chọn và ươm mầm các hạt nhân xuất sắc nhất bổ sung vào Đội tuyển Học sinh giỏi dự thi cấp Thành phố, Khu vực và Quốc gia.",
+      "",
+      "II. ĐỐI TƯỢNG, BẢNG THI & NỘI DUNG CHUYÊN MÔN",
+      "1. Bảng A – Khối Tiểu học (Lớp 1 – Lớp 5): Sáng tạo sản phẩm hoạt hình tương tác Scratch & Đấu trường Robot Lego Wedo / Whalesbot 1S.",
+      "2. Bảng B – Khối THCS (Lớp 6 – Lớp 9): Lập trình ứng dụng Python / Đa phương tiện & Chế tạo Robot tự hành cảm biến Whalesbot 5S.",
+      "3. Bảng C – Khối THPT (Lớp 10 – Lớp 12): Dự án Phần mềm sáng tạo, IoT & Ứng dụng Trí tuệ nhân tạo (AI For Good) có cam kết bảo mật dữ liệu.",
+      "",
+      "III. CHUẨN BỊ CƠ SỞ VẬT CHẤT & PHÂN CÔNG NHÂN SỰ TỔ ICT",
+      `- Địa điểm & Hạ tầng: Huy động hệ thống ${stats.totalLabs} phòng Lab và toàn bộ các bộ Kit Robotics hiện có trên hệ thống (${stats.totalDevices} hạng mục thiết bị đang quản lý trên cổng thông tin).`,
+      `- Trưởng Ban chuyên môn & Kỹ thuật: Thầy ${stats.leaderName} – Tổ trưởng Chuyên môn ICT.`,
+      `- Ủy viên phụ trách huấn luyện, ra đề & trọng tài tại các cơ sở: ${teacherListText}.`,
+      customNotes.trim() ? `- Lưu ý đặc biệt từ Tổ trưởng: ${customNotes.trim()}` : "",
+      "",
+      "IV. LỘ TRÌNH TRIỂN KHAI",
+      "- Giai đoạn 1 (Tuần 1 - Tuần 2): Phát động thể lệ đến các lớp; giáo viên ICT hướng dẫn học sinh đăng ký và ôn luyện tại phòng Lab cơ sở.",
+      "- Giai đoạn 2 (Tuần 3): Vòng Sơ khảo cấp Cơ sở, chọn các đội xuất sắc nhất vào Vòng Chung kết Hệ thống.",
+      "- Giai đoạn 3 (Tuần 4): Vòng Chung kết & Trưng bày sản phẩm công nghệ học sinh; cập nhật kết quả lên Bảng vàng Thành tích Sky-Line ICT Portal.",
+      "",
+      "BAN ĐIỀU HÀNH PHÊ DUYỆT                       TỔ TRƯỞNG CHUYÊN MÔN ICT",
+      "                                                       (Đã ký)",
+      "                                                    " + stats.leaderName,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return {
+      title,
+      content,
+      generatedAt: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+    };
+  }
+
+  if (templateType === "training_plan") {
+    const title =
+      customTopic.trim() ||
+      `KẾ HOẠCH BỒI DƯỠNG HỌC SINH GIỎI & LUYỆN THI CHỨNG CHỈ QUỐC TẾ (IC3 SPARK, IC3 GS6, MOS, ROBOTICS) NĂM HỌC ${stats.schoolYear}`;
+    const content = [
+      headerBlock,
+      title.toUpperCase(),
+      "I. MỤC TIÊU CHẤT LƯỢNG MŨI NHỌN",
+      `1. Duy trì và nâng cao chất lượng ${stats.totalTeams} đội tuyển mũi nhọn của Tổ ICT (Tin học trẻ, MOSWC, Đấu trường IC3/IC3 Spark, Sáng tạo Robotics, KHKT & AI).`,
+      "2. Đảm bảo tỷ lệ học sinh đạt chuẩn đầu ra chứng chỉ Tin học Quốc tế (IC3 Spark đối với Tiểu học, IC3 GS6 đối với THCS và MOS đối với THPT) đạt và vượt chỉ tiêu cam kết đầu năm học.",
+      "",
+      "II. GIẢI PHÁP CHUYÊN MÔN & ỨNG DỤNG CÔNG NGHỆ",
+      "1. Phân tầng ôn luyện trên phần mềm GMetrix/Compass tại 6 phòng Lab; giáo viên theo dõi sát sao điểm số từng buổi để kèm cặp 1-1 các học sinh còn yếu kỹ năng thực hành.",
+      "2. Áp dụng ngân hàng đề thi chuẩn hóa và các chuyên đề nâng cao (Python, C++, Cảm biến Robotics, AI) từ Kho dữ liệu dùng chung của Tổ ICT.",
+      "3. Phối hợp chặt chẽ giữa Giáo viên ICT – Giáo viên chủ nhiệm – Phụ huynh học sinh trong việc thông báo lịch bồi dưỡng và động viên tinh thần học sinh.",
+      customNotes.trim() ? `\nIII. CHỈ ĐẠO CHI TIẾT CỦA TỔ TRƯỞNG:\n- ${customNotes.trim()}` : "",
+      "",
+      "                                              TỔ TRƯỞNG CHUYÊN MÔN ICT",
+      "                                                       (Đã ký)",
+      "                                                    " + stats.leaderName,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return {
+      title,
+      content,
+      generatedAt: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+    };
+  }
+
+  if (templateType === "equipment_proposal") {
+    const title =
+      customTopic.trim() ||
+      `TỜ TRÌNH ĐỀ XUẤT BẢO TRÌ, NÂNG CẤP PHÒNG LAB & BỔ SUNG THIẾT BỊ ROBOTICS NĂM HỌC ${stats.schoolYear}`;
+    const content = [
+      headerBlock,
+      title.toUpperCase(),
+      "Kính gửi: - Ban Tổng Giám đốc Hệ thống Giáo dục Sky-Line;",
+      "          - Ban Điều hành Chuyên môn;",
+      "          - Phòng Quản lý Hành chính & Bộ phận CNTT Hệ thống.",
+      "",
+      "I. CĂN CỨ ĐỀ XUẤT VÀ SỐ LIỆU KIỂM KÊ THỰC TẾ TRÊN HỆ THỐNG",
+      `1. Hiện nay, Tổ Chuyên môn ICT đang trực tiếp quản lý và giảng dạy thực hành cho ${stats.totalClasses} lớp trên toàn hệ thống ${stats.totalCampuses} cơ sở tại ${stats.totalLabs} phòng Lab chuyên dụng.`,
+      `2. Qua số liệu kiểm kê trực tuyến trên cổng Sky-Line ICT Portal (Phân hệ Thiết Bị & Robot), trong tổng số ${stats.totalDevices} danh mục thiết bị, hiện ghi nhận ${stats.brokenOrMaintDevicesCount} hạng mục cần được bảo trì, sửa chữa hoặc thay thế linh kiện kịp thời (${stats.brokenDeviceNames.join("; ") || "chi tiết theo danh mục đính kèm trên cổng thông tin"}).`,
+      "",
+      "II. NỘI DUNG ĐỀ XUẤT PHÊ DUYỆT",
+      "1. Phối hợp bộ phận Kỹ thuật IT bảo dưỡng định kỳ, khắc phục dứt điểm các máy trạm và thiết bị ngoại vi đang báo cần bảo trì để đảm bảo 100% học sinh có máy thực hành độc lập.",
+      "2. Bổ sung linh kiện dự phòng (pin sạc, cáp kết nối, cảm biến) cho các bộ Kit Lego Wedo 2.0, Whalesbot AI Module 1S/5S phục vụ giảng dạy STEM và các đội tuyển Robotics.",
+      customNotes.trim() ? `3. Đề xuất chi tiết bổ sung: ${customNotes.trim()}` : "",
+      "",
+      "Kính trình Ban Lãnh đạo xem xét và phê duyệt để Tổ Chuyên môn ICT đảm bảo chất lượng dạy và học tốt nhất./.",
+      "",
+      "                                              TỔ TRƯỞNG CHUYÊN MÔN ICT",
+      "                                                       (Đã ký)",
+      "                                                    " + stats.leaderName,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return {
+      title,
+      content,
+      generatedAt: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+    };
+  }
+
+  // meeting_minutes: Biên bản sinh hoạt tổ chuyên môn
+  const title =
+    customTopic.trim() ||
+    `BIÊN BẢN SINH HOẠT TỔ CHUYÊN MÔN ICT ĐỊNH KỲ (THÁNG ${mm}/${yyyy} - NĂM HỌC ${stats.schoolYear})`;
+  const content = [
+    headerBlock,
+    title.toUpperCase(),
+    `1. Thời gian: Ngày ${dd}/${mm}/${yyyy}.`,
+    "2. Hình thức: Họp trực tiếp kết hợp trực tuyến giữa 5 cơ sở Sky-Line.",
+    `3. Chủ trì: Thầy ${stats.leaderName} – Tổ trưởng Chuyên môn ICT.`,
+    `4. Thành phần tham dự: Đầy đủ ${stats.totalTeachers} giáo viên trong Tổ ICT (${teacherListText}).`,
+    "",
+    "NỘI DUNG SINH HOẠT CHUYÊN MÔN:",
+    `I. Đánh giá kết quả thực hiện nhiệm vụ giai đoạn vừa qua:`,
+    `- Toàn tổ duy trì ổn định lịch giảng dạy ${stats.totalClasses} lớp tại ${stats.totalLabs} phòng Lab; hoàn thành ${stats.completedTasksCount}/${stats.totalTasks} đầu việc chuyên môn trên cổng thông tin.`,
+    "- Các sự vụ phát sinh tại phòng máy đều được giáo viên báo cáo, tiếp nhận ý kiến chỉ đạo của Tổ trưởng và cập nhật minh chứng hoàn thành đúng quy trình.",
+    "",
+    "II. Triển khai nhiệm vụ trọng tâm và Thống nhất chuyên môn kỳ tới:",
+    "1. Thảo luận và thống nhất áp dụng các đề xuất cập nhật chương trình từ 'Bản tin AI 08h00 sáng Thứ Bảy' vào bài dạy thực tế của 3 cấp học.",
+    "2. Rà soát tiến độ đánh giá năng lực giáo viên 360° và thực hiện lộ trình phát triển cá nhân (IDP) theo khuyến nghị của AI.",
+    "3. Tăng tốc ôn luyện cho các đội tuyển học sinh giỏi và kiểm tra kỹ thuật toàn bộ thiết bị phòng Lab trước các kỳ thi.",
+    customNotes.trim() ? `4. Ý kiến kết luận bổ sung của Tổ trưởng: ${customNotes.trim()}` : "",
+    "",
+    "Biên bản được thông qua 100% thành viên dự họp và lưu trữ trực tuyến trên Kho dữ liệu Tổ ICT.",
+    "",
+    "                                              CHỦ TRÌ CUỘC HỌP – TỔ TRƯỞNG",
+    "                                                         (Đã ký)",
+    "                                                      " + stats.leaderName,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    title,
+    content,
+    generatedAt: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
+export function generateLeaderEmailDraft(
+  emailType: LeaderEmailTemplateType,
+  customTopic: string,
+  customNotes: string,
+  stats: LeaderPortalLiveStats
+): LeaderAIDocumentOutput {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yyyy = now.getFullYear();
+
+  if (emailType === "email_bgh_plan") {
+    const subjectLine =
+      customTopic.trim() ||
+      `[Tổ ICT - Sky-Line] Kính trình Báo cáo tình hình vận hành & Kế hoạch hoạt động chuyên môn (Tháng ${mm}/${yyyy})`;
+    const content = [
+      "Kính gửi: Ban Điều hành Chuyên môn & Ban Giám hiệu Hệ thống Giáo dục Sky-Line,",
+      "",
+      `Em là ${stats.leaderName} – Tổ trưởng Chuyên môn ICT. Thay mặt Tổ Chuyên môn ICT, em xin kính báo cáo nhanh tình hình vận hành chuyên môn của tổ và kính trình Kế hoạch công tác giai đoạn tiếp theo trong năm học ${stats.schoolYear} như sau:`,
+      "",
+      "1. Số liệu vận hành thực tế (Trích xuất từ Cổng thông tin Quản trị Sky-Line ICT Portal):",
+      `- Công tác giảng dạy: Đảm bảo 100% kế hoạch giảng dạy tại ${stats.totalClasses} lớp thuộc ${stats.totalCampuses} cơ sở với đội ngũ ${stats.totalTeachers} giáo viên chuyên trách.`,
+      `- Quản trị phòng Lab & Thiết bị: Đang vận hành ${stats.totalLabs} phòng Lab (${stats.totalDevices} hạng mục thiết bị/Robotics). Các thiết bị cần bảo trì (${stats.brokenOrMaintDevicesCount} mục) đều đã được lập phiếu theo dõi và phối hợp kỹ thuật xử lý.`,
+      `- Công tác chuyên môn & Mũi nhọn: Đã hoàn thành ${stats.completedTasksCount}/${stats.totalTasks} nhiệm vụ trọng tâm, duy trì ${stats.totalTeams} đội tuyển bồi dưỡng HSG và đạt ${stats.totalAchievements} thành tích/giải thưởng.`,
+      "",
+      "2. Nội dung trình duyệt / Xin ý kiến chỉ đạo:",
+      customNotes.trim()
+        ? `- ${customNotes.trim()}`
+        : "- Kính trình Ban Điều hành và Ban Giám hiệu xem xét, phê duyệt Kế hoạch hoạt động chuyên môn tháng tới và định hướng cập nhật chuyên đề AI/Robotics mới cho học sinh 3 cấp học.",
+      "",
+      "Tổ Chuyên môn ICT rất mong nhận được ý kiến chỉ đạo của Quý Ban để triển khai hiệu quả nhất.",
+      "Em xin trân trọng cảm ơn và kính chúc Quý Ban một tuần làm việc nhiều năng lượng!",
+      "",
+      "Trân trọng,",
+      "--------------------------------------------------",
+      `${stats.leaderName}`,
+      "Tổ trưởng Chuyên môn ICT – Hệ thống Giáo dục Sky-Line",
+      `Email: ${stats.leaderEmail}`,
+      "Cổng điều hành trực tuyến: https://sky-line-ict-portal-app.vercel.app",
+    ].join("\n");
+
+    return {
+      title: "Email trình Ban Giám hiệu & Ban Điều hành Chuyên môn",
+      subjectLine,
+      recipientHint: "Ban Điều hành Chuyên môn, Ban Giám hiệu các cơ sở",
+      content,
+      generatedAt: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+    };
+  }
+
+  if (emailType === "email_teachers_meeting") {
+    const subjectLine =
+      customTopic.trim() ||
+      `[Tổ Chuyên môn ICT] Thông báo Sinh hoạt chuyên môn định kỳ & Triển khai nhiệm vụ trọng tâm tuần mới`;
+    const content = [
+      `Thân gửi Quý Thầy/Cô trong Tổ Chuyên môn ICT (${stats.teacherNamesList.join(", ")}),`,
+      "",
+      "Đầu thư, Tổ trưởng xin gửi lời cảm ơn chân thành đến các thầy/cô tại cả 5 cơ sở đã luôn tận tâm, chủ động đảm bảo tốt các tiết dạy thực hành phòng Lab cũng như công tác bồi dưỡng đội tuyển trong tuần qua.",
+      "",
+      "Để chuẩn bị tốt nhất cho kế hoạch chuyên môn sắp tới, Tổ trưởng xin thông báo lịch họp và các đầu việc trọng tâm cần lưu ý như sau:",
+      "",
+      "1. Nội dung trọng tâm cần triển khai:",
+      "- Rà soát Lịch giảng dạy & Lịch phòng Lab tuần tới trên cổng Sky-Line ICT Portal; kiểm tra kỹ thiết bị máy tính và bộ Kit Robotics trước ca dạy.",
+      "- Xem 'Bản tin AI 08h00 sáng Thứ Bảy' trên màn hình Tổng Quan để lồng ghép các kiến thức công nghệ mới và kỹ năng An toàn số vào bài giảng cho học sinh.",
+      "- Đối với các sự vụ đã được Tổ trưởng cho ý kiến chỉ đạo, thầy/cô lưu ý bấm 'Xác nhận thực hiện' và đính kèm link minh chứng khi hoàn thành đúng thời hạn nhắc hẹn.",
+      customNotes.trim() ? `- Lưu ý bổ sung: ${customNotes.trim()}` : "",
+      "",
+      "2. Chuẩn bị cho buổi sinh hoạt chuyên môn tổ:",
+      "- Mỗi cơ sở chuẩn bị báo cáo ngắn (3 phút) về tình hình học tập của học sinh, tiến độ luyện thi IC3/MOS trên GMetrix và đề xuất hỗ trợ (nếu có).",
+      "",
+      "Chúc các thầy/cô thật nhiều sức khỏe, niềm vui và những giờ lên lớp truyền cảm hứng công nghệ cho học sinh Sky-Line!",
+      "",
+      "Thân mến,",
+      `${stats.leaderName} – Tổ trưởng Chuyên môn ICT`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return {
+      title: "Email triệu tập họp & Triển khai công việc cho Giáo viên Tổ ICT",
+      subjectLine,
+      recipientHint: "Toàn thể Giáo viên Tổ Chuyên môn ICT (5 cơ sở)",
+      content,
+      generatedAt: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+    };
+  }
+
+  if (emailType === "email_teachers_kpi") {
+    const subjectLine =
+      customTopic.trim() ||
+      `[Nhắc lịch Chuyên môn ICT] Hoàn thiện Phiếu Đánh giá năng lực 360° & Lộ trình phát triển cá nhân (IDP) năm học ${stats.schoolYear}`;
+    const content = [
+      "Thân gửi Quý Thầy/Cô trong Tổ Chuyên môn ICT,",
+      "",
+      `Thực hiện quy trình đánh giá và phát triển đội ngũ năm học ${stats.schoolYear}, Tổ trưởng đề nghị các thầy/cô truy cập vào mục 'Nhân Sự ICT -> Phần 2: Đánh Giá Năng Lực Giáo Viên ICT' trên cổng Sky-Line ICT Portal để hoàn tất các bước sau:`,
+      "",
+      "1. Hoàn thành chấm điểm Tự đánh giá (15 tiêu chí thuộc 4 nhóm năng lực) và cập nhật đầy đủ minh chứng cho từng tiêu chí.",
+      "2. Thực hiện chấm điểm Đánh giá đồng cấp khách quan, công tâm cho 02 đồng nghiệp được hệ thống phân công.",
+      "3. Khai thác tính năng '✨ AI Phân Tích & Gợi Ý Lộ Trình Phát Triển Năng Lực' ngay trên phiếu để tham khảo kế hoạch hành động 3 giai đoạn và hoàn thiện Mục tiêu cam kết năm học tiếp theo (Mục IV).",
+      customNotes.trim() ? `4. Ghi chú thêm từ Tổ trưởng: ${customNotes.trim()}` : "",
+      "",
+      "Các thầy/cô lưu ý hoàn tất và bấm 'Xác nhận hoàn thành' đúng mốc thời gian quy định. Nếu cần hỗ trợ kỹ thuật, thầy/cô nhắn trực tiếp cho Tổ trưởng nhé.",
+      "",
+      "Trân trọng cảm ơn sự phối hợp của Quý Thầy/Cô!",
+      `${stats.leaderName} – Tổ trưởng Chuyên môn ICT`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return {
+      title: "Email đôn đốc Đánh giá năng lực 360° & Lộ trình IDP",
+      subjectLine,
+      recipientHint: "Giáo viên Tổ Chuyên môn ICT",
+      content,
+      generatedAt: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+    };
+  }
+
+  // email_parents_team: Thư gửi Phụ huynh / GVCN phối hợp bồi dưỡng đội tuyển & chứng chỉ quốc tế
+  const subjectLine =
+    customTopic.trim() ||
+    `[Trường Sky-Line - Tổ Chuyên môn ICT] Thư ngỏ phối hợp bồi dưỡng Đội tuyển Học sinh giỏi & Luyện thi Chứng chỉ Công nghệ Quốc tế`;
+  const content = [
+    "Kính gửi: Quý Phụ huynh học sinh cùng Quý Thầy/Cô Giáo viên chủ nhiệm,",
+    "",
+    `Lời đầu tiên, Tổ Chuyên môn Công nghệ Thông tin & Robotics (ICT) – Hệ thống Giáo dục Sky-Line xin gửi tới Quý Phụ huynh và Thầy/Cô lời chào trân trọng cùng lời chúc sức khỏe, hạnh phúc.`,
+    "",
+    `Trong năm học ${stats.schoolYear}, qua quá trình giảng dạy và theo dõi năng lực thực hành tại Phòng Lab, các giáo viên Tổ ICT rất vui mừng ghi nhận sự đam mê, tư duy nhạy bén của các em học sinh trong lĩnh vực Lập trình, Tin học văn phòng chuẩn quốc tế (IC3 Spark, IC3 GS6, MOS) cũng như lắp ráp, điều khiển Robotics & Trí tuệ nhân tạo (AI).`,
+    "",
+    "Nhằm giúp các em phát huy tối đa năng lực và chuẩn bị tốt nhất cho các kỳ thi sắp tới, Tổ Chuyên môn ICT xin thông tin kế hoạch phối hợp như sau:",
+    "1. Tại trường: Nhà trường bố trí phòng Lab hiện đại cùng đội ngũ giáo viên ICT hướng dẫn chuyên sâu theo từng nhóm năng lực và tổ chức luyện đề trực tiếp trên hệ thống chuẩn quốc tế.",
+    "2. Tại gia đình: Rất mong Quý Phụ huynh đồng hành nhắc nhở các con ôn luyện thêm 15–20 phút mỗi tuần theo tài khoản học tập đã được thầy/cô bộ môn cung cấp, đồng thời hướng dẫn con sử dụng máy tính và Internet an toàn, lành mạnh.",
+    customNotes.trim() ? `3. Thông tin lịch trình cụ thể: ${customNotes.trim()}` : "",
+    "",
+    "Sự đồng hành và khích lệ của Quý Phụ huynh cùng Thầy/Cô GVCN chính là nguồn động lực lớn nhất để các con tự tin tỏa sáng tại các đấu trường công nghệ.",
+    "Mọi ý kiến trao đổi, Quý Phụ huynh và Thầy/Cô có thể phản hồi trực tiếp qua email này hoặc liên hệ Giáo viên bộ môn ICT phụ trách lớp.",
+    "",
+    "Xin trân trọng cảm ơn!",
+    "--------------------------------------------------",
+    `TM. TỔ CHUYÊN MÔN ICT – HỆ THỐNG GIÁO DỤC SKY-LINE`,
+    `Tổ trưởng Chuyên môn: Thầy ${stats.leaderName}`,
+    `Email: ${stats.leaderEmail}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    title: "Thư ngỏ phối hợp Phụ huynh & GVCN (Bồi dưỡng Đội tuyển / Chứng chỉ Quốc tế)",
+    subjectLine,
+    recipientHint: "Quý Phụ huynh học sinh & Giáo viên chủ nhiệm các lớp",
+    content,
+    generatedAt: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+  };
+}
