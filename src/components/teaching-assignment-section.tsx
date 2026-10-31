@@ -365,57 +365,20 @@ export function TeachingAssignmentSection({
     const sourceClasses = overrideClasses || classesList;
 
     try {
-      // 1. Tải toàn bộ tiết dạy hiện tại từ lab_timetables và teacher_timetables theo Năm học
-      const { data: labSlotsData, error: labErr } = await supabase
-        .from("lab_timetables")
-        .select("*")
-        .eq("school_year", selectedSchoolYear);
+      // 1. Tải toàn bộ tiết dạy hiện tại từ teacher_timetables theo Năm học (dùng chung cho cả Phần 1 Lịch Phòng Lab & Phần 2 TKB Giáo viên)
       const { data: teacherSlotsData, error: ttErr } = await supabase
         .from("teacher_timetables")
         .select("*")
         .eq("school_year", selectedSchoolYear);
 
-      if (labErr || ttErr) {
-        showToast("Lỗi khi tải dữ liệu thời khóa biểu: " + (labErr?.message || ttErr?.message), "warning");
+      if (ttErr) {
+        showToast("Lỗi khi tải dữ liệu thời khóa biểu: " + ttErr.message, "warning");
         return;
       }
 
-      let labUpdatedCount = 0;
       let teacherUpdatedCount = 0;
 
-      // 2. Đồng bộ sang lab_timetables (Phần 1: Lịch Phòng Lab)
-      const updatedLabSlots = (labSlotsData || []).map((slot: any) => {
-        const matchedClass = sourceClasses.find((c) =>
-          checkSlotMatchesClass(slot.class_name, slot.campus_id, c)
-        );
-
-        if (matchedClass) {
-          let changed = false;
-          const newSlot = { ...slot };
-
-          // Đặc biệt: Đồng bộ Tên Lớp chuẩn từ Phần 3
-          if (newSlot.class_name !== matchedClass.name) {
-            newSlot.class_name = matchedClass.name;
-            changed = true;
-          }
-
-          // Đồng bộ Giáo viên phụ trách từ Phần 3
-          if (matchedClass.teacher_name && newSlot.teacher_name !== matchedClass.teacher_name) {
-            newSlot.teacher_name = matchedClass.teacher_name;
-            newSlot.teacher_id = matchedClass.teacher_id;
-            changed = true;
-          }
-
-          if (changed) {
-            labUpdatedCount++;
-            newSlot.updated_at = new Date().toISOString();
-            return newSlot;
-          }
-        }
-        return slot;
-      });
-
-      // 3. Đồng bộ sang teacher_timetables (Phần 2: Lịch Cá Nhân Giáo Viên)
+      // 2. Đồng bộ sang teacher_timetables (Phục vụ đồng thời Phần 1: Lịch Phòng Lab & Phần 2: Lịch Cá Nhân Giáo Viên)
       const teacherCodeMap: Record<string, string> = {
         "Cô Đào Thị Mỹ Linh": "LINH",
         "Thầy Đồng Nguyên Tuấn": "TUAN",
@@ -459,21 +422,18 @@ export function TeachingAssignmentSection({
         return slot;
       });
 
-      // 4. Lưu lại dữ liệu đã đồng bộ vào Supabase
-      if (labUpdatedCount > 0) {
-        await supabase.from("lab_timetables").upsert(updatedLabSlots);
-      }
+      // 3. Lưu lại dữ liệu đã đồng bộ vào Supabase
       if (teacherUpdatedCount > 0) {
         await supabase.from("teacher_timetables").upsert(updatedTeacherSlots);
       }
 
-      // 5. Cập nhật lại giao diện tức thì
+      // 4. Cập nhật lại giao diện tức thì
       if (reloadDashboardData) {
         await reloadDashboardData();
       }
 
       showToast(
-        `Đã đồng bộ thành công ${labUpdatedCount} tiết phòng Lab (Phần 1) và ${teacherUpdatedCount} tiết TKB giáo viên (Phần 2) với tên lớp chuẩn xác!`,
+        `Đã đồng bộ thành công ${teacherUpdatedCount} tiết dạy sang Lịch phòng Lab (Phần 1) và TKB giáo viên (Phần 2)!`,
         "success"
       );
     } catch (err: any) {

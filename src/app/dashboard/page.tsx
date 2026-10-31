@@ -659,47 +659,7 @@ export default function DashboardPage() {
         }
       }
 
-      // 2. Tải thời khóa biểu (timetables) từ Supabase kết hợp với 193 tiết phòng Lab
-      const periodsTimes: Record<number, string> = {
-        1: "08:00 - 08:45",
-        2: "08:50 - 09:35",
-        3: "09:50 - 10:35",
-        4: "10:40 - 11:25",
-        5: "13:15 - 14:00",
-        6: "14:05 - 14:50",
-        7: "15:05 - 15:50",
-        8: "15:55 - 16:40",
-      };
-
-      // 2. Tải thời khóa biểu 6 phòng Lab từ Supabase (lab_timetables) theo Năm học
-      let labTtQuery = supabase
-        .from("lab_timetables")
-        .select("*")
-        .eq("school_year", selectedSchoolYear);
-      if (selectedCampus !== "all") {
-        labTtQuery = labTtQuery.eq("campus_id", selectedCampus);
-      }
-      const { data: labTtData } = await labTtQuery;
-      if (labTtData && labTtData.length > 0) {
-        const mappedLabSlots: TimetableSlot[] = labTtData.map((t: any) => ({
-          id: t.id,
-          day: t.day_of_week,
-          period: t.period,
-          time: t.time_slot || periodsTimes[t.period] || "07:30 - 08:15",
-          className: t.class_name,
-          teacher: t.teacher_name,
-          subject: t.subject || "Robotics & Tin Học STEM",
-          room: t.room || t.lab_name,
-          labId: t.lab_id,
-          campusId: t.campus_id,
-          topic: t.notes || "",
-        }));
-        setTimetableSlots(mappedLabSlots);
-      } else {
-        setTimetableSlots([]);
-      }
-
-      // 2b. Tải tiết dạy của từng giáo viên từ Supabase (teacher_timetables) theo Năm học
+      // 2. Tải tiết dạy của từng giáo viên & phòng Lab từ Supabase (teacher_timetables) theo Năm học
       const { data: teacherTtData } = await supabase
         .from("teacher_timetables")
         .select("*")
@@ -856,9 +816,6 @@ export default function DashboardPage() {
     // Lắng nghe thay đổi tức thì qua Supabase Realtime (Không cần bấm F5)
     const channel = supabase
       .channel("portal_realtime_sync")
-      .on("postgres_changes", { event: "*", schema: "public", table: "timetables" }, () => {
-        loadDashboardData();
-      })
       .on("postgres_changes", { event: "*", schema: "public", table: "teacher_timetables" }, () => {
         loadLabScheduleFromTeacherTimetables();
       })
@@ -966,35 +923,7 @@ export default function DashboardPage() {
       8: "15:55 - 16:40",
     };
 
-    let generatedId = `t_${Date.now()}`;
-
-    try {
-      const { data } = await supabase
-        .from("lab_timetables")
-        .upsert({
-          school_year_id: "985ffcb7-73c6-4d33-89da-1102e2fb1699",
-          semester: "HK1",
-          lab_id: slotForm.labId || "riverside_primary",
-          lab_name: slotForm.room,
-          campus_id: slotForm.campusId,
-          day_of_week: day,
-          period: period,
-          session: period <= 4 ? "morning" : "afternoon",
-          time_slot: periodsTimes[period] || "07:30 - 08:15",
-          class_name: slotForm.className,
-          teacher_name: slotForm.teacher,
-          subject: slotForm.subject,
-          room: slotForm.room,
-        })
-        .select()
-        .single();
-
-      if (data) {
-        generatedId = data.id;
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    const generatedId = `t_${Date.now()}`;
 
     // Cập nhật giao diện tức thì
     setTimetableSlots((prev) => {
@@ -1026,11 +955,6 @@ export default function DashboardPage() {
   const handleDeleteSlot = async () => {
     if (!selectedSlotForEdit) return;
     const { day, period } = selectedSlotForEdit;
-    const slotToDelete = timetableSlots.find((s) => s.day === day && s.period === period);
-    if (slotToDelete && slotToDelete.id && !slotToDelete.id.startsWith("t_")) {
-      await supabase.from("lab_timetables").delete().eq("id", slotToDelete.id);
-      await supabase.from("timetables").delete().eq("id", slotToDelete.id);
-    }
     setTimetableSlots((prev) => prev.filter((s) => !(s.day === day && s.period === period)));
     setIsSlotModalOpen(false);
     showToast("Đã hủy tiết dạy và đồng bộ vào kho Supabase!", "info");
