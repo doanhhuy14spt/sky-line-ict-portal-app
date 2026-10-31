@@ -247,7 +247,8 @@ export function LeaderAISparkHub({
 
         const updatedBriefing = generateSaturdayWeeklyBriefing(
           selectedSchoolYear,
-          liveHeadlines
+          liveHeadlines,
+          new Date()
         );
         setBriefing(updatedBriefing);
 
@@ -546,6 +547,101 @@ export function LeaderAISparkHub({
           >
             <Wand2 className="w-4 h-4" />
             <span>AI Soạn Kế Hoạch & Email Tổ Trưởng</span>
+          </button>
+        </div>
+      </div>
+
+      {/* THANH CHUYỂN ĐỔI 2 TAB LỚN TRỰC QUAN NGAY ĐẦU TRUNG TÂM AI (AI SỐ 3 & AI SỐ 4) */}
+      <div className="p-3 sm:p-4 bg-slate-950/70 border-b border-white/15">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setActiveAITab("news_curriculum")}
+            className={`p-3.5 rounded-2xl text-left flex items-center justify-between gap-3 transition-all cursor-pointer border-2 ${
+              activeAITab === "news_curriculum"
+                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 border-amber-300 shadow-lg shadow-amber-500/25 scale-[1.005]"
+                : "bg-white/[0.06] hover:bg-white/[0.12] text-white border-white/15"
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  activeAITab === "news_curriculum"
+                    ? "bg-slate-950/20 text-slate-950"
+                    : "bg-amber-500/20 text-amber-300"
+                }`}
+              >
+                <Newspaper className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm font-black truncate">
+                  Tab 1: AI Bản Tin 08h00 Thứ Bảy & Chương Trình ICT
+                </div>
+                <div
+                  className={`text-[11px] truncate ${
+                    activeAITab === "news_curriculum"
+                      ? "text-slate-900 font-semibold"
+                      : "text-sky-200/80"
+                  }`}
+                >
+                  Quét tin chính thống & Tham mưu cập nhật chương trình 3 cấp học
+                </div>
+              </div>
+            </div>
+            <span
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-black shrink-0 ${
+                activeAITab === "news_curriculum"
+                  ? "bg-slate-950 text-amber-300"
+                  : "bg-white/10 text-amber-300"
+              }`}
+            >
+              AI Số 3
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveAITab("leader_assistant")}
+            className={`p-3.5 rounded-2xl text-left flex items-center justify-between gap-3 transition-all cursor-pointer border-2 ${
+              activeAITab === "leader_assistant"
+                ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white border-sky-300 shadow-lg shadow-sky-500/25 scale-[1.005]"
+                : "bg-white/[0.06] hover:bg-white/[0.12] text-white border-white/15"
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  activeAITab === "leader_assistant"
+                    ? "bg-white/20 text-white"
+                    : "bg-sky-500/20 text-sky-300"
+                }`}
+              >
+                <Wand2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm font-black truncate">
+                  Tab 2: AI Soạn Kế Hoạch & Email Tổ Trưởng
+                </div>
+                <div
+                  className={`text-[11px] truncate ${
+                    activeAITab === "leader_assistant"
+                      ? "text-sky-100 font-semibold"
+                      : "text-sky-200/80"
+                  }`}
+                >
+                  Soạn 5 mẫu Kế hoạch/Tờ trình & 4 mẫu Email điều hành kèm số liệu thật
+                </div>
+              </div>
+            </div>
+            <span
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-black shrink-0 ${
+                activeAITab === "leader_assistant"
+                  ? "bg-white text-sky-900"
+                  : "bg-white/10 text-sky-300"
+              }`}
+            >
+              AI Số 4
+            </span>
           </button>
         </div>
       </div>

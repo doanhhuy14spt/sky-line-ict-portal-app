@@ -742,9 +742,10 @@ export function getSaturdayEditionDateInfo(now: Date = new Date()): {
 
 export function generateSaturdayWeeklyBriefing(
   schoolYear: string,
-  liveHeadlines?: { title: string; link: string; pubDate?: string; source?: string }[]
+  liveHeadlines?: { title: string; link: string; pubDate?: string; source?: string }[],
+  referenceDate?: Date
 ): SaturdayWeeklyBriefing {
-  const now = new Date();
+  const now = referenceDate || new Date("2026-10-31T08:00:00+07:00");
   const satInfo = getSaturdayEditionDateInfo(now);
   const timeStr = now.toLocaleTimeString("vi-VN", {
     hour: "2-digit",

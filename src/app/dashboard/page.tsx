@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   School,
   Calendar,
@@ -188,19 +188,15 @@ function buildDashboardPath(
 
 export default function DashboardPage() {
   const router = useRouter();
-  const pathname = usePathname();
-  const initialRoute = parseDashboardPathname(pathname || "/dashboard");
 
   const [isDark, setIsDark] = useState(true);
   const [selectedCampus, setSelectedCampus] = useState("all");
   const [selectedSchoolYear, setSelectedSchoolYear] = useState("2026-2027");
   const [selectedLab, setSelectedLab] = useState<string>("riverside_primary"); // Mặc định: Sky-Line Riverside Tiểu Học
   const [selectedSessionFilter, setSelectedSessionFilter] = useState<"all" | "morning" | "afternoon">("all");
-  const [timetableSubTab, setTimetableSubTab] = useState<TimetableSubTab>(
-    initialRoute.timetableSub || "lab_view"
-  ); // 3 phần: Lịch Lab, TKB giáo viên & Phân công chuyên môn
+  const [timetableSubTab, setTimetableSubTab] = useState<TimetableSubTab>("lab_view"); // 3 phần: Lịch Lab, TKB giáo viên & Phân công chuyên môn
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("huy"); // Mặc định: Thầy Quốc Huy (Tổ trưởng)
-  const [activeTab, setActiveTab] = useState<MainDashboardTab>(initialRoute.tab);
+  const [activeTab, setActiveTab] = useState<MainDashboardTab>("dashboard");
   const [isDeptDataMenuOpen, setIsDeptDataMenuOpen] = useState(false);
   const [isDataRepoSubOpen, setIsDataRepoSubOpen] = useState(true);
   const deptDataMenuRef = useRef<HTMLDivElement>(null);
@@ -463,12 +459,8 @@ export default function DashboardPage() {
   ]);
 
   // --- STATE QUẢN LÝ & CHỈNH SỬA HỒ SƠ GIÁO VIÊN TRONG TAB NHÂN SỰ ICT ---
-  const [teachersSubTab, setTeachersSubTab] = useState<TeachersSubTab>(
-    initialRoute.teachersSub || "part1_directory"
-  );
-  const [tasksSubTab, setTasksSubTab] = useState<TasksSubTab>(
-    initialRoute.tasksSub || "part1_assigned_tasks"
-  );
+  const [teachersSubTab, setTeachersSubTab] = useState<TeachersSubTab>("part1_directory");
+  const [tasksSubTab, setTasksSubTab] = useState<TasksSubTab>("part1_assigned_tasks");
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [profileModalMode, setProfileModalMode] = useState<"add" | "edit">("edit");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -498,7 +490,7 @@ export default function DashboardPage() {
       if (parsed.teachersSub) setTeachersSubTab(parsed.teachersSub);
     };
 
-    applyFromLocation(pathname || window.location.pathname || "/dashboard");
+    applyFromLocation(window.location.pathname || "/dashboard");
 
     const handlePopState = () => {
       applyFromLocation(window.location.pathname || "/dashboard");
@@ -506,7 +498,7 @@ export default function DashboardPage() {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [pathname]);
+  }, []);
 
   const pushDashboardUrl = useCallback(
     (
