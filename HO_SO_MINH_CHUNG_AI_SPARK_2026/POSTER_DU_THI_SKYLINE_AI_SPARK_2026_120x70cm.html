@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<title>POSTER DỰ THI SKY-LINE AI SPARK 2026 - 2027 (120x70cm)</title>
+<style>
+  @page {
+    size: 2400px 1400px;
+    margin: 0;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html, body {
+    width: 2400px;
+    height: 1400px;
+    overflow: hidden;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(135deg, #061326 0%, #0b2244 50%, #081933 100%);
+    color: #f8fafc;
+  }
+  .poster-canvas {
+    width: 2400px;
+    height: 1400px;
+    padding: 24px 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+  /* ĐẦU POSTER (HEADER BANNER) */
+  .poster-header {
+    background: linear-gradient(90deg, #0369a1 0%, #0f172a 55%, #1e293b 100%);
+    border: 2px solid #38bdf8;
+    border-radius: 22px;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 12px 32px rgba(2, 132, 199, 0.3);
+  }
+  .header-left {
+    max-width: 1500px;
+  }
+  .comp-pill {
+    display: inline-block;
+    background: linear-gradient(90deg, #f59e0b, #ea580c);
+    color: #0f172a;
+    font-weight: 900;
+    font-size: 15px;
+    padding: 4px 16px;
+    border-radius: 999px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .product-title {
+    font-size: 36px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: -0.3px;
+    line-height: 1.18;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  }
+  .product-title span {
+    color: #38bdf8;
+  }
+  .ai-tools-bar {
+    margin-top: 8px;
+    font-size: 16px;
+    color: #e0f2fe;
+    background: rgba(2, 132, 199, 0.28);
+    border-left: 4px solid #f59e0b;
+    padding: 6px 14px;
+    border-radius: 8px;
+  }
+  .header-right {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1.5px solid rgba(56, 189, 248, 0.45);
+    border-radius: 16px;
+    padding: 12px 22px;
+    min-width: 780px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 18px;
+    font-size: 16px;
+  }
+  .meta-item {
+    line-height: 1.38;
+  }
+  .meta-label {
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .meta-value {
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 16.5px;
+  }
+  .meta-value.highlight {
+    color: #fbbf24;
+  }
+
+  /* LƯỚI 3 CỘT CHỨA 8 KHỐI CHUẨN BTC */
+  .poster-grid {
+    display: grid;
+    grid-template-columns: 740px 830px 740px;
+    gap: 20px;
+    height: 1185px;
+    margin-top: 16px;
+  }
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+  }
+  .block-card {
+    background: rgba(15, 23, 42, 0.86);
+    border: 1.5px solid rgba(56, 189, 248, 0.32);
+    border-radius: 18px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  }
+  .block-card.amber-border {
+    border-color: rgba(245, 158, 11, 0.55);
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.92) 100%);
+  }
+  .block-card.emerald-border {
+    border-color: rgba(16, 185, 129, 0.55);
+  }
+  .block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1.5px solid rgba(148, 163, 184, 0.22);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .block-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .block-num {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 17px;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #38bdf8;
+  }
+  .block-num.amber {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #0f172a;
+    border-color: #fde68a;
+  }
+  .block-num.emerald {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #0f172a;
+    border-color: #a7f3d0;
+  }
+  .block-title {
+    font-size: 20px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #38bdf8;
+    letter-spacing: 0.3px;
+  }
+  .block-title.amber {
+    color: #fbbf24;
+  }
+  .block-title.emerald {
+    color: #34d399;
+  }
+  .criteria-tag {
+    font-size: 12px;
+    font-weight: 800;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 15.2px;
+    line-height: 1.42;
+    color: #e2e8f0;
+  }
+  .bullet-list li {
+    position: relative;
+    padding-left: 18px;
+  }
+  .bullet-list li::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: #f59e0b;
+    font-weight: bold;
+  }
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .stat-box {
+    background: rgba(2, 132, 199, 0.18);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 12px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 23px;
+    font-weight: 900;
+    color: #fbbf24;
+    line-height: 1.1;
+  }
+  .stat-lbl {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #bae6fd;
+    margin-top: 3px;
+  }
+  .flow-box {
+    background: rgba(2, 132, 199, 0.12);
+    border: 1px dashed rgba(56, 189, 248, 0.5);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin: 8px 0;
+  }
+  .flow-title {
+    font-size: 14.5px;
+    font-weight: 900;
+    color: #fbbf24;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .flow-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .flow-step {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 9px;
+    padding: 7px 8px;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  .flow-step strong {
+    color: #38bdf8;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .ai5-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 6px;
+  }
+  .ai5-item {
+    background: rgba(255, 255, 255, 0.04);
+    border-left: 4px solid #38bdf8;
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 14.2px;
+    line-height: 1.35;
+  }
+  .ai5-item strong {
+    color: #fbbf24;
+  }
+  .mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.8px;
+    margin-top: 6px;
+  }
+  .mini-table th {
+    background: #0284c7;
+    color: #fff;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 800;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+  }
+  .mini-table td {
+    padding: 6px 8px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    vertical-align: top;
+    line-height: 1.32;
+  }
+  .mini-table tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .checkbox-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 6px 0;
+  }
+  .chk-item {
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    border-radius: 9px;
+    padding: 6px 10px;
+    font-size: 14.2px;
+    font-weight: 700;
+    color: #d1fae5;
+  }
+  .chk-item.unselected {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+    font-weight: 500;
+  }
+  .qr-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .qr-box {
+    background: rgba(2, 132, 199, 0.14);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 14px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .qr-info {
+    font-size: 13.5px;
+    line-height: 1.35;
+  }
+  .qr-info strong {
+    color: #fbbf24;
+    font-size: 14.5px;
+    display: block;
+    margin-bottom: 3px;
+  }
+</style>
+</head>
+<body>
+<div class="poster-canvas">
+
+  <!-- ĐẦU POSTER CHUẨN MẪU BAN TỔ CHỨC -->
+  <div class="poster-header">
+    <div class="header-left">
+      <div class="comp-pill">CUỘC THI SKY-LINE AI SPARK 2026 - 2027 • CREATE – INNOVATE – INSPIRE</div>
+      <div class="product-title"><span>SKY-LINE ICT PORTAL</span> – HỆ THỐNG QUẢN TRỊ VÀ VẬN HÀNH CHUYÊN MÔN</div>
+      <div class="ai-tools-bar">
+        <strong>🤖 CÔNG CỤ AI SỬ DỤNG (MÔ HÌNH AI KÉP):</strong>
+        (1) <strong>Google Antigravity IDE</strong> (Kiến tạo toàn bộ ứng dụng bằng <em>Vibe Coding + 4 Bộ Kỹ năng AI + MCP Supabase/GitHub</em>) &nbsp;&bull;&nbsp;
+        (2) <strong>Hệ sinh thái 05 Trợ lý AI Chuyên môn &amp; Điều hành</strong> tích hợp trực tiếp trong Cổng thông tin.
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="meta-item">
+        <div class="meta-label">Tác giả thực hiện</div>
+        <div class="meta-value highlight">Thầy Đỗ Anh Huy - Tổ trưởng chuyên môn tổ ICT</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Đơn vị</div>
+        <div class="meta-value">Tổ ICT – Hệ thống Giáo dục Sky-Line</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Bảng dự thi</div>
+        <div class="meta-value">Bảng B – Quản trị, vận hành, quản lý</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Nhóm sản phẩm</div>
+        <div class="meta-value highlight">Nhóm Đột phá (Hướng tới Chuẩn T2)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LƯỚI 3 CỘT TRÌNH BÀY ĐỦ 8 KHỐI BẮT BUỘC TRÊN POSTER -->
+  <div class="poster-grid">
+
+    <!-- CỘT 1: KHỐI 1 (BỐI CẢNH) + KHỐI 3 (TRIỂN KHAI TẠI SKY-LINE) + KHỐI 6 (CHI PHÍ & TÍNH BỀN VỮNG) -->
+    <div class="col">
+      <!-- KHỐI 1 -->
+      <div class="block-card" style="flex: 1.15;">
+        <div class="block-header">
+          <div class="block-title-wrap">
+            <span class="block-num">1</span>
+            <span class="block-title">Bối Cảnh &amp; Vấn Đề Thực Tế</span>
+          </div>
+          <span class="criteria-tag">Ứng dụng thực tiễn</span>
+        </div>
+        <ul class="bullet-list">
+          <li><strong>Đặc thù liên cấp đa cơ sở:</strong> Tổ ICT quản lý giảng dạy từ Lớp 1 đến Lớp 12 trải rộng trên <strong>05 cơ sở Sky-Line</strong>, vận hành <strong>06 Phòng Lab</strong>, <strong>113 lớp</strong> (152 tiết/tuần) và hơn <strong>150+ thiết bị Robot (Lego Wedo, Whalesbot) &amp; dàn máy tính</strong>.</li>
+          <li><strong>Nỗi đau của cách làm thủ công cũ:</strong> Dữ liệu Thời khóa biểu phòng Lab, nhật ký hỏng thiết bị, giao việc và hồ sơ đội tuyển nằm rời rạc trên hàng chục file Excel, Word, nhóm Zalo &rarr; dễ trùng lịch phòng máy và thất lạc minh chứng.</li>
+          <li><strong>Quá tải hành chính cho Tổ trưởng:</strong> Mất <strong>4–5 giờ/tuần</strong> dò lịch, đếm số liệu viết Kế hoạch, Tờ trình bảo trì, Biên bản họp tổ và tổng hợp phiếu đánh giá năng lực giáo viên cuối kỳ.</li>
+          <li><strong>Rào cản công nghệ:</strong> Muốn có phần mềm quản trị riêng cho Tổ theo cách cũ phải thuê công ty lập trình với chi phí rất lớn và khó tùy biến theo thực tế trường học.</li>
+        </ul>
+      </div>
+
+      <!-- KHỐI 3 -->
+      <div class="block-card" style="flex: 1.05;">
+        <div class="block-header">
+          <div class="block-title-wrap">
+            <span class="block-num">3</span>
+            <span class="block-title">Triển Khai Thực Tế Tại Sky-Line</span>
+          </div>
+          <span class="criteria-tag">Số liệu thực tế</span>
+        </div>
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-num">05 Cơ sở</div>
+            <div class="stat-lbl">Toàn Hệ thống</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">06 Lab</div>
+            <div class="stat-lbl">113 Lớp • 152 Tiết</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">100% GV</div>
+            <div class="stat-lbl">07/07 GV Tổ ICT</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">13 Bảng</div>
+            <div class="stat-lbl">CSDL Đám mây</div>
+          </div>
+        </div>
+        <ul class="bullet-list">
+          <li><strong>Địa điểm áp dụng:</strong> Triển khai đồng bộ tại cả <strong>05 cơ sở Sky-Line</strong> (Riverside, Central, Hill, Beach, Global) cho cả 3 cấp Tiểu học, THCS và THPT từ năm học 2025–2026 &amp; 2026–2027.</li>
+          <li><strong>Tần suất sử dụng:</strong> 100% Giáo viên và Tổ trưởng Tổ ICT truy cập hằng ngày trên máy tính &amp; điện thoại để xem lịch phòng Lab, nhận việc, báo cáo sự vụ, cập nhật tiến độ đội tuyển HSG và đánh giá năng lực 360°.</li>
+        </ul>
+      </div>
+
+      <!-- KHỐI 6 -->
+      <div class="block-card" style="flex: 0.8;">
+        <div class="block-header">
+          <div class="block-title-wrap">
+            <span class="block-num">6</span>
+            <span class="block-title">Chi Phí &amp; Tính Bền Vững</span>
+          </div>
+          <span class="criteria-tag">Bền vững 100%</span>
+        </div>
+        <ul class="bullet-list">
+          <li><strong>Chi phí xây dựng &amp; vận hành: <span style="color:#fbbf24;font-weight:900;">0 đồng/tháng</span></strong> (Tự kiến tạo 100% bằng Vibe Coding trên Google Antigravity IDE; vận hành trên hạ tầng đám mây miễn phí bền vững của Vercel &amp; Supabase).</li>
+          <li><strong>Độc lập hoàn toàn:</strong> Không phụ thuộc nền tảng thu phí bên ngoài; không yêu cầu học sinh tạo tài khoản hay đóng phí.</li>
+          <li><strong>Chủ động duy trì sau cuộc thi:</strong> Tổ trưởng chuyên môn tổ ICT nắm giữ toàn bộ mã nguồn trên GitHub, dễ dàng dùng Google Antigravity IDE nâng cấp tính năng mới chỉ trong vài phút.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CỘT 2 (TRUNG TÂM): KHỐI 2 (GIẢI PHÁP AI KÉP) + KHỐI 4 (THAY ĐỔI & TÁC ĐỘNG) -->
+    <div class="col">
+      <!-- KHỐI 2 -->
+      <div class="block-card amber-border" style="flex: 1.32;">
+        <div class="block-header">
+          <div class="block-title-wrap">
+            <span class="block-num amber">2</span>
+            <span class="block-title amber">Giải Pháp Đột Phá: Mô Hình “AI Kép” (Vibe Coding + 5 Trợ Lý AI)</span>
+          </div>
+          <span class="criteria-tag">Chiều sâu &amp; Sáng tạo</span>
+        </div>
+        <p style="font-size: 14.8px; color: #e2e8f0; line-height: 1.38;">
+          <strong>Sản phẩm là gì:</strong> Ứng dụng Web <strong>Sky-Line ICT Portal</strong> gồm <strong>07 Phân hệ quản trị</strong> (Tổng quan, Thời khóa biểu &amp; Lịch Lab, Thiết bị &amp; Robot, Công việc &amp; Sự vụ, Đội tuyển HSG, Thành tích, Đánh giá GV 360°) kết nối thời gian thực với <strong>13 bảng CSDL Supabase</strong>.
+        </p>
+
+        <!-- SƠ ĐỒ QUY TRÌNH TẦNG 1: VIBE CODING TRÊN GOOGLE ANTIGRAVITY IDE -->
+        <div class="flow-box">
+          <div class="flow-title">⚡ Tầng 1: Quy trình Kiến tạo Ứng dụng bằng Vibe Coding trên Google Antigravity IDE</div>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <strong>BƯỚC 1: Chuẩn hóa</strong>
+              Tác giả lập <code>KE_HOACH_DU_AN.md</code> &amp; Hiến pháp <code>AGENTS.md</code>
+            </div>
+            <div class="flow-step">
+              <strong>BƯỚC 2: Huấn luyện Skill</strong>
+              Thiết kế 4 bộ <code>SKILL.md</code> (DB RLS, SSR, UI/UX, Auto-Ship)
+            </div>
+            <div class="flow-step">
+              <strong>BƯỚC 3: Vibe Coding</strong>
+              AI trong Antigravity IDE tự sinh 13 bảng SQL &amp; 15.000+ dòng code
+            </div>
+            <div class="flow-step">
+              <strong>BƯỚC 4: Kiểm định &amp; Xuất bản</strong>
+              Tự động kiểm tra lỗi (<code>tsc</code>) &amp; đẩy lên GitHub / Vercel
+            </div>
+          </div>
+        </div>
+
+        <!-- TẦNG 2: 5 TRỢ LÝ AI VẬN HÀNH HẰNG NGÀY -->
+        <div style="font-size: 14.5px; font-weight: 900; color: #38bdf8; margin-top: 4px; text-transform: uppercase;">
+          🤖 Tầng 2: Hệ sinh thái 05 Trợ lý AI Vận hành Chuyên môn &amp; Điều hành Hằng ngày
+        </div>
+        <div class="ai5-grid">
+          <div class="ai5-item">
+            <strong>1. AI Hỗ trợ Xếp lịch &amp; Chống trùng Phòng Lab:</strong> Quét 152 tiết/tuần phát hiện trùng GV/Phòng Lab tức thì, tính cân bằng tải và gợi ý khung tiết trống vàng để dạy bù, bồi dưỡng HSG hoặc bảo trì máy.
+          </div>
+          <div class="ai5-item">
+            <strong>2. AI Phân tích Năng lực 360° &amp; Gợi ý Lộ trình IDP:</strong> Truy xuất chéo 5 bảng CSDL &amp; 24 kịch bản huấn luyện để lập lộ trình phát triển cá nhân (IDP) 3 giai đoạn sát cấp học (IC3 Spark, GS6, MOS, Robotics).
+          </div>
+          <div class="ai5-item">
+            <strong>3. AI Cố vấn Xử lý Sự vụ Phòng Lab:</strong> Phân tích sự cố theo 6 nhóm chuyên môn, đề xuất quy trình xử lý 3 bước (Tức thời – Phối hợp – Phòng ngừa chuẩn SLA) và dự thảo ý kiến chỉ đạo cho Tổ trưởng.
+          </div>
+          <div class="ai5-item">
+            <strong>4. AI Bản tin 08h00 Thứ Bảy &amp; Tham mưu Chương trình ICT:</strong> Quét nguồn tin chính thống + tìm kiếm mở toàn mạng kèm nhãn độ tin cậy, đề xuất cập nhật chương trình 3 cấp học &amp; giao việc 1 chạm.
+          </div>
+          <div class="ai5-item">
+            <strong>5. AI Soạn Kế hoạch, Tờ trình, Biên bản &amp; Email Tổ trưởng:</strong> Tự động rút trích số liệu thật đang sống trên CSDL để xuất bản 5 mẫu Kế hoạch/Tờ trình và 4 mẫu Email chuẩn thể thức Sky-Line (<code>.doc</code>) trong 3 giây.
+          </div>
+        </div>
+      </div>
+
+      <!-- KHỐI 4 -->
+      <div class="block-card" style="flex: 0.98;">
+        <div class="block-header">
+          <div class="block-title-wrap">
+            <span class="block-num">4</span>
+            <span class="block-title">Thay Đổi Và Tác Động (Trước &amp; Sau Khi Áp Dụng)</span>
+          </div>
+          <span class="criteria-tag">Tác động 35%</span>
+        </div>
+        <p style="font-size: 14.2px; color: #fde68a; font-weight: 800; margin-bottom: 4px;">
+          ★ Tạo ra điều cách làm cũ KHÔNG LÀM ĐƯỢC: Giúp Tổ trưởng tự kiến tạo hệ thống phần mềm quản trị đám mây hoàn chỉnh không cần thuê lập trình viên!
+        </p>
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th style="width: 28%;">Nghiệp vụ tại Tổ ICT</th>
+              <th style="width: 34%;">Trước khi có AI (Thủ công)</th>
+              <th style="width: 38%;">Sau khi có Sky-Line ICT Portal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Xếp lịch &amp; Dò tiết trống 6 Lab</strong></td>
+              <td>Mất 3–4 giờ/tuần dò trên nhiều file Excel; dễ trùng phòng Lab khi đổi tiết.</td>
+              <td><strong style="color:#34d399;">30 giây</strong> (Giảm 98% thời gian • <strong>0% trùng lịch</strong>).</td>
+            </tr>
+            <tr>
+              <td><strong>Đánh giá 15 tiêu chí &amp; lập IDP</strong></td>
+              <td>Mất 2–3 ngày tổng hợp thủ công; nhận xét IDP chung chung.</td>
+              <td><strong style="color:#34d399;">5 giây/GV</strong> (Truy xuất chéo 5 bảng CSDL, cá nhân hóa 100%).</td>
+            </tr>
+            <tr>
+              <td><strong>Soạn Kế hoạch, Tờ trình, Email</strong></td>
+              <td>Mất 90–120 phút/văn bản để đếm số liệu thiết bị, lớp học, công việc.</td>
+              <td><strong style="color:#34d399;">3 giây/văn bản</strong> (Tự điền số liệu thật • <strong>Tiết kiệm ~5,5 giờ/tuần</strong>).</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top: 8px; font-size: 13.5px; color: #bae6fd; font-style: italic; background: rgba(255,255,255,0.04); padding: 6px 10px; border-radius: 8px;">
+          💬 <strong>Phản hồi đồng nghiệp (Thầy Trần Quốc Huy &amp; Cô Đào Thị Mỹ Linh – GV ICT):</strong> “Hệ thống giúp báo hỏng Robot 1 chạm, chủ động lịch mượn phòng Lab bồi dưỡng HSG và nhận gợi ý lộ trình IDP rất sát chuyên môn giảng dạy.”
+        </div>
+      </div>
+    </div>
+
+    <!-- CỘT 3: KHỐI 5 (TÁI SỬ DỤNG <30 PHÚT) + KHỐI 7 (AN TOÀN DỮ LIỆU) + KHỐI 8 (MINH CHỨNG QR) -->
+    <div class="col">
+      <!-- KHỐI 5 -->
+      <div class="block-card emerald-border" style="flex: 1.05;">
+        <div class="block-header">
+          <div class="block-title-wrap">
+            <span class="block-num emerald">5</span>
+            <span class="block-title emerald">Khả Năng Tái Sử Dụng (&lt; 30 Phút)</span>
+          </div>
+          <span class="criteria-tag">Chuẩn Hạng T2</span>
+        </div>
+        <div class="checkbox-row">
+          <div class="chk-item">☑ Dưới 30 phút, chỉ cần thay nội dung (Đạt khung 84% – 100% điểm tối đa)</div>
+          <div class="chk-item unselected">☐ Cần một buổi tập huấn &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; ☐ Phải xây dựng lại từ đầu</div>
+        </div>
+        <ul class="bullet-list" style="margin-top: 4px;">
+          <li><strong>Cấp độ 1 – Chuyển giao trong 15 phút cho các Tổ bộ môn khác (Tổ KHTN, Tiếng Anh, Toán, KHXH):</strong> Nhờ tách biệt tri thức vào bảng <code>ai_training_knowledge_base</code>, Tổ khác chỉ cần 3 bước: <em>(1) Phút 1–5: Thay danh sách Phòng thí nghiệm/Phòng chức năng &amp; GV; (2) Phút 6–10: Nạp 15 tiêu chí năng lực bộ môn; (3) Phút 11–15: Nhập từ khóa Bản tin Sáng Thứ Bảy</em>.</li>
+          <li><strong>Cấp độ 2 – Chuyển giao Bộ Khuôn Mẫu Vibe Coding trên Google Antigravity IDE:</strong> Chia sẻ trọn bộ <code>KE_HOACH_DU_AN.md</code> + <code>AGENTS.md</code> + <code>4 bộ SKILL.md</code> để mọi phòng ban tại Sky-Line tự tạo ứng dụng riêng.</li>
+        </ul>
+      </div>
+
+      <!-- KHỐI 7 -->
+      <div class="block-card" style="flex: 1.15;">
+        <div class="block-header">
+          <div class="block-title-wrap">
+            <span class="block-num">7</span>
+            <span class="block-title">An Toàn Dữ Liệu &amp; AI Có Trách Nhiệm</span>
+          </div>
+          <span class="criteria-tag">Đạt 3 điều kiện Vòng 1</span>
+        </div>
+        <div class="checkbox-row">
+          <div class="chk-item">☑ Không đưa dữ liệu cá nhân học sinh vào công cụ AI chưa được duyệt</div>
+          <div class="chk-item">☑ Không buộc học sinh (nhất là dưới 13 tuổi) tạo tài khoản ngoài</div>
+          <div class="chk-item">☑ Không công khai thông tin cá nhân, thành tích từng học sinh</div>
+        </div>
+        <ul class="bullet-list" style="margin-top: 4px;">
+          <li><strong>Nơi lưu trữ &amp; Bảo mật:</strong> Dữ liệu lưu trên <strong>Supabase Cloud (PostgreSQL mã hóa SSL)</strong>, kích hoạt <strong>Khóa bảo mật từng dòng (RLS) trên 13/13 bảng</strong> với 3 tầng phân quyền (<em>Tổ trưởng – Giáo viên – Khách</em>).</li>
+          <li><strong>Cách kiểm chứng kết quả AI (Kiểm chứng 2 tầng bởi Con người):</strong><br/>
+            + <em>Khi Vibe Coding:</em> Tác giả duyệt từng kế hoạch <code>/plan</code>, kiểm tra logic &amp; RLS trước khi xuất bản.<br/>
+            + <em>Khi vận hành 5 Trợ lý AI:</em> Mọi văn bản, lộ trình IDP, chỉ đạo sự vụ đều mở trong khung chỉnh sửa để Tổ trưởng &amp; GV kiểm duyệt trước khi ban hành; Bản tin AI gắn nhãn độ tin cậy &amp; link gốc bài báo.</li>
+        </ul>
+      </div>
+
+      <!-- KHỐI 8 -->
+      <div class="block-card amber-border" style="flex: 0.8;">
+        <div class="block-header">
+          <div class="block-title-wrap">
+            <span class="block-num amber">8</span>
+            <span class="block-title amber">Minh Chứng, Bản Demo Sống &amp; Tài Liệu Hướng Dẫn</span>
+          </div>
+          <span class="criteria-tag">Quét mã trải nghiệm ngay</span>
+        </div>
+        <div class="qr-container">
+          <div class="qr-box">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQQAAAEEAQMAAAD0xthJAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABxklEQVRoge2ZsbGEMAxExRA4pARKoTQojVJcgkMCz+lrJRsw/LkCzlLAHOKRaKT1oiP6oRjZYiOa03TUxLZYOndHZC3Lui37nIiCZD9ILDuuwYl/iEGSQiAxHSGXzpIXmFPHhDRVmtBVw6cU0InvBC1ReuqgUQBMZbdEnTmOEx+B8YZW7D2VToS7rkOlMJXjZygt91T+LogrMHT6Y6ii9QwnEFZTWuUSpxSOEeccb+u+RHMKnRGGyNAxeoyLSm36hs2cEy2hKlWn8jJK6LhYesyJligZqSm8FO4xlXzv066IDFV6OyV5NJtqOdESGkxX4CRE7HMsc9sXoU6gtBhESiu4KlQq5kRLkJZwE12Sk5DgpaDr9shOwq6IolJWogTVrrId61Q68SAYxgBI1I1AtefmrXJ3hCqV3O/WVnavH280pSvjREtIbl/YtpKXalF1Bk68CTVPIuycTdesC5s9bh/EGYsea0EJdUozKCdexH2HwuYMbls4vNoZUXds5gxOQiqGnstOvIlrr40a6g7FjMI5t30S54ZkYPOWMzvxlUBJQyPsmNL+iDJzao34qE6J7hsSJ+5EqV79J4Dr1wla7KX8TvxU/AFtJq8Tc0+CbgAAAABJRU5ErkJggg==" alt="QR Demo" style="width:118px;height:118px;border-radius:10px;border:3px solid #38bdf8;background:#fff;padding:4px;"/>
+            <div class="qr-info">
+              <strong>🌐 MÃ QR 1: BẢN DEMO SỐNG</strong>
+              Trải nghiệm trực tiếp hệ thống <strong>Sky-Line ICT Portal</strong> đang vận hành (có sẵn chế độ trải nghiệm nhanh cho Ban Giám khảo):<br/>
+              <span style="color:#38bdf8;font-weight:700;font-size:12px;">sky-line-ict-portal-app.vercel.app</span>
+            </div>
+          </div>
+          <div class="qr-box">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQQAAAEEAQMAAAD0xthJAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAB+0lEQVRogeWZvbGDQAyExTggpARKoTSuNEqhBEIHDHralTj72a5AusA/5+8CdqQ9SRZJtB7Ktcna+O05+kZb+XYmI5545nlbtOlln0Y9Jt3tw0otChIm0T6bYqoynDww67a0VUyvrAT08ACZDpHFTtQmhFvIjynyJycR2WABMdhPTyLbr3ypQYRbgriQL+Mx7Tzw6acZiPellz3/GF74c+UnqNg+49UU09Oy5xCYZ9MBB3IRgkrAnt+88OaP2d0B2XGWI4QJYj94ZWBrwoFmZhmK5SIoyKK9MoAXLgyX8IZKBEoB9TpZyXupBAFDwUwEtsz8lm3Vj8pAcfysRuBylLADugG+erhc4n6aiKAe2EEbwJvwPTmkHmEBYZcBe+SLheF0yG2e4ZaJCNiBBcRd9qovhsvV86UO8dCwRyuMIRHNwu+GXkslIp5RCMH8Bq97Zlhjk8iGagT3NonLICYCqBK7nyYiGPzQQzgC4L3o84+eDaUINMXRIw+kDwq4qr7yJRHxEqB3wHQHjQ6oHCEhkffIvCtJXP8nRhmIe1kT2OVhuMg9DaxF9PmYl0acBr6XicmIV3zgJlQ3C1XXQwoS8U9Ak+iRvzMqJeECjMr/PVYPl9JE9MjTXRl8xUcCwrMBlaDZQfQIPgsuSXS39PGf5QtH5RDw008rEInWH+tC203BTrSMAAAAAElFTkSuQmCC" alt="QR Repo" style="width:118px;height:118px;border-radius:10px;border:3px solid #f59e0b;background:#fff;padding:4px;"/>
+            <div class="qr-info">
+              <strong>📂 MÃ QR 2: HỒ SƠ &amp; KHUÔN MẪU</strong>
+              Kho Mã nguồn, Bộ 4 Kỹ năng Vibe Coding (<code>.agents/skills</code>) &amp; Hồ sơ Minh chứng Chuyển giao 15 phút:<br/>
+              <span style="color:#fbbf24;font-weight:700;font-size:12px;">github.com/doanhhuy14spt/sky-line-ict-portal-app</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
