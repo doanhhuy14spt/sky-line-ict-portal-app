@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   School,
   Calendar,
@@ -100,16 +100,107 @@ interface TaskItem {
   status: "todo" | "in_progress" | "waiting_approval" | "completed";
 }
 
+type MainDashboardTab = "dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers";
+type TimetableSubTab = "lab_view" | "teacher_view" | "assignment_view";
+type TasksSubTab = "part1_assigned_tasks" | "part2_incidents";
+type TeachersSubTab = "part1_directory" | "part2_evaluation";
+
+function parseDashboardPathname(pathname: string): {
+  tab: MainDashboardTab;
+  timetableSub?: TimetableSubTab;
+  tasksSub?: TasksSubTab;
+  teachersSub?: TeachersSubTab;
+} {
+  const clean = (pathname || "/dashboard").replace(/\/+$/, "").toLowerCase();
+
+  if (clean === "/dashboard" || clean === "/dashboard/tong-quan") {
+    return { tab: "dashboard" };
+  }
+
+  if (clean.startsWith("/dashboard/lich-giang-day")) {
+    if (clean.includes("/tkb-giao-vien")) {
+      return { tab: "timetable", timetableSub: "teacher_view" };
+    }
+    if (clean.includes("/phan-cong-chuyen-mon")) {
+      return { tab: "timetable", timetableSub: "assignment_view" };
+    }
+    return { tab: "timetable", timetableSub: "lab_view" };
+  }
+
+  if (clean.startsWith("/dashboard/thiet-bi-robot")) {
+    return { tab: "devices" };
+  }
+
+  if (clean.startsWith("/dashboard/cong-viec")) {
+    if (clean.includes("/xu-ly-su-vu")) {
+      return { tab: "tasks", tasksSub: "part2_incidents" };
+    }
+    return { tab: "tasks", tasksSub: "part1_assigned_tasks" };
+  }
+
+  if (clean.startsWith("/dashboard/doi-tuyen")) {
+    return { tab: "teams" };
+  }
+
+  if (clean.startsWith("/dashboard/thanh-tich")) {
+    return { tab: "achievements" };
+  }
+
+  if (clean.startsWith("/dashboard/nhan-su")) {
+    if (clean.includes("/danh-gia-nang-luc")) {
+      return { tab: "teachers", teachersSub: "part2_evaluation" };
+    }
+    return { tab: "teachers", teachersSub: "part1_directory" };
+  }
+
+  return { tab: "dashboard" };
+}
+
+function buildDashboardPath(
+  tab: MainDashboardTab,
+  timetableSub: TimetableSubTab,
+  tasksSub: TasksSubTab,
+  teachersSub: TeachersSubTab
+): string {
+  switch (tab) {
+    case "dashboard":
+      return "/dashboard";
+    case "timetable":
+      if (timetableSub === "teacher_view") return "/dashboard/lich-giang-day/tkb-giao-vien";
+      if (timetableSub === "assignment_view") return "/dashboard/lich-giang-day/phan-cong-chuyen-mon";
+      return "/dashboard/lich-giang-day";
+    case "devices":
+      return "/dashboard/thiet-bi-robot";
+    case "tasks":
+      if (tasksSub === "part2_incidents") return "/dashboard/cong-viec/xu-ly-su-vu";
+      return "/dashboard/cong-viec";
+    case "teams":
+      return "/dashboard/doi-tuyen";
+    case "achievements":
+      return "/dashboard/thanh-tich";
+    case "teachers":
+      if (teachersSub === "part2_evaluation") return "/dashboard/nhan-su/danh-gia-nang-luc";
+      return "/dashboard/nhan-su";
+    default:
+      return "/dashboard";
+  }
+}
+
 export default function DashboardPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const initialRoute = parseDashboardPathname(pathname || "/dashboard");
+
   const [isDark, setIsDark] = useState(true);
   const [selectedCampus, setSelectedCampus] = useState("all");
   const [selectedSchoolYear, setSelectedSchoolYear] = useState("2026-2027");
   const [selectedLab, setSelectedLab] = useState<string>("riverside_primary"); // Mặc định: Sky-Line Riverside Tiểu Học
   const [selectedSessionFilter, setSelectedSessionFilter] = useState<"all" | "morning" | "afternoon">("all");
-  const [timetableSubTab, setTimetableSubTab] = useState<"lab_view" | "teacher_view" | "assignment_view">("lab_view"); // 3 phần: Lịch Lab, TKB giáo viên & Phân công chuyên môn
+  const [timetableSubTab, setTimetableSubTab] = useState<TimetableSubTab>(
+    initialRoute.timetableSub || "lab_view"
+  ); // 3 phần: Lịch Lab, TKB giáo viên & Phân công chuyên môn
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("huy"); // Mặc định: Thầy Quốc Huy (Tổ trưởng)
-  const [activeTab, setActiveTab] = useState<"dashboard" | "timetable" | "devices" | "tasks" | "teams" | "achievements" | "teachers">("dashboard");
+  const [activeTab, setActiveTab] = useState<MainDashboardTab>(initialRoute.tab);
   const [isDeptDataMenuOpen, setIsDeptDataMenuOpen] = useState(false);
   const [isDataRepoSubOpen, setIsDataRepoSubOpen] = useState(true);
   const deptDataMenuRef = useRef<HTMLDivElement>(null);
@@ -372,8 +463,12 @@ export default function DashboardPage() {
   ]);
 
   // --- STATE QUẢN LÝ & CHỈNH SỬA HỒ SƠ GIÁO VIÊN TRONG TAB NHÂN SỰ ICT ---
-  const [teachersSubTab, setTeachersSubTab] = useState<"part1_directory" | "part2_evaluation">("part1_directory");
-  const [tasksSubTab, setTasksSubTab] = useState<"part1_assigned_tasks" | "part2_incidents">("part1_assigned_tasks");
+  const [teachersSubTab, setTeachersSubTab] = useState<TeachersSubTab>(
+    initialRoute.teachersSub || "part1_directory"
+  );
+  const [tasksSubTab, setTasksSubTab] = useState<TasksSubTab>(
+    initialRoute.tasksSub || "part1_assigned_tasks"
+  );
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [profileModalMode, setProfileModalMode] = useState<"add" | "edit">("edit");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -392,6 +487,42 @@ export default function DashboardPage() {
     email: string;
   } | null>(null);
   const [isDeletingTeacher, setIsDeletingTeacher] = useState(false);
+
+  // Đồng bộ URL hai chiều khi truy cập trực tiếp đường dẫn hoặc bấm nút Back/Forward trên trình duyệt
+  useEffect(() => {
+    const applyFromLocation = (pathToParse: string) => {
+      const parsed = parseDashboardPathname(pathToParse);
+      setActiveTab(parsed.tab);
+      if (parsed.timetableSub) setTimetableSubTab(parsed.timetableSub);
+      if (parsed.tasksSub) setTasksSubTab(parsed.tasksSub);
+      if (parsed.teachersSub) setTeachersSubTab(parsed.teachersSub);
+    };
+
+    applyFromLocation(pathname || window.location.pathname || "/dashboard");
+
+    const handlePopState = () => {
+      applyFromLocation(window.location.pathname || "/dashboard");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [pathname]);
+
+  const pushDashboardUrl = useCallback(
+    (
+      nextTab: MainDashboardTab,
+      nextTimetableSub: TimetableSubTab = timetableSubTab,
+      nextTasksSub: TasksSubTab = tasksSubTab,
+      nextTeachersSub: TeachersSubTab = teachersSubTab
+    ) => {
+      if (typeof window === "undefined") return;
+      const targetPath = buildDashboardPath(nextTab, nextTimetableSub, nextTasksSub, nextTeachersSub);
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState(null, "", targetPath);
+      }
+    },
+    [timetableSubTab, tasksSubTab, teachersSubTab]
+  );
 
   // Khởi tạo và đồng bộ chế độ Sáng / Tối từ bộ nhớ trình duyệt (Mặc định: Chế độ Tối)
   useEffect(() => {
@@ -439,10 +570,41 @@ export default function DashboardPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleTabChange = (newTab: typeof activeTab) => {
+  const handleTabChange = (
+    newTab: MainDashboardTab,
+    subOverrides?: {
+      timetableSub?: TimetableSubTab;
+      tasksSub?: TasksSubTab;
+      teachersSub?: TeachersSubTab;
+    }
+  ) => {
+    const nextTimetableSub = subOverrides?.timetableSub || timetableSubTab;
+    const nextTasksSub = subOverrides?.tasksSub || tasksSubTab;
+    const nextTeachersSub = subOverrides?.teachersSub || teachersSubTab;
+
+    if (subOverrides?.timetableSub) setTimetableSubTab(subOverrides.timetableSub);
+    if (subOverrides?.tasksSub) setTasksSubTab(subOverrides.tasksSub);
+    if (subOverrides?.teachersSub) setTeachersSubTab(subOverrides.teachersSub);
+
     setIsLoadingTab(true);
     setActiveTab(newTab);
+    pushDashboardUrl(newTab, nextTimetableSub, nextTasksSub, nextTeachersSub);
     setTimeout(() => setIsLoadingTab(false), 200);
+  };
+
+  const handleTimetableSubTabChange = (sub: TimetableSubTab) => {
+    setTimetableSubTab(sub);
+    pushDashboardUrl("timetable", sub, tasksSubTab, teachersSubTab);
+  };
+
+  const handleTasksSubTabChange = (sub: TasksSubTab) => {
+    setTasksSubTab(sub);
+    pushDashboardUrl("tasks", timetableSubTab, sub, teachersSubTab);
+  };
+
+  const handleTeachersSubTabChange = (sub: TeachersSubTab) => {
+    setTeachersSubTab(sub);
+    pushDashboardUrl("teachers", timetableSubTab, tasksSubTab, sub);
   };
 
   const campuses = [
@@ -1085,14 +1247,15 @@ export default function DashboardPage() {
                 supabase={supabase}
                 currentUserProfile={currentUserProfile}
                 onNavigateTab={(tab, notif) => {
-                  handleTabChange(tab);
-                  if (
+                  const isIncidentNotif =
                     notif &&
                     (notif.category === "incident" ||
                       notif.title?.toLowerCase().includes("sự vụ") ||
-                      notif.message?.toLowerCase().includes("sự vụ"))
-                  ) {
-                    setTasksSubTab("part2_incidents");
+                      notif.message?.toLowerCase().includes("sự vụ"));
+                  if (tab === "tasks" && isIncidentNotif) {
+                    handleTabChange("tasks", { tasksSub: "part2_incidents" });
+                  } else {
+                    handleTabChange(tab);
                   }
                 }}
                 showToast={showToast}
@@ -1349,7 +1512,7 @@ export default function DashboardPage() {
                 <div className="inline-flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
                   <button
                     onClick={() => {
-                      setTimetableSubTab("lab_view");
+                      handleTimetableSubTabChange("lab_view");
                       showToast("Đang xem Phần 1: Lịch phòng Lab", "info");
                     }}
                     className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
@@ -1364,7 +1527,7 @@ export default function DashboardPage() {
 
                   <button
                     onClick={() => {
-                      setTimetableSubTab("teacher_view");
+                      handleTimetableSubTabChange("teacher_view");
                       showToast("Đang xem Phần 2: Lịch giảng dạy cá nhân từng giáo viên (TKB CÁ NHÂN)", "info");
                     }}
                     className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
@@ -1384,7 +1547,7 @@ export default function DashboardPage() {
                   {isLeader && (
                     <button
                       onClick={() => {
-                        setTimetableSubTab("assignment_view");
+                        handleTimetableSubTabChange("assignment_view");
                         showToast("Đang xem Phần 3: Phân công chuyên môn & Danh sách lớp học", "info");
                       }}
                       className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
@@ -1705,7 +1868,7 @@ export default function DashboardPage() {
                 <div className="inline-flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
                   <button
                     onClick={() => {
-                      setTasksSubTab("part1_assigned_tasks");
+                      handleTasksSubTabChange("part1_assigned_tasks");
                       showToast("Đang xem Phần 1: Phân Công Công Việc & Nhiệm Vụ Chuyên Môn", "info");
                     }}
                     className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
@@ -1720,7 +1883,7 @@ export default function DashboardPage() {
 
                   <button
                     onClick={() => {
-                      setTasksSubTab("part2_incidents");
+                      handleTasksSubTabChange("part2_incidents");
                       showToast("Đang xem Phần 2: Xử lý sự vụ", "info");
                     }}
                     className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
@@ -1803,7 +1966,7 @@ export default function DashboardPage() {
                 <div className="inline-flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
                   <button
                     onClick={() => {
-                      setTeachersSubTab("part1_directory");
+                      handleTeachersSubTabChange("part1_directory");
                       showToast("Đang xem Phần 1. Danh Bạ Đội Ngũ Nhân Sự Tổ ICT", "info");
                     }}
                     className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
@@ -1821,7 +1984,7 @@ export default function DashboardPage() {
 
                   <button
                     onClick={() => {
-                      setTeachersSubTab("part2_evaluation");
+                      handleTeachersSubTabChange("part2_evaluation");
                       showToast("Đang xem Phần 2. Đánh giá năng lực giáo viên", "info");
                     }}
                     className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
