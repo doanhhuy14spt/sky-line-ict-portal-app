@@ -64,6 +64,10 @@ import { NotificationBell } from "@/components/notification-bell";
 import { maskStudentName } from "@/lib/student-privacy";
 import { TeacherCompetencyEvaluationSection } from "@/components/teacher-competency-evaluation-section";
 import { IncidentHandlingSection } from "@/components/incident-handling-section";
+import {
+  generateTimetableAIOptimizationReport,
+  TimetableAIOptimizationReport,
+} from "@/lib/ai-spark-engine";
 
 interface TimetableSlot {
   id: string;
@@ -318,6 +322,9 @@ export default function DashboardPage() {
   });
   const [isSubmittingSlot, setIsSubmittingSlot] = useState(false);
   const [slotConflictWarning, setSlotConflictWarning] = useState<string | null>(null);
+  const [timetableAIReport, setTimetableAIReport] =
+    useState<TimetableAIOptimizationReport | null>(null);
+  const [isAnalyzingTimetableAI, setIsAnalyzingTimetableAI] = useState(false);
 
   // --- STATE KANBAN ---
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -1488,6 +1495,129 @@ export default function DashboardPage() {
                     ? "Lịch phân công giảng dạy chi tiết của 8 Giáo viên Tổ ICT"
                     : "Sắp xếp phân công giáo viên giảng dạy & Quản lý danh sách 113 lớp"}
                 </div>
+              </div>
+
+              {/* ===================================================================== */}
+              {/* TRỢ LÝ AI SỐ 1: PHÂN TÍCH CHỐNG TRÙNG LỊCH & GỢI Ý KHUNG TIẾT TRỐNG   */}
+              {/* ===================================================================== */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white border border-sky-500/40 shadow-md space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-amber-500 flex items-center justify-center shrink-0 shadow-md">
+                      <Bot className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-amber-400" />
+                          Trợ Lý AI Số 1: Kiểm Tra Chống Trùng Lịch, Cân Bằng Tiết Dạy & Gợi Ý Khung Tiết Trống Phòng Lab
+                        </h3>
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-extrabold">
+                          Quét 5 Cơ sở • 6 Phòng Lab • 113 Lớp
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-sky-200/85">
+                        Tự động rà soát xung đột lịch dạy giáo viên & lịch phòng Lab theo thời gian thực, phân tích định mức tiết/tuần và đề xuất khung giờ trống tối ưu để xếp lịch dạy bù, ôn luyện Đội tuyển hoặc bảo trì máy tính.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={isAnalyzingTimetableAI}
+                      onClick={() => {
+                        setIsAnalyzingTimetableAI(true);
+                        setTimeout(() => {
+                          const report = generateTimetableAIOptimizationReport(
+                            timetableSlots,
+                            teachersList.length || 7
+                          );
+                          setTimetableAIReport(report);
+                          setIsAnalyzingTimetableAI(false);
+                          showToast(
+                            "✨ Trợ lý AI Số 1 đã hoàn tất quét chống trùng lịch & phân tích công suất 6 phòng Lab!",
+                            "success"
+                          );
+                        }, 250);
+                      }}
+                      className="h-9 px-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs cursor-pointer flex items-center gap-1.5 shadow-md"
+                    >
+                      <RefreshCw
+                        className={`w-3.5 h-3.5 ${
+                          isAnalyzingTimetableAI ? "animate-spin" : ""
+                        }`}
+                      />
+                      <span>
+                        {timetableAIReport
+                          ? "Quét lại Thời khóa biểu & Phòng Lab"
+                          : "⚡ AI Phân Tích Lịch & Tìm Tiết Trống Ngay"}
+                      </span>
+                    </Button>
+                    {timetableAIReport && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setTimetableAIReport(null)}
+                        className="h-9 px-2.5 rounded-xl border-white/20 bg-white/5 hover:bg-white/15 text-white text-xs cursor-pointer"
+                      >
+                        Thu gọn
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {timetableAIReport && (
+                  <div className="pt-3 border-t border-white/15 space-y-3 text-xs animate-in fade-in duration-200">
+                    <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-emerald-200 font-bold">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{timetableAIReport.workloadSummary}</span>
+                      </div>
+                      <span className="text-[10px] text-sky-200 shrink-0 font-semibold">
+                        Phân tích lúc {timetableAIReport.analyzedAt}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {timetableAIReport.recommendedFreeSlotsByCampus.map(
+                        (item, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 rounded-xl bg-white/[0.06] border border-white/10 space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-black text-amber-300 text-xs">
+                                {item.campusLabel}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-200 text-[10px] font-bold">
+                                {item.utilizationRate}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-300 font-semibold">
+                              {item.labName}
+                            </div>
+                            <div className="space-y-1 pt-1">
+                              {item.bestFreeSlotsForMakeupOrCoaching.map(
+                                (slotText, sIdx) => (
+                                  <div
+                                    key={sIdx}
+                                    className="text-[11px] text-sky-100/90 flex items-start gap-1.5"
+                                  >
+                                    <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                                    <span>{slotText}</span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* ========================================================================= */}
